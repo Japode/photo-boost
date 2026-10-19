@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ONNX Runtime: provider detection, sessions loaded on demand and the one-at-a-time queue.
+       It reads tensors from Imaging and never sees a UI type. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>PhotoBoost.Inference</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PhotoBoost.Imaging\PhotoBoost.Imaging.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,33 @@
+<Project>
+
+  <!-- Every setting here applies to every project, so none of them can be turned off in one
+       .csproj without the diff showing it. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- x64 only. ONNX Runtime's GPU providers and the D3D11 display ship no ARM or x86 build
+         this app targets, and AnyCPU would pretend otherwise. -->
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+
+    <!-- One output tree per configuration: with a single platform the bin\x64\ segment carries
+         nothing, and a bare `dotnet build <csproj>` would otherwise write a second tree. -->
+    <AppendPlatformToOutputPath>false</AppendPlatformToOutputPath>
+
+    <!-- On from the first commit: tiling and tensor conversion run per pixel, and a rule turned
+         on after that code exists is a rule nobody turns on. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisModePerformance>All</AnalysisModePerformance>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+
+    <Version>0.1.0</Version>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

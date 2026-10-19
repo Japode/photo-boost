@@ -1,0 +1,7 @@
+<!-- ThemeMode="System" loads WPF's Fluent theme and follows the Windows light or dark setting
+     while running; on Windows 11 the Fluent theme gives every window the Mica backdrop. -->
+<Application x:Class="PhotoBoost.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ThemeMode="System"
+             StartupUri="MainWindow.xaml" />

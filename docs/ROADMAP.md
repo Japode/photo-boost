@@ -2,13 +2,12 @@
 
 ## Block A — Project foundation
 
-- 📋 **PB1** (deps: —) **No WPF .NET 10 solution with the Fluent ThemeMode that builds and opens a window** — Every later block needs the app, imaging, inference and render projects to land in. → §PB1
-- 📋 **PB2** (deps: PB1) **No xunit.v3 test projects, analyzer gate or architecture tests in the build** — Tiling and preprocessing need unit tests and a build gate before any pipeline code exists. → §PB2
-- 📋 **PB5** (deps: PB1) **Unverified which ONNX Runtime package (DirectML, Windows ML, CUDA) runs in a self-contained WPF build** — ONNX Runtime ships native binaries per provider; a mismatch found late would force a stack change after pipelines exist. → §PB5
-- 📋 **PB37** (deps: PB1) **No design system: Brand, Theme, Appearance and the Fluent page styles from claude-tray are missing** — The app should look like claude-tray, quickshell and pportal, which share one decided visual language. → §PB37
-- 📋 **PB38** (deps: PB1, PB2) **No winwright Cases project, winwright.json or first case that opens the main window** — UI behaviour is proven by winwright cases in the sibling apps, and the harness is cheapest to adopt before screens exist. → §PB38
-- 📋 **PB39** (deps: PB1) **No command-line flags to open a file, force a provider or point at a models folder** — Cases must reach states without file dialogs or drag and drop, which winwright cannot drive yet. → §PB39
-- 📋 **PB40** (deps: PB1) **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — WPF's own image control renders through DirectX 9 and struggles with very large bitmaps; the comparator needs a direct GPU path. → §PB40
+- 📋 **PB2** (deps: PB1 ✅) **No xunit.v3 test projects, analyzer gate or architecture tests in the build** — Tiling and preprocessing need unit tests and a build gate before any pipeline code exists. → §PB2
+- 📋 **PB5** (deps: PB1 ✅) **Unverified which ONNX Runtime package (DirectML, Windows ML, CUDA) runs in a self-contained WPF build** — ONNX Runtime ships native binaries per provider; a mismatch found late would force a stack change after pipelines exist. → §PB5
+- 📋 **PB37** (deps: PB1 ✅) **No design system: Brand, Theme, Appearance and the Fluent page styles from claude-tray are missing** — The app should look like claude-tray, quickshell and pportal, which share one decided visual language. → §PB37
+- 📋 **PB38** (deps: PB1 ✅, PB2) **No winwright Cases project, winwright.json or first case that opens the main window** — UI behaviour is proven by winwright cases in the sibling apps, and the harness is cheapest to adopt before screens exist. → §PB38
+- 📋 **PB39** (deps: PB1 ✅) **No command-line flags to open a file, force a provider or point at a models folder** — Cases must reach states without file dialogs or drag and drop, which winwright cannot drive yet. → §PB39
+- 📋 **PB40** (deps: PB1 ✅) **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — WPF's own image control renders through DirectX 9 and struggles with very large bitmaps; the comparator needs a direct GPU path. → §PB40
 
 ## Block B — Model management
 

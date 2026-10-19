@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The WPF shell, and the only assembly allowed to reference all three libraries. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>PhotoBoost.App</RootNamespace>
+    <AssemblyName>PhotoBoost</AssemblyName>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <!-- Per-Monitor V2 DPI awareness, so a photo is not bitmap-stretched on a second monitor. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <UseWPF>true</UseWPF>
+    <!-- WPF0001: ThemeMode is still marked [Experimental] in the SDK and is the supported way to
+         follow the system theme while running. The sibling apps carry the same suppression. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PhotoBoost.Imaging\PhotoBoost.Imaging.csproj" />
+    <ProjectReference Include="..\PhotoBoost.Inference\PhotoBoost.Inference.csproj" />
+    <ProjectReference Include="..\PhotoBoost.Render\PhotoBoost.Render.csproj" />
+  </ItemGroup>
+
+</Project>

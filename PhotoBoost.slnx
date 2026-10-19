@@ -1,0 +1,11 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/PhotoBoost.App/PhotoBoost.App.csproj" />
+    <Project Path="src/PhotoBoost.Imaging/PhotoBoost.Imaging.csproj" />
+    <Project Path="src/PhotoBoost.Inference/PhotoBoost.Inference.csproj" />
+    <Project Path="src/PhotoBoost.Render/PhotoBoost.Render.csproj" />
+  </Folder>
+</Solution>

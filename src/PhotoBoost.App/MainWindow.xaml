@@ -1,0 +1,9 @@
+<Window x:Class="PhotoBoost.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PhotoBoost"
+        Width="1100"
+        Height="720"
+        WindowStartupLocation="CenterScreen">
+  <Grid />
+</Window>

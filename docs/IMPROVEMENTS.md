@@ -2,15 +2,6 @@
 
 ## Block A — Project foundation
 
-### §PB1 Project scaffold
-
-Mirror quickshell and pportal: PhotoBoost.slnx with src/PhotoBoost.App (WPF,
-net10.0-windows, win-x64), src/PhotoBoost.Imaging (tensors, tiling, codecs),
-src/PhotoBoost.Inference (ONNX Runtime, queue, sessions) and src/PhotoBoost.Render
-(Vortice D3D11 display). global.json pins the SDK. Directory.Build.props: x64 only,
-nullable, warnings as errors, performance analyzers on. ThemeMode="System" with WPF0001
-in NoWarn. Done when dotnet build and dotnet run open an empty Fluent window with Mica.
-
 ### §PB2 Test and build gates
 
 tests/Directory.Build.props wires xunit.v3 on Microsoft.Testing.Platform for every test
