@@ -2,15 +2,6 @@
 
 ## Block A — Project foundation
 
-### §PB5 ONNX Runtime package spike
-
-In a self-contained Release publish, load Microsoft.ML.OnnxRuntime.DirectML and run a
-tiny model on the DirectML and CPU providers. Then try Windows ML (Windows App SDK,
-unpackaged) which picks TensorRT, OpenVINO or an NPU on its own, and the CUDA package on
-an NVIDIA machine. Record size added to the installer, startup cost and which ops fall
-back to CPU. DirectML is in sustained engineering, so weigh Windows ML as the long-term
-path. Propose and explain any switch before making it, as the brief requires.
-
 ### §PB37 Design system reuse
 
 Copy the pattern, not a package (none exists): Brand.cs with the app's colours declared
@@ -112,9 +103,13 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ### §PB14 Execution provider detection
 
-Try DirectML first (any DX12 GPU: NVIDIA, AMD, Intel), then CUDA if that package ships,
-then CPU, by creating a session on a tiny probe model; keep the first that works. If the
-PB5 spike picks Windows ML, let it choose and report its choice. Name the adapter
+Use Microsoft.ML.OnnxRuntime.DirectML 1.24.4, the package the PB5 spike chose
+(spike/onnx-runtime/README.md). Try DirectML on the DXGI adapter with the most video
+memory, then CPU, by creating a session on a tiny probe model; keep the first that
+works. Put AppendExecutionProvider_DML itself inside the try: in the spike it threw
+887A0004 once in about thirty runs on a working GPU, before any session existed.
+DirectML needs EnableMemoryPattern off and sequential execution. CUDA is not shipped
+(rejected by the spike); Windows ML is PB43, waiting for the owner. Name the adapter
 through DXGI, show provider and GPU in the status bar, and accept --provider to force
 one.
 
@@ -210,6 +205,22 @@ export-and-quantize.py also emits a tiny ONNX model (e.g. a nearest-neighbour 4x
 stage it into {files} and pass --models and --provider cpu, so the exported bytes are
 stable and checkable with sameBytesAs.
 
+### §PB43 Windows ML providers
+
+The PB5 spike (spike/onnx-runtime/README.md) ran Microsoft.Windows.AI.MachineLearning
+2.1.74 unpackaged and self-contained, with no Windows App SDK: PREFER_GPU picked NVIDIA
+TensorRT-RTX at 2.4 ms against DirectML's 5.5 to 12 ms on the same model. The brief
+requires the switch to be proposed and approved first, so this waits on the owner.
+
+Once approved: swap the DirectML package for Windows ML behind PB14's provider
+abstraction, target net10.0-windows10.0.19041.0, call EnsureAndRegisterCertifiedAsync
+and let SetEpSelectionPolicy(PREFER_GPU) choose, reporting the EP it picked. Three
+questions decide the details. The first run took 57 s while Windows Update fetched the
+providers, so it needs progress and must not block an offline start (DirectML and CPU
+stay available meanwhile). TensorRT-RTX differed from CPU by 2e-3, which PB10's quality
+threshold must accept. And TensorRT-RTX builds its engine at session creation (about 0.5
+s on the tiny model), so PB16's idle release costs that again.
+
 ## Block D — Editor: comparison, history and quality modes
 
 ### §PB27 Before/after comparator
@@ -272,9 +283,11 @@ Paste the result into the README with the hardware it ran on.
 Follow claude-tray: a self-contained single-file publish (ReadyToRun), an Inno Setup
 per-user installer built by a build-installer.cmd, and optionally winget manifests. The
 version lives in one place and is checked against app.manifest, as pportal does. Models
-are not bundled. Smoke-test the installed app offline after models are downloaded. The
-non-goal Builds for macOS, Linux, web or mobile does not apply: this is the one Windows
-build.
+are not bundled. The PB5 spike ran DirectML from a single-file exe both with natives
+beside it and self-extracted; exclude DirectML.Debug.dll, the .pdb files and
+onnxruntime.lib the package copies (about 14.5 MB). Smoke-test the installed app offline
+after models are downloaded. The non-goal Builds for macOS, Linux, web or mobile does
+not apply: this is the one Windows build.
 
 ## Block G — Phase 2: denoising
 

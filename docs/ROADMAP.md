@@ -2,7 +2,6 @@
 
 ## Block A — Project foundation
 
-- 📋 **PB5** (deps: PB1 ✅) **Unverified which ONNX Runtime package (DirectML, Windows ML, CUDA) runs in a self-contained WPF build** — ONNX Runtime ships native binaries per provider; a mismatch found late would force a stack change after pipelines exist. → §PB5
 - 📋 **PB37** (deps: PB1 ✅) **No design system: Brand, Theme, Appearance and the Fluent page styles from claude-tray are missing** — The app should look like claude-tray, quickshell and pportal, which share one decided visual language. → §PB37
 - 📋 **PB38** (deps: PB1 ✅, PB2 ✅) **No winwright Cases project, winwright.json or first case that opens the main window** — UI behaviour is proven by winwright cases in the sibling apps, and the harness is cheapest to adopt before screens exist. → §PB38
 - 📋 **PB39** (deps: PB1 ✅) **No command-line flags to open a file, force a provider or point at a models folder** — Cases must reach states without file dialogs or drag and drop, which winwright cannot drive yet. → §PB39
@@ -21,10 +20,10 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB14** (deps: PB5) **Execution provider is neither detected at runtime nor shown in the UI** — Users need to know if they run on GPU or CPU, and the app must fall back without crashing. → §PB14
+- 📋 **PB14** (deps: PB5 ✅) **Execution provider is neither detected at runtime nor shown in the UI** — Users need to know if they run on GPU or CPU, and the app must fall back without crashing. → §PB14
 - 📋 **PB15** (deps: PB14) **No InferenceService queue that runs one inference at a time** — Two concurrent sessions on one GPU or in limited RAM is the fastest route to OOM. → §PB15
 - 📋 **PB16** (deps: PB15) **ONNX sessions are not loaded on demand nor released after idle minutes** — Keeping every model resident wastes memory the user needs for large images. → §PB16
-- 📋 **PB17** (deps: PB2 ✅, PB5) **No preprocessing to and from model tensors, and no unit tests for it** — Every pipeline converts images to normalized NCHW float tensors and back; one bug corrupts all outputs. → §PB17
+- 📋 **PB17** (deps: PB2 ✅, PB5 ✅) **No preprocessing to and from model tensors, and no unit tests for it** — Every pipeline converts images to normalized NCHW float tensors and back; one bug corrupts all outputs. → §PB17
 - 📋 **PB18** (deps: PB17) **Large images cannot be processed: no tiling with overlap** — Running Real-ESRGAN on a full 12 MP image exhausts memory; tiles keep peak usage bounded. → §PB18
 - 📋 **PB19** (deps: PB11, PB16, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
 - 📋 **PB20** (deps: PB19) **UI receives no tile X of Y progress during inference** — A 4x upscale can take minutes on CPU; without progress the app looks frozen. → §PB20
@@ -36,6 +35,7 @@
 - 📋 **PB26** (deps: PB21, PB22, PB24, PB25, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB41** (deps: PB14, PB18) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
 - 📋 **PB42** (deps: PB11, PB38) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
+- 📋 **PB43** (deps: PB14, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
 
 ## Block D — Editor: comparison, history and quality modes
 

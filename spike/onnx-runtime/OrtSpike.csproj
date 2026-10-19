@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- PB5: a record of the ONNX Runtime package spike, outside the solution like pportal's spikes.
+       -p:Flavor=DirectML (default) or Cuda picks the package; the answer is in README.md. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>PhotoBoost.Spike.OnnxRuntime</RootNamespace>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Flavor Condition="'$(Flavor)' == ''">DirectML</Flavor>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Flavor)' == 'DirectML'">
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Flavor)' == 'Cuda'">
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu.Windows" Version="1.31.0" />
+  </ItemGroup>
+
+  <!-- Windows ML without the Windows App SDK: the package carries its own ONNX Runtime and the
+       managed API, and an unpackaged app activates it reg-free on Windows 10 19H1 and later. -->
+  <PropertyGroup Condition="'$(Flavor)' == 'WinML'">
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <DefineConstants>$(DefineConstants);WINML</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Flavor)' == 'WinML'">
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" Version="2.1.74" />
+  </ItemGroup>
+
+</Project>
