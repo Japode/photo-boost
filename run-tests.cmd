@@ -32,7 +32,8 @@ set /a RAN=0
 set /a FAILED=0
 set "BROKEN="
 
-for /d %%P in (tests\*) do (
+rem Only the *.Tests folders: tests\fixtures holds data, and a winwright Cases project runs apart.
+for /d %%P in (tests\*.Tests) do (
     set "APP=%%P\bin\%CONFIG%\net10.0-windows\%%~nxP.exe"
     echo.
     echo === %%~nxP ===

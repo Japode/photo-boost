@@ -71,14 +71,6 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB17 Preprocessing
-
-Decode with WIC (honouring EXIF orientation, colour profiles and 16-bit), convert to
-sRGB, split alpha, and produce Float32 NCHW in 0..1 RGB, plus the inverse with clamping.
-Write it with spans and SIMD where it pays. Unit tests cover round trips, alpha,
-grayscale and 16-bit inputs. A GPU compute-shader path can follow once tensors stay on
-the GPU.
-
 ### §PB18 Tiling with overlap
 
 Split into 256px tiles with 16px overlap (both configurable), run each, crop the overlap
@@ -166,6 +158,20 @@ providers, so it needs progress and must not block an offline start (DirectML an
 stay available meanwhile). TensorRT-RTX differed from CPU by 2e-3, which PB10's quality
 threshold must accept. And TensorRT-RTX builds its engine at session creation (about 0.5
 s on the tiny model), so PB16's idle release costs that again.
+
+### §PB44 Colour profile decode test
+
+ImageDecoder (PB17) converts a frame that embeds a colour profile to sRGB with WIC's
+IWICColorTransform, and leaves the pixels as they are when WIC cannot transform from
+that profile. No test exercises either path: the desk that built it had only the sRGB
+profile, and a fixture needs an image tagged with a wide-gamut one.
+
+Commit a tiny PNG or JPEG tagged with Display P3 or Adobe RGB (1998), made with Pillow
+and an ICC file whose license allows redistribution (the ICC's own sample profiles, or
+one built with ImageCms), and assert that a saturated green comes out with its red and
+blue channels moved the way the sRGB conversion predicts, within JPEG tolerance. Add a
+second fixture with a deliberately broken profile and assert the decode still succeeds
+unconverted. Record both in tests/fixtures/images/README.md beside the existing ones.
 
 ## Block D — Editor: comparison, history and quality modes
 

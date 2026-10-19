@@ -23,7 +23,7 @@
 - ✅ **PB14** **Execution provider is neither detected at runtime nor shown in the UI** — ProviderDetector runs a probe session on DirectML on the GPU with the most video memory, falls back to CPU with the reason, and the status bar shows the provider and GPU.
 - ✅ **PB15** **No InferenceService queue that runs one inference at a time** — InferenceService runs queued jobs one at a time in order on one background thread, with progress through IProgress, cancellation while queued or between tiles, and failures kept per job.
 - ✅ **PB16** **ONNX sessions are not loaded on demand nor released after idle minutes** — SessionCache loads a model variant's session on first use, lends it out by lease, drops the model's other variant on a switch and releases sessions idle for 5 minutes.
-- ✅ **PB17 (tensor half)** **No preprocessing to and from model tensors, and no unit tests for it** — RgbaImage holds RGBA at 16 bits and TensorConversion maps regions to NCHW tensors in any value range and back, clamped and exact, with masks and alpha carried apart.
+- ✅ **PB17** **No preprocessing to and from model tensors, and no unit tests for it** — ImageDecoder now reads any WIC format into RgbaImage upright per EXIF, converted to sRGB, with alpha, grayscale and 16-bit samples kept, tested on JPEG, PNG and WebP.
 
 ## Block D — Editor: comparison, history and quality modes
 

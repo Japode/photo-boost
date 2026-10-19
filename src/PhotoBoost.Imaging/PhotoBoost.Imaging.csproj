@@ -5,6 +5,13 @@
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>PhotoBoost.Imaging</RootNamespace>
+    <!-- WIC's CopyPixels writes straight into the image's sample array. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WIC, which Vortice ships inside its Direct2D package; only Vortice.WIC is used here. -->
+    <PackageReference Include="Vortice.Direct2D1" Version="3.8.3" />
+  </ItemGroup>
 
 </Project>
