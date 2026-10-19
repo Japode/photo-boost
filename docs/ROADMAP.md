@@ -2,10 +2,9 @@
 
 ## Block A — Project foundation
 
-- 📋 **PB2** (deps: PB1 ✅) **No xunit.v3 test projects, analyzer gate or architecture tests in the build** — Tiling and preprocessing need unit tests and a build gate before any pipeline code exists. → §PB2
 - 📋 **PB5** (deps: PB1 ✅) **Unverified which ONNX Runtime package (DirectML, Windows ML, CUDA) runs in a self-contained WPF build** — ONNX Runtime ships native binaries per provider; a mismatch found late would force a stack change after pipelines exist. → §PB5
 - 📋 **PB37** (deps: PB1 ✅) **No design system: Brand, Theme, Appearance and the Fluent page styles from claude-tray are missing** — The app should look like claude-tray, quickshell and pportal, which share one decided visual language. → §PB37
-- 📋 **PB38** (deps: PB1 ✅, PB2) **No winwright Cases project, winwright.json or first case that opens the main window** — UI behaviour is proven by winwright cases in the sibling apps, and the harness is cheapest to adopt before screens exist. → §PB38
+- 📋 **PB38** (deps: PB1 ✅, PB2 ✅) **No winwright Cases project, winwright.json or first case that opens the main window** — UI behaviour is proven by winwright cases in the sibling apps, and the harness is cheapest to adopt before screens exist. → §PB38
 - 📋 **PB39** (deps: PB1 ✅) **No command-line flags to open a file, force a provider or point at a models folder** — Cases must reach states without file dialogs or drag and drop, which winwright cannot drive yet. → §PB39
 - 📋 **PB40** (deps: PB1 ✅) **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — WPF's own image control renders through DirectX 9 and struggles with very large bitmaps; the comparator needs a direct GPU path. → §PB40
 
@@ -25,7 +24,7 @@
 - 📋 **PB14** (deps: PB5) **Execution provider is neither detected at runtime nor shown in the UI** — Users need to know if they run on GPU or CPU, and the app must fall back without crashing. → §PB14
 - 📋 **PB15** (deps: PB14) **No InferenceService queue that runs one inference at a time** — Two concurrent sessions on one GPU or in limited RAM is the fastest route to OOM. → §PB15
 - 📋 **PB16** (deps: PB15) **ONNX sessions are not loaded on demand nor released after idle minutes** — Keeping every model resident wastes memory the user needs for large images. → §PB16
-- 📋 **PB17** (deps: PB2, PB5) **No preprocessing to and from model tensors, and no unit tests for it** — Every pipeline converts images to normalized NCHW float tensors and back; one bug corrupts all outputs. → §PB17
+- 📋 **PB17** (deps: PB2 ✅, PB5) **No preprocessing to and from model tensors, and no unit tests for it** — Every pipeline converts images to normalized NCHW float tensors and back; one bug corrupts all outputs. → §PB17
 - 📋 **PB18** (deps: PB17) **Large images cannot be processed: no tiling with overlap** — Running Real-ESRGAN on a full 12 MP image exhausts memory; tiles keep peak usage bounded. → §PB18
 - 📋 **PB19** (deps: PB11, PB16, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
 - 📋 **PB20** (deps: PB19) **UI receives no tile X of Y progress during inference** — A 4x upscale can take minutes on CPU; without progress the app looks frozen. → §PB20

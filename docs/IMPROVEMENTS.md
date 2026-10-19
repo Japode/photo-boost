@@ -2,14 +2,6 @@
 
 ## Block A — Project foundation
 
-### §PB2 Test and build gates
-
-tests/Directory.Build.props wires xunit.v3 on Microsoft.Testing.Platform for every test
-project, as quickshell does. Projects: PhotoBoost.Imaging.Tests,
-PhotoBoost.Inference.Tests and PhotoBoost.Architecture.Tests (layer rules, plus the
-colour rule from the design system task). run-tests.cmd runs them; UI cases run
-separately through winwright.
-
 ### §PB5 ONNX Runtime package spike
 
 In a self-contained Release publish, load Microsoft.ML.OnnxRuntime.DirectML and run a

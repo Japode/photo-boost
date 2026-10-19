@@ -8,4 +8,9 @@
     <Project Path="src/PhotoBoost.Inference/PhotoBoost.Inference.csproj" />
     <Project Path="src/PhotoBoost.Render/PhotoBoost.Render.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PhotoBoost.Architecture.Tests/PhotoBoost.Architecture.Tests.csproj" />
+    <Project Path="tests/PhotoBoost.Imaging.Tests/PhotoBoost.Imaging.Tests.csproj" />
+    <Project Path="tests/PhotoBoost.Inference.Tests/PhotoBoost.Inference.Tests.csproj" />
+  </Folder>
 </Solution>

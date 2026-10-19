@@ -56,10 +56,9 @@ Validated means the project's own build and test were run, not that the edit loo
 | Command         | What it holds                                                               | When                       |
 | --------------- | --------------------------------------------------------------------------- | -------------------------- |
 | `roadkeep lint` | The governed files. Non-zero exit is the whole point of it.                 | Every task, without exception. |
-| `dotnet build PhotoBoost.slnx` | Compiles every project with warnings as errors and the performance analyzers on, so it is also the lint. | Every task that touches `src/`, `Directory.Build.props` or `global.json`. |
+| `run-tests.cmd` | Builds `PhotoBoost.slnx` (warnings as errors, performance analyzers on, so the build is also the lint), then runs every test application under `tests\`. Fails on a red, missing or absent assembly. | Every task that touches code, a project file, `Directory.Build.props` or `global.json`. |
 
-**There is no test command yet**: PB2 adds the test projects. When it lands, add its row
-here, and do not invent one before it exists.
+UI cases are not in `run-tests.cmd`; they run through winwright once PB38 lands.
 
 **Name EVERY task id an assertion holds, not just the one you are working**, so each test
 can be traced back to what it was for.
