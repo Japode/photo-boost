@@ -71,14 +71,6 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB22 Inference logging
-
-Log operation, model, variant, provider, adapter, image size, tile size, tile count,
-retries and wall time to a rotating file under %LOCALAPPDATA%\PhotoBoost\logs, and show
-the last run time in the status bar. Retries come from Upscale.Run's log callback
-(PB21), one line per smaller-tile retry or CPU fallback; pass it from UpscaleJob and
-write each line.
-
 ### §PB23 Open image screen
 
 A drop zone accepting files dragged from Explorer plus the common open dialog, for PNG,
@@ -93,7 +85,9 @@ are missing. Built so face restore and background removal slot in as entries lat
 Start the run with UpscaleJob.Enqueue (PB20) and a Progress&lt;JobProgress&gt; made on
 the UI thread: show "tile Done of Total" in a ProgressBar with AutomationId
 "JobProgress" for cases, the Remaining estimate once it is not null, and a cancel button
-calling the job's Cancel.
+calling the job's Cancel. Pass an OperationLog on OperationLog.DefaultFolder (PB22) and,
+when a job ends, show its wall time and provider beside ProviderStatus in the status
+bar.
 
 ### §PB25 Export
 

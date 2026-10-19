@@ -91,6 +91,39 @@ public sealed class UpscaleTests : IDisposable
     }
 
     [Fact]
+    public async Task AQueuedUpscaleIsLoggedWithItsTilesProviderAndTime()
+    {
+        // PB22: the record a bug report and the README table read.
+        using ModelLibrary library = new(root, Cpu);
+        await using InferenceService service = new();
+        OperationLog log = new(Path.Combine(root, "logs"));
+
+        await UpscaleJob.Enqueue(service, library, Pattern(300, 40, opaque: true), 2, "fp32", log: log)
+            .Completion.WaitAsync(TimeSpan.FromSeconds(60), TestContext.Current.CancellationToken);
+
+        OperationRecord record = Assert.Single(log.ReadCurrent());
+        Assert.Equal(("upscale x2", Upscale.X2, "fp32", "Cpu", "ok"), (record.Operation, record.Model, record.Variant, record.Provider, record.Outcome));
+        Assert.Equal((300, 40, 256, 2), (record.Width, record.Height, record.Tile, record.Tiles));
+        Assert.True(record.Milliseconds > 0);
+        Assert.Empty(record.Retries);
+    }
+
+    [Fact]
+    public async Task ACancelledUpscaleIsLoggedAsCancelled()
+    {
+        using ModelLibrary library = new(root, Cpu);
+        await using InferenceService service = new(TimeSpan.Zero);
+        OperationLog log = new(Path.Combine(root, "logs"));
+        InferenceJob<RgbaImage>? job = null;
+        CancelOnFirst progress = new(() => job!.Cancel());
+
+        job = UpscaleJob.Enqueue(service, library, Pattern(600, 40, opaque: true), 2, "fp32", progress, log);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => job.Completion.WaitAsync(TimeSpan.FromSeconds(60), TestContext.Current.CancellationToken));
+
+        Assert.Equal("cancelled", Assert.Single(log.ReadCurrent()).Outcome);
+    }
+
+    [Fact]
     public void FactorsOtherThanTwoAndFourAreRefused() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => Upscale.ModelFor(3));
 
@@ -119,6 +152,11 @@ public sealed class UpscaleTests : IDisposable
     private sealed class SyncProgress(List<JobProgress> seen) : IProgress<JobProgress>
     {
         public void Report(JobProgress value) => seen.Add(value);
+    }
+
+    private sealed class CancelOnFirst(Action cancel) : IProgress<JobProgress>
+    {
+        public void Report(JobProgress value) => cancel();
     }
 
     private static RgbaImage Pattern(int w, int h, bool opaque)

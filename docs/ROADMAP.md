@@ -14,11 +14,10 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB22** (deps: PB19 ✅) **Inference time and the provider used are not logged per operation** — The README benchmark table and user bug reports both need timing per operation and provider. → §PB22
 - 📋 **PB23** (deps: PB37, PB39) **No screen to open an image by drag and drop or file picker** — Opening a photo is the first step of every flow. → §PB23
 - 📋 **PB24** (deps: PB20 ✅, PB23) **No operations panel to run an upscale and pick 2x or 4x** — The user needs a control to trigger the pipeline and see its progress. → §PB24
 - 📋 **PB25** (deps: PB19 ✅) **Results cannot be exported as PNG, JPG or WebP** — Exporting closes the open, upscale, export loop the brief asks for before any other model. → §PB25
-- 📋 **PB26** (deps: PB21 ✅, PB22, PB24, PB25, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
+- 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24, PB25, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB41** (deps: PB14 ✅, PB18 ✅) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
 - 📋 **PB42** (deps: PB11 ✅, PB38) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
 - 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
@@ -39,7 +38,7 @@
 ## Block F — Delivery: README, benchmarks and installers
 
 - 📋 **PB33** (deps: PB12 ⏳, PB26) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
-- 📋 **PB34** (deps: PB10 ✅, PB22, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
+- 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
 - 📋 **PB35** (deps: PB26) **Release build produces no self-contained Windows installer** — Installers are a deliverable, and native ONNX Runtime binaries break easily in a single-file publish. → §PB35
 
 ## Block G — Phase 2: denoising
