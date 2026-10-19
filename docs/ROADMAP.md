@@ -14,8 +14,7 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB18** (deps: PB17 ✅) **Large images cannot be processed: no tiling with overlap** — Running Real-ESRGAN on a full 12 MP image exhausts memory; tiles keep peak usage bounded. → §PB18
-- 📋 **PB19** (deps: PB11 ✅, PB16 ✅, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
+- 📋 **PB19** (deps: PB11 ✅, PB16 ✅, PB18 ✅) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
 - 📋 **PB20** (deps: PB19) **UI receives no tile X of Y progress during inference** — A 4x upscale can take minutes on CPU; without progress the app looks frozen. → §PB20
 - 📋 **PB21** (deps: PB19) **An out-of-memory failure aborts the inference instead of retrying with smaller tiles** — OOM depends on the GPU and image; halving the tile is a recoverable fix the user should not need to do. → §PB21
 - 📋 **PB22** (deps: PB19) **Inference time and the provider used are not logged per operation** — The README benchmark table and user bug reports both need timing per operation and provider. → §PB22
@@ -23,7 +22,7 @@
 - 📋 **PB24** (deps: PB20, PB23) **No operations panel to run an upscale and pick 2x or 4x** — The user needs a control to trigger the pipeline and see its progress. → §PB24
 - 📋 **PB25** (deps: PB19) **Results cannot be exported as PNG, JPG or WebP** — Exporting closes the open, upscale, export loop the brief asks for before any other model. → §PB25
 - 📋 **PB26** (deps: PB21, PB22, PB24, PB25, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
-- 📋 **PB41** (deps: PB14 ✅, PB18) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
+- 📋 **PB41** (deps: PB14 ✅, PB18 ✅) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
 - 📋 **PB42** (deps: PB11 ✅, PB38) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
 - 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
 - 📋 **PB44** (deps: PB17 ✅) **Decoding a wide-gamut image to sRGB is untested, so a wrong colour transform would pass the suite** — Phone photos often carry Display P3, and colours shifted on open would end up in every exported result. → §PB44

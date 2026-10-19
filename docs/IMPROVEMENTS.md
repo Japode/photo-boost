@@ -71,13 +71,6 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB18 Tiling with overlap
-
-Split into 256px tiles with 16px overlap (both configurable), run each, crop the overlap
-from the scaled output and stitch, optionally feathering seams. Unit test: tiling then
-recomposing with an identity model reproduces the original image exactly, including edge
-tiles of odd sizes.
-
 ### §PB19 Upscale pipeline
 
 PhotoBoost.Inference/Pipelines/Upscale.cs drives the tiled run of RealESRGAN_x4plus. 2x
