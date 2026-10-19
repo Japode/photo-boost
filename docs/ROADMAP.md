@@ -2,7 +2,6 @@
 
 ## Block A — Project foundation
 
-- 📋 **PB37** (deps: PB1 ✅) **No design system: Brand, Theme, Appearance and the Fluent page styles from claude-tray are missing** — The app should look like claude-tray, quickshell and pportal, which share one decided visual language. → §PB37
 - 📋 **PB38** (deps: PB1 ✅, PB2 ✅) **No winwright Cases project, winwright.json or first case that opens the main window** — UI behaviour is proven by winwright cases in the sibling apps, and the harness is cheapest to adopt before screens exist. → §PB38
 - 📋 **PB39** (deps: PB1 ✅) **No command-line flags to open a file, force a provider or point at a models folder** — Cases must reach states without file dialogs or drag and drop, which winwright cannot drive yet. → §PB39
 - 📋 **PB40** (deps: PB1 ✅) **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — WPF's own image control renders through DirectX 9 and struggles with very large bitmaps; the comparator needs a direct GPU path. → §PB40
@@ -10,11 +9,11 @@
 ## Block B — Model management
 
 - ⏳ **PB12** (deps: PB11 ✅, owner chooses the host and clears redistribution) **Generated ONNX models have no download location the app can fetch from** — The staged models are not published anywhere yet; that needs the owner's account and a license check. → §PB12
-- 📋 **PB13** (deps: PB12 ⏳, PB37) **First launch has no Download models screen with progress and hash verification** — Without models nothing works, and a corrupt file must be caught before onnxruntime loads it. → §PB13
+- 📋 **PB13** (deps: PB12 ⏳, PB37 ✅) **First launch has no Download models screen with progress and hash verification** — Without models nothing works, and a corrupt file must be caught before onnxruntime loads it. → §PB13
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB23** (deps: PB37, PB39) **No screen to open an image by drag and drop or file picker** — Opening a photo is the first step of every flow. → §PB23
+- 📋 **PB23** (deps: PB37 ✅, PB39) **No screen to open an image by drag and drop or file picker** — Opening a photo is the first step of every flow. → §PB23
 - 📋 **PB24** (deps: PB20 ✅, PB23) **No operations panel to run an upscale and pick 2x or 4x** — The user needs a control to trigger the pipeline and see its progress. → §PB24
 - ⏳ **PB25** (deps: PB19 ✅, PB24, PB39) **Results cannot be exported as PNG, JPG or WebP** — No save dialog, --export route or keep-metadata choice yet; they need the screens and flags that PB24 and PB39 add. → §PB25
 - 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24, PB25 ⏳, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26

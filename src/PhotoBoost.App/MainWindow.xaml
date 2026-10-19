@@ -4,12 +4,16 @@
         Title="PhotoBoost"
         Width="1100"
         Height="720"
+        FontFamily="{StaticResource AppFont}"
         WindowStartupLocation="CenterScreen">
   <DockPanel>
-    <!-- PB14: where inference runs, so a slow upscale on CPU is never a mystery. -->
+    <!-- PB14: where inference runs, so a slow upscale on CPU is never a mystery. A chip that
+         carries the word, per the design rules in Styles.xaml. -->
     <StatusBar DockPanel.Dock="Bottom">
       <StatusBarItem>
-        <TextBlock x:Name="ProviderStatus" AutomationProperties.AutomationId="ProviderStatus" Text="Detecting GPU…" />
+        <Border Style="{StaticResource StatusChip}">
+          <TextBlock x:Name="ProviderStatus" AutomationProperties.AutomationId="ProviderStatus" Text="Detecting GPU…" />
+        </Border>
       </StatusBarItem>
     </StatusBar>
     <Grid />

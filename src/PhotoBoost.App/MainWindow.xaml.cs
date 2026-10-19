@@ -10,6 +10,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        ThemeMode = Theme.Mode(Appearance.Default.Theme);
         Loaded += OnLoaded;
     }
 

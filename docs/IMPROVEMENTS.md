@@ -2,17 +2,6 @@
 
 ## Block A — Project foundation
 
-### §PB37 Design system reuse
-
-Copy the pattern, not a package (none exists): Brand.cs with the app's colours declared
-once as bytes, Theme.cs and Appearance.cs from quickshell for ThemeMode and
-light/dark/system, Templates.cs for controls Fluent lacks, and the GroupCard,
-SectionHeader, StatValue and NavDest styles from claude-tray, moved into one
-ResourceDictionary. Rules from quickshell docs/design/friendly-shell: Fluent brushes
-only on themed surfaces, Segoe UI Variable, flat cards with 1px border and 8px radius,
-3px accent underline, status chips that carry a word. An architecture test refuses a
-colour literal outside Brand.cs.
-
 ### §PB38 winwright adoption
 
 Follow winwright's adoption guide and quickshell: winwright.json at the root naming the
