@@ -44,10 +44,20 @@ WW552 asks winwright for a capture route for this surface.
 
 ### §PB12 Model hosting and manifest
 
-Publish the exported files (GitHub release assets or a Hugging Face repo under the
-project) and a manifest.json listing each model, variant, URL, size and SHA256. The app
-pins a manifest version. Check the upstream licenses allow redistribution of converted
-weights before publishing.
+Built: scripts/build-manifest.py reads every .cache/models/<name>/meta.json, checks each
+listed file against its size and SHA-256, writes manifest.json (schema 1: version,
+base_url, and per model the meta.json and each variant's URL, size and SHA-256, plus the
+license) and stages flat assets named <name>-<variant>.onnx and <name>-meta.json in
+.cache/publish.
+
+Left for the owner: choose the host (GitHub release assets on the project's repository,
+or a Hugging Face model repo under the project) and run the script with that --base-url.
+Before uploading, settle redistribution: Real-ESRGAN is BSD-3-Clause, GFPGAN is
+Apache-2.0 with non-commercial StyleGAN2 and DFDNet parts, and RMBG-1.4's BRIA license
+is non-commercial and may not allow redistributing converted weights at all; U2-Net
+(Apache-2.0) is the fallback listed in scripts/model-sources.json. GitHub release assets
+are limited to 2 GB each, which every variant fits. The app then pins the manifest
+version and URL.
 
 ### §PB13 First-run model download
 

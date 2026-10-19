@@ -16,6 +16,7 @@
 - ✅ **PB9** **Exported models are not quantized to INT8** — export-and-quantize.py writes int8.onnx for all four models with QUInt8 dynamic quantization, leaving no float Conv or MatMul; INT8 runs slower than FP32, so it buys size only.
 - ✅ **PB10** **INT8 models are not validated against FP32 on a test image** — export-and-quantize.py checks INT8 and FP16 against FP32 on each model's upstream sample image, writes PSNR and SSIM to meta.json and fails INT8 below a per-model floor.
 - ✅ **PB11** **No models/<name>/{fp32.onnx, int8.onnx, meta.json} layout with SHA256 hashes** — Each .cache/models/<name>/ holds fp32, fp16 and int8 ONNX beside a meta.json with IO, ranges, tiling, SHA-256 per variant, license and validation, held to meta.schema.json and read by ModelMeta.
+- ✅ **PB12 (manifest builder)** **Generated ONNX models have no download location the app can fetch from** — build-manifest.py turns every meta.json into manifest.json with URL, size and SHA-256 per file, checks each file, and stages flat release assets for upload.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 

@@ -9,8 +9,8 @@
 
 ## Block B — Model management
 
-- 📋 **PB12** (deps: PB11 ✅) **Generated ONNX models have no download location the app can fetch from** — First launch downloads models, so the exported files need a stable published home and a manifest. → §PB12
-- 📋 **PB13** (deps: PB12, PB37) **First launch has no Download models screen with progress and hash verification** — Without models nothing works, and a corrupt file must be caught before onnxruntime loads it. → §PB13
+- ⏳ **PB12** (deps: PB11 ✅, owner chooses the host and clears redistribution) **Generated ONNX models have no download location the app can fetch from** — The staged models are not published anywhere yet; that needs the owner's account and a license check. → §PB12
+- 📋 **PB13** (deps: PB12 ⏳, PB37) **First launch has no Download models screen with progress and hash verification** — Without models nothing works, and a corrupt file must be caught before onnxruntime loads it. → §PB13
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
@@ -45,13 +45,19 @@
 
 ## Block F — Delivery: README, benchmarks and installers
 
-- 📋 **PB33** (deps: PB12, PB26) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
+- 📋 **PB33** (deps: PB12 ⏳, PB26) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
 - 📋 **PB34** (deps: PB10 ✅, PB22, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
 - 📋 **PB35** (deps: PB26) **Release build produces no self-contained Windows installer** — Installers are a deliverable, and native ONNX Runtime binaries break easily in a single-file publish. → §PB35
 
 ## Block G — Phase 2: denoising
 
 - 📋 **PB36** (deps: PB31, PB32) **No denoising operation** — Denoising is listed as an optional phase 2 operation. → §PB36
+
+## Done when — PB12
+
+- **The manifest and model files are published at a stable URL** build-manifest.py ran
+  with the real --base-url, every staged file is reachable there, and a download checks
+  against the manifest's SHA-256.
 
 ## Non-goals
 
