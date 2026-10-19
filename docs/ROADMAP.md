@@ -14,10 +14,9 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB16** (deps: PB15 ✅) **ONNX sessions are not loaded on demand nor released after idle minutes** — Keeping every model resident wastes memory the user needs for large images. → §PB16
 - 📋 **PB17** (deps: PB2 ✅, PB5 ✅) **No preprocessing to and from model tensors, and no unit tests for it** — Every pipeline converts images to normalized NCHW float tensors and back; one bug corrupts all outputs. → §PB17
 - 📋 **PB18** (deps: PB17) **Large images cannot be processed: no tiling with overlap** — Running Real-ESRGAN on a full 12 MP image exhausts memory; tiles keep peak usage bounded. → §PB18
-- 📋 **PB19** (deps: PB11 ✅, PB16, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
+- 📋 **PB19** (deps: PB11 ✅, PB16 ✅, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
 - 📋 **PB20** (deps: PB19) **UI receives no tile X of Y progress during inference** — A 4x upscale can take minutes on CPU; without progress the app looks frozen. → §PB20
 - 📋 **PB21** (deps: PB19) **An out-of-memory failure aborts the inference instead of retrying with smaller tiles** — OOM depends on the GPU and image; halving the tile is a recoverable fix the user should not need to do. → §PB21
 - 📋 **PB22** (deps: PB19) **Inference time and the provider used are not logged per operation** — The README benchmark table and user bug reports both need timing per operation and provider. → §PB22
@@ -33,7 +32,7 @@
 
 - 📋 **PB27** (deps: PB24, PB40) **No before and after slider comparison** — Judging an enhancement needs both versions aligned at the same zoom. → §PB27
 - 📋 **PB28** (deps: PB24) **No operation history with undo and redo** — Users chain operations and must be able to step back without reprocessing from scratch. → §PB28
-- 📋 **PB29** (deps: PB13, PB16) **No UI choice between INT8 and the High quality FP16/FP32 models** — The brief requires both variants selectable, trading speed and memory for fidelity. → §PB29
+- 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between INT8 and the High quality FP16/FP32 models** — The brief requires both variants selectable, trading speed and memory for fidelity. → §PB29
 
 ## Block E — Face restoration and background removal
 

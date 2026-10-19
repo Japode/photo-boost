@@ -19,4 +19,9 @@
     <ProjectReference Include="..\PhotoBoost.Imaging\PhotoBoost.Imaging.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The tests write ProbeModel to disk to load a real session without a downloaded model. -->
+    <InternalsVisibleTo Include="PhotoBoost.Inference.Tests" />
+  </ItemGroup>
+
 </Project>

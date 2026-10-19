@@ -71,12 +71,6 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB16 Session lifecycle
-
-Load a session on first use of a model/variant, cache it, and release it after N idle
-minutes (configurable, default 5). Switching INT8 to High quality drops the other
-variant's session.
-
 ### §PB17 Preprocessing
 
 Decode with WIC (honouring EXIF orientation, colour profiles and 16-bit), convert to
