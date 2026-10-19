@@ -9,8 +9,7 @@
 
 ## Block B — Model management
 
-- 📋 **PB6** (deps: —) **No verified source URLs for Real-ESRGAN x4plus, GFPGAN v1.4 and RMBG-1.4 weights** — The brief forbids invented URLs; each link must be fetched and its license checked before it is scripted. → §PB6
-- 📋 **PB7** (deps: PB6) **No scripts/download_models.py to fetch the original weights** — Export and quantization start from the upstream weights, which must not live in the repository. → §PB7
+- 📋 **PB7** (deps: PB6 ✅) **No scripts/download_models.py to fetch the original weights** — Export and quantization start from the upstream weights, which must not live in the repository. → §PB7
 - 📋 **PB8** (deps: PB7) **No scripts/export-and-quantize.py to export each model to ONNX with dynamic axes** — The app consumes ONNX only, and tiling needs dynamic batch, height and width axes. → §PB8
 - 📋 **PB9** (deps: PB8) **Exported models are not quantized to INT8** — INT8 dynamic quantization is the default variant, chosen to cut download size and memory. → §PB9
 - 📋 **PB10** (deps: PB9) **INT8 models are not validated against FP32 on a test image** — A quantized model that silently degrades quality must fail the script, not ship. → §PB10
@@ -46,7 +45,7 @@
 ## Block E — Face restoration and background removal
 
 - 📋 **PB30** (deps: PB26) **No face detection and alignment to feed GFPGAN crops and paste results back** — GFPGAN expects aligned 512px face crops, so a whole photo cannot be passed in directly. → §PB30
-- 📋 **PB31** (deps: PB30) **No GFPGAN face restoration pipeline in faceRestore.ts** — Face restoration is the second operation the brief lists. → §PB31
+- 📋 **PB31** (deps: PB30) **No GFPGAN face restoration pipeline** — Face restoration is the second operation the brief lists. → §PB31
 - 📋 **PB32** (deps: PB26) **No background removal pipeline producing a transparent image** — Background removal is the third operation the brief lists. → §PB32
 
 ## Block F — Delivery: README, benchmarks and installers

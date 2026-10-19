@@ -42,14 +42,6 @@ WW552 asks winwright for a capture route for this surface.
 
 ## Block B — Model management
 
-### §PB6 Verified model sources
-
-Check each official release: xinntao/Real-ESRGAN GitHub releases (RealESRGAN_x4plus.pth,
-and x2plus if 2x uses a native model), TencentARC/GFPGAN releases (GFPGANv1.4.pth),
-briaai/RMBG-1.4 on Hugging Face. Record URL, size, upstream hash if published, and
-license. RMBG-1.4 is non-commercial; note it in the README and consider U2-Net as a
-permissive fallback.
-
 ### §PB7 Weight download script
 
 Python, since the export step already requires it: download the verified URLs into a
@@ -255,13 +247,16 @@ pipeline of Block B, with verified URLs. Compute landmarks, warp each face to th
 Pipelines/FaceRestore.cs: detect, align, run GFPGANv1.4 per face, paste back with the
 mask, optionally upscale the background with Real-ESRGAN first. Expose a
 fidelity/strength blend. CodeFormer can be added later as an alternative model behind
-the same interface.
+the same interface. GFPGAN's LICENSE puts its StyleGAN2 and DFDNet parts under
+non-commercial terms (scripts/model-sources.json), so the About page states it as it
+does for RMBG-1.4.
 
 ### §PB32 Background removal pipeline
 
 Pipelines/RemoveBackground.cs: resize to the RMBG-1.4 input (1024px), run, upscale the
 mask to the original size, refine edges and attach it as alpha. Export defaults to PNG
-or WebP. Keep the license caveat from PB6 visible in the app's About page.
+or WebP. Keep RMBG-1.4's non-commercial license (scripts/model-sources.json) visible in
+the app's About page; U2-Net, listed there too, is the permissive fallback.
 
 ## Block F — Delivery: README, benchmarks and installers
 

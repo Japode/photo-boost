@@ -1,0 +1,59 @@
+{
+  "$comment": "PB6: upstream weights PhotoBoost exports to ONNX, each URL fetched and its license read on 2026-10-19. sha256 is the upstream's own where it publishes one (Hugging Face LFS) and computed from the downloaded file otherwise; size is bytes. scripts/download_models.py (PB7) reads this file. No weights live in the repository.",
+  "models": [
+    {
+      "name": "realesrgan-x4plus",
+      "file": "RealESRGAN_x4plus.pth",
+      "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+      "size": 67040989,
+      "sha256": "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1",
+      "sha256_source": "computed",
+      "license": "BSD-3-Clause",
+      "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE"
+    },
+    {
+      "name": "realesrgan-x2plus",
+      "file": "RealESRGAN_x2plus.pth",
+      "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth",
+      "size": 67061725,
+      "sha256": "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb",
+      "sha256_source": "computed",
+      "license": "BSD-3-Clause",
+      "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE",
+      "note": "A native 2x model, so 2x need not be 4x followed by a downscale."
+    },
+    {
+      "name": "gfpgan-v1.4",
+      "file": "GFPGANv1.4.pth",
+      "url": "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth",
+      "size": 348632874,
+      "sha256": "e2cd4703ab14f4d01fd1383a8a8b266f9a5833dacee8e6a79d3bf21a1b6be5ad",
+      "sha256_source": "computed",
+      "license": "Apache-2.0 with third-party terms",
+      "license_url": "https://github.com/TencentARC/GFPGAN/blob/master/LICENSE",
+      "note": "The same asset is also attached to release v1.3.0. Apache-2.0 except third-party components: StyleGAN2-derived code under the NVIDIA Source Code License (non-commercial: research or evaluation only) and DFDNet-derived code under CC BY-NC-SA 4.0. Treat commercial use as not cleared."
+    },
+    {
+      "name": "rmbg-1.4",
+      "file": "model.pth",
+      "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/model.pth",
+      "size": 176718373,
+      "sha256": "893c16c340b1ddafc93e78457a4d94190da9b7179149f8574284c83caebf5e8c",
+      "sha256_source": "upstream",
+      "license": "bria-rmbg-1.4 (non-commercial)",
+      "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/",
+      "note": "Not gated. Pinned to repository commit 2ceba5a5. The repository also publishes onnx/model.onnx (176153355 bytes, sha256 8cafcf770b06757c4eaced21b1a88e57fd2b66de01b8045f35f01535ba742e0f), an upstream ONNX export the export step may use instead. Commercial use needs a license from BRIA; the README and the About page must say so."
+    },
+    {
+      "name": "u2net",
+      "file": "u2net.onnx",
+      "url": "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx",
+      "size": 175997641,
+      "sha256": "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491",
+      "sha256_source": "computed",
+      "license": "Apache-2.0 (U-2-Net weights), MIT (rembg export)",
+      "license_url": "https://github.com/xuebinqin/U-2-Net/blob/master/LICENSE",
+      "note": "Permissive fallback for background removal if RMBG-1.4's non-commercial license is unacceptable. Already ONNX. Not part of the default download until it is chosen."
+    }
+  ]
+}

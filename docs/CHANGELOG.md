@@ -10,6 +10,8 @@
 
 ## Block B — Model management
 
+- ✅ **PB6** **No verified source URLs for Real-ESRGAN x4plus, GFPGAN v1.4 and RMBG-1.4 weights** — scripts/model-sources.json lists fetched URLs, sizes, SHA-256 and licenses for Real-ESRGAN x4plus and x2plus, GFPGAN v1.4, RMBG-1.4 and the U2-Net fallback.
+
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ## Block D — Editor: comparison, history and quality modes
