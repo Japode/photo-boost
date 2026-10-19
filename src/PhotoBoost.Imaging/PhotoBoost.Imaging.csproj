@@ -12,6 +12,8 @@
   <ItemGroup>
     <!-- WIC, which Vortice ships inside its Direct2D package; only Vortice.WIC is used here. -->
     <PackageReference Include="Vortice.Direct2D1" Version="3.8.3" />
+    <!-- WebP export only (PB25): WIC has no WebP encoder. MIT. -->
+    <PackageReference Include="SkiaSharp" Version="4.153.1" />
   </ItemGroup>
 
 </Project>

@@ -225,9 +225,11 @@ per-user installer built by a build-installer.cmd, and optionally winget manifes
 version lives in one place and is checked against app.manifest, as pportal does. Models
 are not bundled. The PB5 spike ran DirectML from a single-file exe both with natives
 beside it and self-extracted; exclude DirectML.Debug.dll, the .pdb files and
-onnxruntime.lib the package copies (about 14.5 MB). Smoke-test the installed app offline
-after models are downloaded. The non-goal Builds for macOS, Linux, web or mobile does
-not apply: this is the one Windows build.
+onnxruntime.lib the package copies (about 14.5 MB). libSkiaSharp.dll ships too: WebP
+export (PB25) needs it, MIT, to be credited beside ONNX Runtime and DirectML in the
+third-party notices. Smoke-test the installed app offline after models are downloaded.
+The non-goal Builds for macOS, Linux, web or mobile does not apply: this is the one
+Windows build.
 
 ## Block G — Phase 2: denoising
 
