@@ -69,8 +69,9 @@ public static class Tiler
     /// <param name="model">The model.</param>
     /// <param name="options">Scale, tiling and the model's value range.</param>
     /// <param name="progress">Called after each tile with (done, total); may throw to cancel.</param>
+    /// <param name="retry">What to do when a tile runs out of memory (PB21); null lets every failure through.</param>
     /// <returns>An image scale times larger, its alpha the source's resized by nearest neighbour.</returns>
-    public static RgbaImage Run(RgbaImage source, TileModel model, TileOptions options, Action<int, int>? progress = null)
+    public static RgbaImage Run(RgbaImage source, TileModel model, TileOptions options, Action<int, int>? progress = null, TileRetry? retry = null)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(model);
@@ -79,34 +80,109 @@ public static class Tiler
         RgbaImage padded = PadToMultiple(source, options.Multiple);
         int scale = options.Scale;
         RgbaImage output = new(padded.Width * scale, padded.Height * scale, source.SourceBitDepth);
-        IReadOnlyList<Tile> tiles = Plan(padded.Width, padded.Height, options.Tile, options.Overlap, options.Multiple);
+        int overlap = RoundUp(options.Overlap, options.Multiple);
+        int planned = RoundUp(options.Tile, options.Multiple);
+        int floor = Math.Min(planned, RoundUp(retry?.MinTile ?? planned, options.Multiple));
+        int side = planned;
+        TileModel current = model;
+        bool fellBack = false;
 
-        for (int i = 0; i < tiles.Count; i++)
+        LinkedList<PixelRect> pending = new(Plan(padded.Width, padded.Height, planned, 0, options.Multiple).Select(t => t.Core));
+        int done = 0;
+        while (pending.First is { } next)
         {
-            Tile tile = tiles[i];
-            float[] input = new float[3 * tile.Input.Area];
-            TensorConversion.ToTensor(padded, tile.Input, options.Low, options.High, input);
-            float[] result = model(input, tile.Input.Width, tile.Input.Height);
-            int outWidth = tile.Input.Width * scale;
-            int outHeight = tile.Input.Height * scale;
-            if (result.Length != 3 * outWidth * outHeight)
+            PixelRect core = next.Value;
+            pending.RemoveFirst();
+            if (core.Width > side || core.Height > side)
             {
-                throw new InvalidOperationException(
-                    $"The model returned {result.Length} values for a {tile.Input.Width} x {tile.Input.Height} tile; x{scale} needs {3 * outWidth * outHeight}.");
+                // A core planned before the tile shrank: split it at the current side, in order.
+                LinkedListNode<PixelRect>? after = null;
+                foreach (Tile part in Plan(core.Width, core.Height, side, 0, options.Multiple))
+                {
+                    PixelRect moved = part.Core with { X = core.X + part.Core.X, Y = core.Y + part.Core.Y };
+                    after = after is null ? pending.AddFirst(moved) : pending.AddAfter(after, moved);
+                }
+
+                continue;
             }
 
-            PixelRect keep = new(
-                (tile.Core.X - tile.Input.X) * scale,
-                (tile.Core.Y - tile.Input.Y) * scale,
-                tile.Core.Width * scale,
-                tile.Core.Height * scale);
-            float[] core = Crop(result, outWidth, outHeight, keep);
-            TensorConversion.FromTensor(core, options.Low, options.High, output, new PixelRect(tile.Core.X * scale, tile.Core.Y * scale, keep.Width, keep.Height));
-            progress?.Invoke(i + 1, tiles.Count);
+            Tile tile = new(Expand(core, overlap, padded.Width, padded.Height), core);
+            float[] result;
+            try
+            {
+                result = RunTile(padded, tile, current, options);
+            }
+            catch (Exception failure) when (retry is not null && retry.Classify(failure) != TileFailure.Other)
+            {
+                TileFailure kind = retry.Classify(failure);
+                pending.AddFirst(core);
+                int smaller = RoundUp(side / 2, options.Multiple);
+                if (kind == TileFailure.OutOfMemory && smaller >= floor && smaller < side)
+                {
+                    retry.Log?.Invoke($"Out of memory on a {side} px tile; retrying at {smaller} px.");
+                    side = smaller;
+                    continue;
+                }
+
+                if (retry.Fallback is not null && !fellBack)
+                {
+                    retry.Log?.Invoke(kind == TileFailure.DeviceLost
+                        ? $"The GPU was lost ({failure.Message}); continuing on {retry.FallbackName} at {planned} px."
+                        : $"Out of memory even at {side} px; continuing on {retry.FallbackName} at {planned} px.");
+                    current = retry.Fallback;
+                    fellBack = true;
+                    side = planned;
+                    continue;
+                }
+
+                throw new InsufficientMemoryException(
+                    $"Not enough memory to run this model even on {side} px tiles{(fellBack ? $" on {retry.FallbackName}" : string.Empty)}. Close other applications or use a smaller image.",
+                    failure);
+            }
+
+            WriteCore(result, tile, options, output);
+            done++;
+            progress?.Invoke(done, done + pending.Count);
         }
 
         ScaleAlpha(padded, output, scale);
         return padded == source ? output : CropImage(output, source.Width * scale, source.Height * scale);
+    }
+
+    private static PixelRect Expand(PixelRect core, int overlap, int width, int height)
+    {
+        int left = Math.Max(0, core.X - overlap);
+        int top = Math.Max(0, core.Y - overlap);
+        int right = Math.Min(width, core.X + core.Width + overlap);
+        int bottom = Math.Min(height, core.Y + core.Height + overlap);
+        return new PixelRect(left, top, right - left, bottom - top);
+    }
+
+    private static float[] RunTile(RgbaImage padded, Tile tile, TileModel model, TileOptions options)
+    {
+        float[] input = new float[3 * tile.Input.Area];
+        TensorConversion.ToTensor(padded, tile.Input, options.Low, options.High, input);
+        return model(input, tile.Input.Width, tile.Input.Height);
+    }
+
+    private static void WriteCore(float[] result, Tile tile, TileOptions options, RgbaImage output)
+    {
+        int scale = options.Scale;
+        int outWidth = tile.Input.Width * scale;
+        int outHeight = tile.Input.Height * scale;
+        if (result.Length != 3 * outWidth * outHeight)
+        {
+            throw new InvalidOperationException(
+                $"The model returned {result.Length} values for a {tile.Input.Width} x {tile.Input.Height} tile; x{scale} needs {3 * outWidth * outHeight}.");
+        }
+
+        PixelRect keep = new(
+            (tile.Core.X - tile.Input.X) * scale,
+            (tile.Core.Y - tile.Input.Y) * scale,
+            tile.Core.Width * scale,
+            tile.Core.Height * scale);
+        float[] core = Crop(result, outWidth, outHeight, keep);
+        TensorConversion.FromTensor(core, options.Low, options.High, output, new PixelRect(tile.Core.X * scale, tile.Core.Y * scale, keep.Width, keep.Height));
     }
 
     /// <summary>A copy grown right and down to a multiple, repeating the last column and row.</summary>
@@ -180,6 +256,32 @@ public static class Tiler
 
     private static int RoundUp(int value, int multiple) => (value + multiple - 1) / multiple * multiple;
 }
+
+/// <summary>What a tile's failure was, as far as retrying goes.</summary>
+public enum TileFailure
+{
+    /// <summary>Anything else: not retried.</summary>
+    Other,
+
+    /// <summary>An allocation failed: a smaller tile may fit.</summary>
+    OutOfMemory,
+
+    /// <summary>The GPU went away: no tile size helps, only another device.</summary>
+    DeviceLost,
+}
+
+/// <summary>How a tiled run recovers from running out of memory (PB21).</summary>
+/// <param name="Classify">Says whether a model's exception was a memory failure.</param>
+/// <param name="MinTile">The smallest side to halve down to before giving up on the device.</param>
+/// <param name="Fallback">The model on another device (the CPU), used once, or null.</param>
+/// <param name="FallbackName">What to call that device in messages.</param>
+/// <param name="Log">Told each step taken.</param>
+public sealed record TileRetry(
+    Func<Exception, TileFailure> Classify,
+    int MinTile = 64,
+    TileModel? Fallback = null,
+    string FallbackName = "the CPU",
+    Action<string>? Log = null);
 
 /// <summary>How to tile a model run.</summary>
 /// <param name="Scale">Output size over input size (4 for x4plus, 1 for a mask).</param>

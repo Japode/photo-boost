@@ -43,8 +43,9 @@ public static class Upscale
     /// <param name="tile">The tile side, or null for the model's recommendation.</param>
     /// <param name="progress">Called after each tile with (done, total); may throw to cancel.</param>
     /// <param name="overlap">Context read around each tile, or null for <see cref="DefaultOverlap"/>.</param>
+    /// <param name="log">Told each recovery step (smaller tiles, CPU fallback; PB21).</param>
     /// <returns>The image, factor times larger, alpha resized bilinearly.</returns>
-    public static RgbaImage Run(ModelLibrary library, RgbaImage image, int factor, string variant, int? tile = null, Action<int, int>? progress = null, int? overlap = null)
+    public static RgbaImage Run(ModelLibrary library, RgbaImage image, int factor, string variant, int? tile = null, Action<int, int>? progress = null, int? overlap = null, Action<string>? log = null)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(image);
@@ -64,14 +65,32 @@ public static class Upscale
             Overlap: overlap ?? DefaultOverlap,
             Multiple: meta.Input.Multiple);
 
-        RgbaImage result = Tiler.Run(image, (input, width, height) => RunTile(lease.Session, meta, input, width, height), options, progress);
-        if (image.HasTransparency)
+        // PB21: an out-of-memory tile is retried smaller down to 64 px, then the run moves to the
+        // CPU, whose session is only loaded if that ever happens.
+        SessionLease<InferenceSession>? cpuLease = null;
+        try
         {
-            AlphaResampler.ScaleInto(image, result, factor);
-        }
+            TileModel? fallback = library.CpuFallback is { } cpu
+                ? (input, width, height) => RunTile((cpuLease ??= cpu.Acquire(new ModelKey(model, variant))).Session, meta, input, width, height)
+                : null;
+            TileRetry retry = new(MemoryFailures.Classify, MinTile: MinTile, Fallback: fallback, Log: log);
 
-        return result;
+            RgbaImage result = Tiler.Run(image, (input, width, height) => RunTile(lease.Session, meta, input, width, height), options, progress, retry);
+            if (image.HasTransparency)
+            {
+                AlphaResampler.ScaleInto(image, result, factor);
+            }
+
+            return result;
+        }
+        finally
+        {
+            cpuLease?.Dispose();
+        }
     }
+
+    /// <summary>The smallest tile an out-of-memory retry halves down to before moving to the CPU.</summary>
+    public const int MinTile = 64;
 
     private static float[] RunTile(InferenceSession session, ModelMeta meta, float[] input, int width, int height)
     {

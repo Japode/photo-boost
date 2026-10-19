@@ -27,6 +27,7 @@
 - ✅ **PB18** **Large images cannot be processed: no tiling with overlap** — Tiler runs a model over 256px tiles with 16px overlap and stitches exact cores, padding odd sizes for even-only models; a neighbour-reading model matches a whole-image run bit for bit.
 - ✅ **PB19** **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscale runs Real-ESRGAN x4plus, or native x2plus for 2x, through the tiler and a ModelLibrary session, with 32 px overlap measured at 45 dB against a whole run and alpha resized bilinearly.
 - ✅ **PB20** **UI receives no tile X of Y progress during inference** — Jobs report tile X of Y with a stage and a time-left estimate, throttled to 100 ms with first and last kept, and UpscaleJob queues an upscale wired to that progress.
+- ✅ **PB21** **An out-of-memory failure aborts the inference instead of retrying with smaller tiles** — An out-of-memory tile is retried at half size down to 64 px, then the run moves once to a CPU session; a lost GPU goes straight to CPU, and each step is logged.
 
 ## Block D — Editor: comparison, history and quality modes
 

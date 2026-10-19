@@ -71,18 +71,13 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB21 OOM retry
-
-Recognise allocation failures from ONNX Runtime (DirectML E_OUTOFMEMORY and
-device-removed, CUDA and CPU messages), halve the tile size down to a floor (e.g. 64px)
-and retry the failed tile. Below the floor, fall back to CPU once, then report a clear
-error. Log each step.
-
 ### §PB22 Inference logging
 
 Log operation, model, variant, provider, adapter, image size, tile size, tile count,
 retries and wall time to a rotating file under %LOCALAPPDATA%\PhotoBoost\logs, and show
-the last run time in the status bar.
+the last run time in the status bar. Retries come from Upscale.Run's log callback
+(PB21), one line per smaller-tile retry or CPU fallback; pass it from UpscaleJob and
+write each line.
 
 ### §PB23 Open image screen
 

@@ -10,6 +10,7 @@ namespace PhotoBoost.Inference;
 public sealed class ModelLibrary : IDisposable
 {
     private readonly ConcurrentDictionary<string, ModelMeta> metas = new(StringComparer.Ordinal);
+    private readonly Lazy<SessionCache<InferenceSession>>? cpu;
 
     /// <summary>Opens a models folder.</summary>
     /// <param name="root">The folder holding one subfolder per model.</param>
@@ -17,9 +18,22 @@ public sealed class ModelLibrary : IDisposable
     /// <param name="idle">How long an unused session is kept.</param>
     public ModelLibrary(string root, ProviderSelection provider, TimeSpan? idle = null)
     {
+        ArgumentNullException.ThrowIfNull(provider);
         Root = root;
-        Sessions = ModelSessions.Create(root, provider, idle ?? SessionCache<InferenceSession>.DefaultIdle);
+        Provider = provider;
+        TimeSpan keep = idle ?? SessionCache<InferenceSession>.DefaultIdle;
+        Sessions = ModelSessions.Create(root, provider, keep);
+        if (provider.Provider != ExecutionProvider.Cpu)
+        {
+            cpu = new(() => ModelSessions.Create(root, new ProviderSelection(ExecutionProvider.Cpu, null, null), keep));
+        }
     }
+
+    /// <summary>Where <see cref="Sessions"/> run.</summary>
+    public ProviderSelection Provider { get; }
+
+    /// <summary>CPU sessions for a GPU run that ran out of memory (PB21); null when already on CPU.</summary>
+    public SessionCache<InferenceSession>? CpuFallback => cpu?.Value;
 
     /// <summary>The models folder.</summary>
     public string Root { get; }
@@ -40,5 +54,12 @@ public sealed class ModelLibrary : IDisposable
     public ModelMeta Meta(string model) => metas.GetOrAdd(model, name => ModelMeta.Load(Path.Combine(Root, name, "meta.json")));
 
     /// <summary>Releases every session.</summary>
-    public void Dispose() => Sessions.Dispose();
+    public void Dispose()
+    {
+        Sessions.Dispose();
+        if (cpu is { IsValueCreated: true })
+        {
+            cpu.Value.Dispose();
+        }
+    }
 }
