@@ -9,8 +9,7 @@
 
 ## Block B — Model management
 
-- 📋 **PB11** (deps: PB9 ✅, PB10 ✅) **No models/<name>/{fp32.onnx, int8.onnx, meta.json} layout with SHA256 hashes** — The app verifies downloads by hash and reads scale, input layout and thresholds from meta.json. → §PB11
-- 📋 **PB12** (deps: PB11) **Generated ONNX models have no download location the app can fetch from** — First launch downloads models, so the exported files need a stable published home and a manifest. → §PB12
+- 📋 **PB12** (deps: PB11 ✅) **Generated ONNX models have no download location the app can fetch from** — First launch downloads models, so the exported files need a stable published home and a manifest. → §PB12
 - 📋 **PB13** (deps: PB12, PB37) **First launch has no Download models screen with progress and hash verification** — Without models nothing works, and a corrupt file must be caught before onnxruntime loads it. → §PB13
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
@@ -20,7 +19,7 @@
 - 📋 **PB16** (deps: PB15) **ONNX sessions are not loaded on demand nor released after idle minutes** — Keeping every model resident wastes memory the user needs for large images. → §PB16
 - 📋 **PB17** (deps: PB2 ✅, PB5 ✅) **No preprocessing to and from model tensors, and no unit tests for it** — Every pipeline converts images to normalized NCHW float tensors and back; one bug corrupts all outputs. → §PB17
 - 📋 **PB18** (deps: PB17) **Large images cannot be processed: no tiling with overlap** — Running Real-ESRGAN on a full 12 MP image exhausts memory; tiles keep peak usage bounded. → §PB18
-- 📋 **PB19** (deps: PB11, PB16, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
+- 📋 **PB19** (deps: PB11 ✅, PB16, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
 - 📋 **PB20** (deps: PB19) **UI receives no tile X of Y progress during inference** — A 4x upscale can take minutes on CPU; without progress the app looks frozen. → §PB20
 - 📋 **PB21** (deps: PB19) **An out-of-memory failure aborts the inference instead of retrying with smaller tiles** — OOM depends on the GPU and image; halving the tile is a recoverable fix the user should not need to do. → §PB21
 - 📋 **PB22** (deps: PB19) **Inference time and the provider used are not logged per operation** — The README benchmark table and user bug reports both need timing per operation and provider. → §PB22
@@ -29,7 +28,7 @@
 - 📋 **PB25** (deps: PB19) **Results cannot be exported as PNG, JPG or WebP** — Exporting closes the open, upscale, export loop the brief asks for before any other model. → §PB25
 - 📋 **PB26** (deps: PB21, PB22, PB24, PB25, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB41** (deps: PB14, PB18) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
-- 📋 **PB42** (deps: PB11, PB38) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
+- 📋 **PB42** (deps: PB11 ✅, PB38) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
 - 📋 **PB43** (deps: PB14, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
 
 ## Block D — Editor: comparison, history and quality modes

@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "name": "realesrgan-x4plus",
+  "task": "upscale",
+  "scale": 4,
+  "input": {
+    "name": "input",
+    "layout": "NCHW",
+    "colour_order": "RGB",
+    "channels": 3,
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "size": null,
+    "multiple": 1,
+    "batch": "dynamic"
+  },
+  "output": {
+    "name": "output",
+    "channels": 3,
+    "value_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "tile": {
+    "recommended": 256,
+    "largest_activation_bytes_per_pixel": 4096.0
+  },
+  "variants": {
+    "fp32": {
+      "file": "fp32.onnx",
+      "bytes": 67051652,
+      "sha256": "8c32294ce23d8ebd1882268e8d8ce32e762806a38fb87b64a1c88c65fd19b797"
+    },
+    "fp16": {
+      "file": "fp16.onnx",
+      "bytes": 33754438,
+      "sha256": "b983ec9d4a261f7bfeff215a01651980ccbc945c1388630d04a0fb594159e938"
+    },
+    "int8": {
+      "file": "int8.onnx",
+      "bytes": 17630551,
+      "sha256": "caf18745376084281dc2ba7e9572107ffc31c55c90dd7136a915503a14ac1be6"
+    }
+  },
+  "upstream": {
+    "url": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth",
+    "license": "BSD-3-Clause",
+    "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE"
+  },
+  "validation": {
+    "image": "0014.jpg",
+    "input": [
+      1,
+      3,
+      179,
+      179
+    ],
+    "against": "fp32",
+    "int8": {
+      "psnr_db": 33.07,
+      "ssim": 0.945,
+      "min_psnr_db": 31.0
+    },
+    "fp16": {
+      "psnr_db": 70.92,
+      "ssim": 1.0
+    }
+  }
+}

@@ -10,3 +10,4 @@ onnxscript==0.7.2
 onnxconverter-common==1.16.0
 numpy==2.5.4
 pillow==13.0.0
+jsonschema==4.26.0

@@ -42,17 +42,6 @@ WW552 asks winwright for a capture route for this surface.
 
 ## Block B — Model management
 
-### §PB11 Model output layout
-
-meta.json holds: name, task, scale, input/output names, layout (NCHW), value range,
-colour order, recommended tile size and bytes per tile pixel, file sizes, SHA256 of each
-variant, PSNR results, upstream URL and license. The PSNR results are already there:
-validate() in export-and-quantize.py writes a "validation" key (image, input shape, PSNR
-and SSIM per variant, the INT8 floor) and keeps the rest of the file, so add the other
-keys beside it. The script writes to .cache/models/<name>/, not a models/ folder in the
-tree. A C# record in PhotoBoost.Inference and a JSON schema in scripts/ keep app and
-script in step; a test loads every meta.json the script emits.
-
 ### §PB12 Model hosting and manifest
 
 Publish the exported files (GitHub release assets or a Hugging Face repo under the

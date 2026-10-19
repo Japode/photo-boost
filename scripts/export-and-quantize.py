@@ -79,6 +79,13 @@ class Export:
     # and the lowest INT8 PSNR against FP32 that may ship.
     test_image: str = ""
     int8_min_psnr: float = 0.0
+    # PB11: what meta.json tells the app. source names the model-sources.json entry the
+    # weights came from; tile is the recommended tile side for tiled models, None otherwise.
+    task: str = "upscale"
+    scale: int = 1
+    output_channels: int = 3
+    source: str = ""
+    tile: int | None = None
 
 
 class ExportError(Exception):
@@ -168,9 +175,32 @@ def build_rmbg(folder: Path) -> nn.Module:
 # RMBG 29.2 dB), so a quantization that got worse fails while run-to-run noise does not.
 INT8_FLOOR = {"realesrgan-x4plus": 31.0, "realesrgan-x2plus": 31.0, "gfpgan-v1.4": 29.0, "rmbg-1.4": 27.0}
 
+# The recommended tile side for the upscalers: the middle of the 128 to 1024 range PB41 picks
+# from by free video memory, and what the app starts from before it knows the GPU.
+UPSCALE_TILE = 256
+
 EXPORTS = [
-    Export("realesrgan-x4plus", "RealESRGAN_x4plus.pth", build_rrdbnet(4, "RealESRGAN_x4plus.pth"), test_image="0014.jpg", int8_min_psnr=INT8_FLOOR["realesrgan-x4plus"]),
-    Export("realesrgan-x2plus", "RealESRGAN_x2plus.pth", build_rrdbnet(2, "RealESRGAN_x2plus.pth"), multiple=2, test_image="0014.jpg", int8_min_psnr=INT8_FLOOR["realesrgan-x2plus"]),
+    Export(
+        "realesrgan-x4plus",
+        "RealESRGAN_x4plus.pth",
+        build_rrdbnet(4, "RealESRGAN_x4plus.pth"),
+        test_image="0014.jpg",
+        int8_min_psnr=INT8_FLOOR["realesrgan-x4plus"],
+        scale=4,
+        source="realesrgan-x4plus",
+        tile=UPSCALE_TILE,
+    ),
+    Export(
+        "realesrgan-x2plus",
+        "RealESRGAN_x2plus.pth",
+        build_rrdbnet(2, "RealESRGAN_x2plus.pth"),
+        multiple=2,
+        test_image="0014.jpg",
+        int8_min_psnr=INT8_FLOOR["realesrgan-x2plus"],
+        scale=2,
+        source="realesrgan-x2plus",
+        tile=UPSCALE_TILE,
+    ),
     Export(
         "gfpgan-v1.4",
         "GFPGANv1.4.pth",
@@ -180,6 +210,9 @@ EXPORTS = [
         output_range=(-1.0, 1.0),
         test_image="Adele_crop.png",
         int8_min_psnr=INT8_FLOOR["gfpgan-v1.4"],
+        task="face-restore",
+        scale=1,
+        source="gfpgan-v1.4",
     ),
     Export(
         "rmbg-1.4",
@@ -190,6 +223,10 @@ EXPORTS = [
         upstream_onnx="RMBG-1.4.onnx",
         test_image="example_input.jpg",
         int8_min_psnr=INT8_FLOOR["rmbg-1.4"],
+        task="background-removal",
+        scale=1,
+        output_channels=1,
+        source="rmbg-1.4",
     ),
 ]
 
@@ -319,6 +356,90 @@ def validate(spec: Export, folder: Path, images: Path) -> list[str]:
     return lines
 
 
+META_SCHEMA_VERSION = 1
+VARIANTS = ("fp32", "fp16", "int8")
+SOURCES = Path(__file__).resolve().parent / "model-sources.json"
+
+
+def largest_activation_bytes_per_pixel(model: nn.Module, spec: Export) -> float:
+    """The biggest tensor any module produces, in FP32 bytes per input pixel, read by forward hooks.
+
+    Not the peak memory (several activations are alive at once): PB41 multiplies it by a margin
+    against the free video memory to pick a tile.
+    """
+    side = spec.size or 32 * spec.multiple
+    largest = 0
+
+    def hook(_module, _inputs, output) -> None:
+        nonlocal largest
+        for tensor in output if isinstance(output, (list, tuple)) else (output,):
+            if isinstance(tensor, torch.Tensor):
+                largest = max(largest, tensor.numel())
+            elif isinstance(tensor, (list, tuple)):
+                largest = max([largest, *(t.numel() for t in tensor if isinstance(t, torch.Tensor))])
+
+    handles = [m.register_forward_hook(hook) for m in model.modules()]
+    try:
+        with torch.no_grad():
+            model(torch.zeros(1, 3, side, side))
+    finally:
+        for handle in handles:
+            handle.remove()
+    return largest * 4 / (side * side)
+
+
+def sha256_of(path: Path) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        while chunk := f.read(1 << 20):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def describe(spec: Export, model: nn.Module, folder: Path) -> str:
+    """PB11: everything the app reads from meta.json, written beside the validation results."""
+    sources = json.loads(SOURCES.read_text(encoding="utf-8"))
+    upstream = next(m for m in sources["models"] if m["name"] == spec.source)
+    variants = {}
+    for variant in VARIANTS:
+        path = folder / f"{variant}.onnx"
+        if path.is_file():
+            variants[variant] = {"file": path.name, "bytes": path.stat().st_size, "sha256": sha256_of(path)}
+    graph = onnx.load(str(folder / "fp32.onnx"), load_external_data=False).graph
+    batch_dim = graph.input[0].type.tensor_type.shape.dim[0]
+    meta_path = folder / "meta.json"
+    old = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else {}
+    meta = {
+        "schema": META_SCHEMA_VERSION,
+        "name": spec.name,
+        "task": spec.task,
+        "scale": spec.scale,
+        "input": {
+            "name": graph.input[0].name,
+            "layout": "NCHW",
+            "colour_order": "RGB",
+            "channels": 3,
+            "value_range": list(spec.input_range),
+            "size": spec.size,
+            "multiple": spec.multiple,
+            "batch": "dynamic" if batch_dim.dim_param else batch_dim.dim_value,
+        },
+        "output": {"name": graph.output[0].name, "channels": spec.output_channels, "value_range": list(spec.output_range)},
+        "tile": {
+            "recommended": spec.tile,
+            "largest_activation_bytes_per_pixel": round(largest_activation_bytes_per_pixel(model, spec), 2),
+        },
+        "variants": variants,
+        "upstream": {"url": upstream["url"], "license": upstream["license"], "license_url": upstream["license_url"]},
+    }
+    if "validation" in old:
+        meta["validation"] = old["validation"]
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    return f"meta.json: {', '.join(variants)}; largest activation {meta['tile']['largest_activation_bytes_per_pixel']} B/px"
+
+
 def run(path: Path, x: np.ndarray) -> np.ndarray:
     session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
     name = session.get_inputs()[0].name
@@ -381,7 +502,8 @@ def export(spec: Export, weights: Path, out: Path, fp16: bool = True, int8: bool
         lines.append(f"fp16 dropped: below {FP16_MIN_PSNR} dB, so only fp32 is written")
     if int8:
         lines.append(quantize_int8(fp32_path, folder / "int8.onnx"))
-    return lines + validate(spec, folder, weights / "test-images")
+    lines += validate(spec, folder, weights / "test-images")
+    return [*lines, describe(spec, model, folder)]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -406,7 +528,9 @@ def main(argv: list[str] | None = None) -> int:
             continue
         try:
             if args.validate_only:
-                lines = validate(spec, args.out / spec.name, args.weights / "test-images")
+                folder = args.out / spec.name
+                lines = validate(spec, folder, args.weights / "test-images")
+                lines.append(describe(spec, load(spec, args.weights), folder))
             else:
                 lines = export(spec, args.weights, args.out, fp16=not args.no_fp16, int8=not args.no_int8)
             for line in lines:

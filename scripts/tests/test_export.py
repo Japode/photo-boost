@@ -6,6 +6,7 @@ skipped and unittest says so in its summary.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -22,6 +23,11 @@ try:
     from PIL import Image
 except ImportError:
     torch = None
+
+try:
+    import jsonschema
+except ImportError:
+    jsonschema = None
 
 
 def _load_export_module():
@@ -137,6 +143,23 @@ class ExportTests(unittest.TestCase):
         spec, images = self.validation_folder(floor=200.0)
         with self.assertRaises(self.ex.ExportError):
             self.ex.validate(spec, self.folder, images)
+
+    @unittest.skipIf(jsonschema is None, "jsonschema not installed")
+    def test_describe_writes_a_schema_valid_meta_json_and_keeps_validation(self):
+        # PB11: the whole file the app reads, beside PB10's validation key.
+        spec, images = self.validation_folder(floor=0.0)
+        spec = self.ex.Export(**{**spec.__dict__, "scale": 4, "source": "realesrgan-x4plus", "tile": 256})
+        model = self.tiny(4)
+        self.ex.validate(spec, self.folder, images)
+        self.ex.describe(spec, model, self.folder)
+        meta = json.loads((self.folder / "meta.json").read_text(encoding="utf-8"))
+        schema = json.loads((SCRIPTS / "meta.schema.json").read_text(encoding="utf-8"))
+        jsonschema.validate(meta, schema)
+        self.assertIn("validation", meta)
+        self.assertEqual("dynamic", meta["input"]["batch"])
+        self.assertEqual(hashlib.sha256((self.folder / "int8.onnx").read_bytes()).hexdigest(), meta["variants"]["int8"]["sha256"])
+        # Tiny RRDBNet: 8 features at 4x the side, in FP32 bytes.
+        self.assertEqual(8 * 16 * 4, meta["tile"]["largest_activation_bytes_per_pixel"])
 
     def test_ssim_is_one_for_identical_images_and_lower_otherwise(self):
         rng = np.random.default_rng(5)
