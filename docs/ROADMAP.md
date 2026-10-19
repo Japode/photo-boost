@@ -9,8 +9,8 @@
 
 ## Block B — Model management
 
-- 🛠 **PB8** (deps: PB7 ✅) **No scripts/export-and-quantize.py to export each model to ONNX with dynamic axes** — The app consumes ONNX only, and tiling needs dynamic batch, height and width axes. → §PB8
-- 📋 **PB9** (deps: PB8) **Exported models are not quantized to INT8** — INT8 dynamic quantization is the default variant, chosen to cut download size and memory. → §PB9
+- ⏳ **PB8** (deps: PB7 ✅) **No scripts/export-and-quantize.py to export each model to ONNX with dynamic axes** — GFPGAN v1.4 and RMBG-1.4 still have no ONNX export in export-and-quantize.py. → §PB8
+- 📋 **PB9** (deps: PB8 ⏳) **Exported models are not quantized to INT8** — INT8 dynamic quantization is the default variant, chosen to cut download size and memory. → §PB9
 - 📋 **PB10** (deps: PB9) **INT8 models are not validated against FP32 on a test image** — A quantized model that silently degrades quality must fail the script, not ship. → §PB10
 - 📋 **PB11** (deps: PB9, PB10) **No models/<name>/{fp32.onnx, int8.onnx, meta.json} layout with SHA256 hashes** — The app verifies downloads by hash and reads scale, input layout and thresholds from meta.json. → §PB11
 - 📋 **PB12** (deps: PB11) **Generated ONNX models have no download location the app can fetch from** — First launch downloads models, so the exported files need a stable published home and a manifest. → §PB12
@@ -56,6 +56,15 @@
 ## Block G — Phase 2: denoising
 
 - 📋 **PB36** (deps: PB31, PB32) **No denoising operation** — Denoising is listed as an optional phase 2 operation. → §PB36
+
+## Done when — PB8
+
+- **GFPGAN v1.4 exports to ONNX matching PyTorch** export-and-quantize.py writes
+  gfpgan-v1.4/fp32.onnx (and fp16.onnx if it converts) at 512x512, passes onnx.checker
+  and stays within FP32_TOLERANCE of the PyTorch model.
+- **RMBG-1.4 has a verified ONNX model** rmbg-1.4/fp32.onnx exists, from the upstream
+  export or a re-export, and its mask matches the PyTorch weights within tolerance at
+  1024x1024.
 
 ## Non-goals
 

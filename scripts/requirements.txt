@@ -1,0 +1,11 @@
+# Model export (scripts/export-and-quantize.py). download_models.py needs none of these.
+# CPU torch is enough to export, and much smaller:
+#   python -m venv .venv
+#   .venv\Scripts\python -m pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+#   .venv\Scripts\python -m pip install -r scripts\requirements.txt
+torch==2.14.1
+onnx==1.23.2
+onnxruntime==1.31.0
+onnxscript==0.7.2
+onnxconverter-common==1.16.0
+numpy==2.5.4

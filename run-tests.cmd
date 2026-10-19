@@ -53,21 +53,26 @@ for /d %%P in (tests\*) do (
 rem The model scripts (PB7 onward) are Python and tested with the standard library's unittest.
 rem Python is required to generate models, not to build the app, so a desk without it says so
 rem out loud and the run still fails: a skipped suite is not a green one.
+rem The export tests (PB8) need torch: .venv holds scripts\requirements.txt when the desk has made
+rem it, and without it those tests are skipped and unittest's summary counts them.
 echo.
 echo === scripts\tests (Python) ===
+set "PY=python"
+if exist ".venv\Scripts\python.exe" set "PY=.venv\Scripts\python.exe"
 where python >nul 2>&1
-if errorlevel 1 (
+if errorlevel 1 if not exist ".venv\Scripts\python.exe" (
     echo   python not found on PATH - the model script tests did not run
     set /a FAILED+=1
     set "BROKEN=!BROKEN! scripts\tests^(no python^)"
-) else (
-    python -m unittest discover -s scripts\tests
-    if errorlevel 1 (
-        set /a FAILED+=1
-        set "BROKEN=!BROKEN! scripts\tests"
-    )
-    set /a RAN+=1
+    goto :scripts_done
 )
+"!PY!" -W ignore::DeprecationWarning -m unittest discover -s scripts\tests
+if errorlevel 1 (
+    set /a FAILED+=1
+    set "BROKEN=!BROKEN! scripts\tests"
+)
+set /a RAN+=1
+:scripts_done
 
 echo.
 

@@ -12,6 +12,7 @@
 
 - ✅ **PB6** **No verified source URLs for Real-ESRGAN x4plus, GFPGAN v1.4 and RMBG-1.4 weights** — scripts/model-sources.json lists fetched URLs, sizes, SHA-256 and licenses for Real-ESRGAN x4plus and x2plus, GFPGAN v1.4, RMBG-1.4 and the U2-Net fallback.
 - ✅ **PB7** **No scripts/download_models.py to fetch the original weights** — scripts/download_models.py fetches the listed weights into .cache/weights, resumes partial files, prints progress, verifies size and SHA-256 and skips valid files.
+- ✅ **PB8 (Real-ESRGAN half)** **No scripts/export-and-quantize.py to export each model to ONNX with dynamic axes** — export-and-quantize.py writes Real-ESRGAN x4plus and x2plus as FP32 and FP16 ONNX with dynamic axes, opset 17, checked against PyTorch at untraced sizes.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 

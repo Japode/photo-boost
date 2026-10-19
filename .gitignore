@@ -7,3 +7,4 @@ TestResults/
 artifacts/
 .cache/
 __pycache__/
+.venv/
