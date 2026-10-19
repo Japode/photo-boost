@@ -1,8 +1,8 @@
-"""Export the upstream weights to ONNX (PB8; INT8 quantization follows in PB9).
+"""Export the upstream weights to ONNX (PB8) and quantize them to INT8 (PB9).
 
 Reads what download_models.py left in .cache/weights and writes, per model,
-<out>/<name>/fp32.onnx and, where the graph converts cleanly, fp16.onnx (default out:
-.cache/models, git-ignored). Each output passes onnx.checker and is then run in ONNX Runtime
+<out>/<name>/fp32.onnx, int8.onnx and, where the graph converts cleanly, fp16.onnx (default
+out: .cache/models, git-ignored). Each output passes onnx.checker and is then run in ONNX Runtime
 against the PyTorch model; an FP32 difference past the tolerance fails the script rather than
 writing a model that is quietly wrong. An FP16 variant that loses too much is dropped, and said.
 
@@ -20,6 +20,7 @@ Requirements: scripts/requirements.txt.
 from __future__ import annotations
 
 import argparse
+import collections
 import shutil
 import sys
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ import onnx
 import onnxruntime as ort
 import torch
 from onnxconverter_common import float16
+from onnxruntime.quantization import QuantType, quantize_dynamic
 from torch import nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -47,6 +49,13 @@ OPSET = 17
 FP32_TOLERANCE = 1e-3
 # FP16 is judged by PSNR against the FP32 output instead: per-pixel error is expected.
 FP16_MIN_PSNR = 40.0
+
+# Unsigned weights, not the QInt8 the plan named: on Real-ESRGAN x4plus at 64x64, QUInt8 came
+# within 37.1 dB of FP32 on CPU against QInt8's 32.3 dB, and ran in 0.8 s against 3.7 s.
+INT8_WEIGHT_TYPE = QuantType.QUInt8
+# What dynamic quantization rewrites; any float op of these kinds left behind is reported.
+QUANTIZED_OPS = ("ConvInteger", "MatMulInteger")
+FLOAT_COMPUTE_OPS = ("Conv", "MatMul", "Gemm", "ConvTranspose")
 
 
 @dataclass(frozen=True)
@@ -210,6 +219,28 @@ def export_fp16(fp32: Path, target: Path) -> None:
     onnx.checker.check_model(str(target), full_check=True)
 
 
+def quantize_int8(fp32: Path, target: Path) -> str:
+    """Dynamic INT8 (weights quantized ahead, activations at run time). Returns the report line.
+
+    Weights reached through another op stay float in the file: GFPGAN's StyleGAN2 decoder
+    multiplies each conv weight by the style first, so that conv quantizes its weight at run
+    time and the file only shrinks from 340 to 158 MB.
+    """
+    quantize_dynamic(str(fp32), str(target), weight_type=INT8_WEIGHT_TYPE)
+    onnx.checker.check_model(str(target), full_check=True)
+    # Loading it is the check that every quantized op has a CPU kernel; quality is PB10's gate.
+    ort.InferenceSession(str(target), providers=["CPUExecutionProvider"])
+    ops = collections.Counter(node.op_type for node in onnx.load(str(target)).graph.node)
+    quantized = sum(ops[op] for op in QUANTIZED_OPS)
+    left = {op: ops[op] for op in FLOAT_COMPUTE_OPS if ops[op]}
+    megabytes = target.stat().st_size / 1e6
+    float_note = ", ".join(f"{count} {op}" for op, count in left.items()) or "none"
+    return (
+        f"int8 {megabytes:.1f} MB (fp32 {fp32.stat().st_size / 1e6:.1f} MB), "
+        f"{quantized} ops quantized, float compute ops left: {float_note}"
+    )
+
+
 def run(path: Path, x: np.ndarray) -> np.ndarray:
     session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
     name = session.get_inputs()[0].name
@@ -254,7 +285,7 @@ def verify(model: nn.Module, spec: Export, fp32: Path, fp16: Path | None) -> tup
     return lines, fp16_ok
 
 
-def export(spec: Export, weights: Path, out: Path, fp16: bool = True) -> list[str]:
+def export(spec: Export, weights: Path, out: Path, fp16: bool = True, int8: bool = True) -> list[str]:
     model = load(spec, weights)
     folder = out / spec.name
     folder.mkdir(parents=True, exist_ok=True)
@@ -270,6 +301,8 @@ def export(spec: Export, weights: Path, out: Path, fp16: bool = True) -> list[st
     if fp16 and not fp16_ok:
         fp16_path.unlink()
         lines.append(f"fp16 dropped: below {FP16_MIN_PSNR} dB, so only fp32 is written")
+    if int8:
+        lines.append(quantize_int8(fp32_path, folder / "int8.onnx"))
     return lines
 
 
@@ -279,6 +312,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=OUT, help="output folder (default: .cache/models)")
     parser.add_argument("--only", action="append", default=[], metavar="NAME", help="export just this model; repeatable")
     parser.add_argument("--no-fp16", action="store_true", help="skip the FP16 variant")
+    parser.add_argument("--no-int8", action="store_true", help="skip the INT8 variant")
     args = parser.parse_args(argv)
 
     known = {e.name for e in EXPORTS}
@@ -292,7 +326,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.only and spec.name not in args.only:
             continue
         try:
-            for line in export(spec, args.weights, args.out, fp16=not args.no_fp16):
+            for line in export(spec, args.weights, args.out, fp16=not args.no_fp16, int8=not args.no_int8):
                 print(f"{spec.name}: {line}")
             print(f"{spec.name}: exported to {args.out / spec.name}")
         except ExportError as error:

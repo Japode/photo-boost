@@ -98,6 +98,19 @@ class ExportTests(unittest.TestCase):
         _, fp16_ok = self.ex.verify(model, spec, fp32, wrong)
         self.assertFalse(fp16_ok)
 
+    def test_int8_quantizes_every_conv_and_loads_on_cpu(self):
+        # PB9: dynamic INT8 with unsigned weights; the report names what stayed float.
+        _, _, fp32, _ = self.exported(4)
+        int8 = self.folder / "int8.onnx"
+        line = self.ex.quantize_int8(fp32, int8)
+        ops = {node.op_type for node in onnx.load(str(int8)).graph.node}
+        self.assertIn("ConvInteger", ops)
+        self.assertNotIn("Conv", ops)
+        self.assertIn("float compute ops left: none", line)
+        weights = [i for i in onnx.load(str(int8)).graph.initializer if i.name.endswith("_quantized")]
+        self.assertTrue(weights)
+        self.assertTrue(all(w.data_type == onnx.TensorProto.UINT8 for w in weights))
+
     def test_psnr_uses_the_output_range(self):
         a = np.zeros((1, 1, 4, 4), dtype=np.float32)
         b = np.full((1, 1, 4, 4), 0.1, dtype=np.float32)

@@ -42,12 +42,6 @@ WW552 asks winwright for a capture route for this surface.
 
 ## Block B — Model management
 
-### §PB9 INT8 dynamic quantization
-
-Apply onnxruntime.quantization.quantize_dynamic with weight_type QInt8 to each FP32
-model. Conv-heavy models may gain little from dynamic quantization; measure, and record
-ops left in float.
-
 ### §PB10 PSNR validation
 
 Run one fixed test image through FP32 and INT8 with onnxruntime CPU and compute PSNR
@@ -216,9 +210,15 @@ operation after undo drops the forward branch. Ctrl+Z and Ctrl+Y / Ctrl+Shift+Z.
 
 ### §PB29 Quality mode selector
 
-A Fast (INT8) / High quality toggle per operation or globally. INT8 dynamic quantization
-mostly pays on the CPU; on DirectML prefer FP16. If the High quality files are not
-downloaded, offer to fetch them through the model download flow.
+A Compact (INT8) / High quality toggle per operation or globally. Do not call INT8
+"Fast": PB9 measured Real-ESRGAN x4plus at 256x256 and dynamic INT8 was slower
+everywhere, 5.2 s FP32 against 10.0 s INT8 on CPU, and 352 ms against 1,080 ms on
+DirectML (RTX 4060), where its output also drifted 0.14 from CPU INT8. FP16 on DirectML
+ran 458 ms, also behind FP32. What INT8 buys is size: Real-ESRGAN 67 to 18 MB, RMBG 176
+to 44 MB, GFPGAN 340 to 158 MB. So on DirectML prefer FP32, and present INT8 as the
+small download. Whether INT8 stays the default the brief names is the owner's call once
+PB34's table exists. If the High quality files are not downloaded, offer to fetch them
+through the model download flow.
 
 ## Block E — Face restoration and background removal
 
@@ -257,7 +257,9 @@ VRAM per tile size), how to run tests and winwright cases, and each model's lice
 
 A script that runs each model and variant on fixed test images per available provider
 and prints a Markdown table of file size, peak memory, time and PSNR/SSIM against FP32.
-Paste the result into the README with the hardware it ran on.
+Paste the result into the README with the hardware it ran on. The PB5 spike's OrtSpike
+--model already times a model file on CPU and DirectML from C#; PB9's first numbers are
+in the PB29 design.
 
 ### §PB35 Installer
 

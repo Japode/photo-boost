@@ -5,14 +5,17 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using PhotoBoost.Spike.OnnxRuntime;
 
 // PB5 spike: does this ONNX Runtime package load and run in a self-contained publish, and what
-// does each provider cost? Usage: OrtSpike <cpu|dml|cuda> [size] [device] [--placement]
+// does each provider cost? Usage: OrtSpike <cpu|dml|cuda> [size] [device] [--placement] [--model <path>]
 // Prints one key=value line per measurement; --placement turns on ORT's verbose log, whose node
-// placement lines say which ops fell back to CPU.
+// placement lines say which ops fell back to CPU. --model runs an exported model instead of the
+// built-in one (PB9 used it to measure INT8 on DirectML); its first input must be 1x3xHxW float.
 
 string provider = args.Length > 0 ? args[0] : "cpu";
 int size = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : 256;
 int device = args.Length > 2 && !args[2].StartsWith('-') ? int.Parse(args[2], CultureInfo.InvariantCulture) : 0;
 bool placement = args.Contains("--placement");
+int modelFlag = Array.IndexOf(args, "--model");
+string? modelPath = modelFlag >= 0 && modelFlag + 1 < args.Length ? args[modelFlag + 1] : null;
 
 Stopwatch process = Stopwatch.StartNew();
 if (placement)
@@ -40,7 +43,7 @@ foreach (OrtEpDevice ep in OrtEnv.Instance().GetEpDevices())
 }
 #endif
 
-byte[] model = TinyModel.Build();
+byte[] model = modelPath is null ? TinyModel.Build() : File.ReadAllBytes(modelPath);
 Report("model_bytes", model.Length);
 Report("ort_version", OrtEnv.Instance().GetVersionString());
 Report("available_providers", string.Join(",", OrtEnv.Instance().GetAvailableProviders()));
@@ -103,7 +106,7 @@ float[] Run(string name, out double createMs, out double firstMs, out double med
     using InferenceSession session = new(model, options);
     createMs = watch.Elapsed.TotalMilliseconds;
 
-    NamedOnnxValue[] feeds = [NamedOnnxValue.CreateFromTensor("x", input)];
+    NamedOnnxValue[] feeds = [NamedOnnxValue.CreateFromTensor(session.InputNames[0], input)];
     double[] runs = new double[6];
     float[] output = [];
     for (int i = 0; i < runs.Length; i++)
