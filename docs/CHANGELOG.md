@@ -2,6 +2,9 @@
 
 ## Block A — Project foundation
 
+- 🗑 **PB3** **Renderer is not locked down: no contextIsolation, sandboxed preload or restrictive CSP** — abandoned: A native WPF app has no web renderer, so contextIsolation and CSP have nothing to protect.
+- 🗑 **PB4** **No typed IPC contract shared by main, preload and renderer** — abandoned: One process replaces main, preload and renderer; the InferenceService API takes the place of IPC.
+
 ## Block B — Model management
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow

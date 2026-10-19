@@ -4,38 +4,67 @@
 
 ### §PB1 Project scaffold
 
-Create the skeleton with electron-vite (or Vite plus vite-plugin-electron) so main,
-preload and renderer each get their own TypeScript build. Folders: src/main,
-src/main/pipelines, src/preload, src/renderer, src/shared, scripts, models
-(git-ignored). Done when npm install && npm run dev opens an empty React window with hot
-reload in the renderer and restart on main changes.
+Mirror quickshell and pportal: PhotoBoost.slnx with src/PhotoBoost.App (WPF,
+net10.0-windows, win-x64), src/PhotoBoost.Imaging (tensors, tiling, codecs),
+src/PhotoBoost.Inference (ONNX Runtime, queue, sessions) and src/PhotoBoost.Render
+(Vortice D3D11 display). global.json pins the SDK. Directory.Build.props: x64 only,
+nullable, warnings as errors, performance analyzers on. ThemeMode="System" with WPF0001
+in NoWarn. Done when dotnet build and dotnet run open an empty Fluent window with Mica.
 
-### §PB2 Lint and test tooling
+### §PB2 Test and build gates
 
-Add ESLint (typescript-eslint, react-hooks), Prettier and Vitest with npm scripts lint,
-format and test. Vitest runs in a node environment for src/main and src/shared, jsdom
-for src/renderer. One smoke test per process proves the config works.
+tests/Directory.Build.props wires xunit.v3 on Microsoft.Testing.Platform for every test
+project, as quickshell does. Projects: PhotoBoost.Imaging.Tests,
+PhotoBoost.Inference.Tests and PhotoBoost.Architecture.Tests (layer rules, plus the
+colour rule from the design system task). run-tests.cmd runs them; UI cases run
+separately through winwright.
 
-### §PB3 Renderer security baseline
+### §PB5 ONNX Runtime package spike
 
-BrowserWindow with contextIsolation: true, nodeIntegration: false, sandbox: true. A CSP
-meta tag and a session header: default-src 'self'; img-src 'self' data: blob:; no remote
-origins, no unsafe-eval in production. Block navigation and window.open. Dev mode may
-relax script-src for Vite HMR only.
+In a self-contained Release publish, load Microsoft.ML.OnnxRuntime.DirectML and run a
+tiny model on the DirectML and CPU providers. Then try Windows ML (Windows App SDK,
+unpackaged) which picks TensorRT, OpenVINO or an NPU on its own, and the CUDA package on
+an NVIDIA machine. Record size added to the installer, startup cost and which ops fall
+back to CPU. DirectML is in sustained engineering, so weigh Windows ML as the long-term
+path. Propose and explain any switch before making it, as the brief requires.
 
-### §PB4 Typed IPC contract
+### §PB37 Design system reuse
 
-Define channel names and payload types in src/shared/ipc.ts. The preload exposes a
-narrow window.photoBoost API through contextBridge (invoke-style calls plus
-subscribe/unsubscribe for progress events). The renderer imports only the types.
-Validate payloads in main handlers.
+Copy the pattern, not a package (none exists): Brand.cs with the app's colours declared
+once as bytes, Theme.cs and Appearance.cs from quickshell for ThemeMode and
+light/dark/system, Templates.cs for controls Fluent lacks, and the GroupCard,
+SectionHeader, StatValue and NavDest styles from claude-tray, moved into one
+ResourceDictionary. Rules from quickshell docs/design/friendly-shell: Fluent brushes
+only on themed surfaces, Segoe UI Variable, flat cards with 1px border and 8px radius,
+3px accent underline, status chips that carry a word. An architecture test refuses a
+colour literal outside Brand.cs.
 
-### §PB5 Native module spike
+### §PB38 winwright adoption
 
-Load onnxruntime-node and sharp in the main process of a dev and a packaged build on
-Windows first, then macOS and Linux. Run a tiny ONNX model and a sharp resize. Record
-which onnxruntime-node build exposes CUDA, DirectML and CoreML. If either fails, propose
-an alternative and explain it before switching, as the brief requires.
+Follow winwright's adoption guide and quickshell: winwright.json at the root naming the
+Debug exe and timeouts; tests/PhotoBoost.Cases with one PackageReference to Winwright
+(NU1603 as error), no reference to WPF or the app; CasesRun.cs loading
+cases/*.cases.json, asserting every case ran, exit 0 and nothing left running, skipping
+when the desk cannot be observed. Add DefaultItemExcludes if the app project sits above
+tests. Every element a case touches gets a unique automation id. Install the winwright
+Claude plugin at project scope. Friction goes to winwright's roadmap (WW).
+
+### §PB39 Command-line flags
+
+Flags in the quickshell style, documented in docs/COMMAND-LINE.md: --open <path>,
+--models <dir>, --provider dml|cpu|cuda, --export <path> (write the current result and
+stay open), --quality fast|high. Parsed in one place, unit tested, and ignored values
+rejected with a clear message. These stand in for WW550 (drop from Explorer) and WW551
+(Open/Save dialogs); once those ship, add cases that drive the real drop and dialogs.
+
+### §PB40 GPU image display spike
+
+Compare D3DImage fed by a shared D3D11 texture against a child HWND with a DXGI flip
+swapchain, both through Vortice as in quickshell's Quickshell.Render and its host spike.
+Measure pan and zoom frame time on a 50 MP image, memory, airspace issues with Fluent
+overlays, and a WARP fallback. Note that winwright cannot screenshot a Mica window, so
+the surface must expose what it shows (size, zoom, divider position) through automation;
+WW552 asks winwright for a capture route for this surface.
 
 ## Block B — Model management
 
@@ -49,9 +78,10 @@ permissive fallback.
 
 ### §PB7 Weight download script
 
-A Node script (run with tsx) that downloads the verified URLs into a cache folder,
-resumes partial downloads, prints progress and checks size or hash. Idempotent: an
-existing valid file is skipped.
+Python, since the export step already requires it: download the verified URLs into a
+cache folder, resume partial downloads, print progress and check size or hash.
+Idempotent: a valid file already present is skipped. Pin dependencies in
+scripts/requirements.txt.
 
 ### §PB8 ONNX export
 
@@ -75,9 +105,10 @@ script. Write the numbers to meta.json; they feed the README table.
 ### §PB11 Model output layout
 
 meta.json holds: name, task, scale, input/output names, layout (NCHW), value range,
-color order, recommended tile size, file sizes, SHA256 of each variant, PSNR results,
-upstream URL and license. A JSON schema for it lives in src/shared so app and script
-agree.
+colour order, recommended tile size and bytes per tile pixel, file sizes, SHA256 of each
+variant, PSNR results, upstream URL and license. A C# record in PhotoBoost.Inference and
+a JSON schema in scripts/ keep app and script in step; a test loads every meta.json the
+script emits.
 
 ### §PB12 Model hosting and manifest
 
@@ -88,24 +119,27 @@ weights before publishing.
 
 ### §PB13 First-run model download
 
-Main process downloads into app.getPath('userData')/models/<name>/, streams progress
-over IPC, verifies SHA256, and renames from .part only on success. The renderer shows
-per-model bars, total size, retry and cancel. Later launches only re-check presence and
-hashes. Offer INT8 by default and the High quality variants as optional extras.
+Models live under %LOCALAPPDATA%\PhotoBoost\models\<name>\ unless --models overrides it.
+HttpClient streams each file to a .part, reports progress, verifies SHA256, then
+renames. The screen shows per-model bars, total size, retry and cancel, in the Fluent
+card style. Later launches only re-check presence and hashes. INT8 is the default
+download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ### §PB14 Execution provider detection
 
-Try providers in order CUDA, DirectML (Windows), CoreML (macOS), CPU by creating a
-session on a tiny probe model; keep the first that succeeds. Expose the result over IPC
-and show it in a status bar. Allow forcing CPU from settings for troubleshooting.
+Try DirectML first (any DX12 GPU: NVIDIA, AMD, Intel), then CUDA if that package ships,
+then CPU, by creating a session on a tiny probe model; keep the first that works. If the
+PB5 spike picks Windows ML, let it choose and report its choice. Name the adapter
+through DXGI, show provider and GPU in the status bar, and accept --provider to force
+one.
 
 ### §PB15 InferenceService queue
 
-A single FIFO queue in src/main/InferenceService.ts. Jobs carry an id, operation and
-options; they can be cancelled while queued or between tiles. Results and errors return
-through the IPC contract.
+A single queue in PhotoBoost.Inference running on a background thread. Jobs carry an id,
+operation and options, can be cancelled while queued or between tiles, and report
+results and progress through IProgress back to the UI thread.
 
 ### §PB16 Session lifecycle
 
@@ -113,11 +147,13 @@ Load a session on first use of a model/variant, cache it, and release it after N
 minutes (configurable, default 5). Switching INT8 to High quality drops the other
 variant's session.
 
-### §PB17 Preprocessing with sharp
+### §PB17 Preprocessing
 
-Decode with sharp (honouring EXIF rotation), convert to sRGB, split alpha, produce
-Float32 NCHW in 0..1 RGB, and the inverse with clamping. Unit tests cover round trips,
-alpha handling, grayscale and 16-bit inputs.
+Decode with WIC (honouring EXIF orientation, colour profiles and 16-bit), convert to
+sRGB, split alpha, and produce Float32 NCHW in 0..1 RGB, plus the inverse with clamping.
+Write it with spans and SIMD where it pays. Unit tests cover round trips, alpha,
+grayscale and 16-bit inputs. A GPU compute-shader path can follow once tensors stay on
+the GPU.
 
 ### §PB18 Tiling with overlap
 
@@ -128,33 +164,35 @@ tiles of odd sizes.
 
 ### §PB19 Upscale pipeline
 
-src/main/pipelines/upscale.ts drives the tiled run of RealESRGAN_x4plus. 2x is either
-the x2plus model or x4 followed by a Lanczos downscale; decide from quality and download
-size. Alpha channels are upscaled separately with sharp.
+PhotoBoost.Inference/Pipelines/Upscale.cs drives the tiled run of RealESRGAN_x4plus. 2x
+is either the x2plus model or x4 followed by a Lanczos downscale; decide from quality
+and download size. Alpha channels are upscaled separately with a plain resampler.
 
-### §PB20 Inference progress over IPC
+### §PB20 Inference progress
 
-The pipeline emits {jobId, tile, totalTiles, stage} events, throttled, through the IPC
-contract. The renderer shows a progress bar, an ETA from tile timings and a cancel
-button.
+The pipeline reports {jobId, tile, totalTiles, stage} through IProgress, throttled. The
+operations panel shows a progress bar with an automation id cases can read, an ETA from
+tile timings and a cancel button.
 
 ### §PB21 OOM retry
 
-Recognize allocation failures from onnxruntime (CUDA, DirectML, CPU messages), halve the
-tile size down to a floor (e.g. 64px), and retry the failed tile. Below the floor, fall
-back to CPU once, then report a clear error. Log each step.
+Recognise allocation failures from ONNX Runtime (DirectML E_OUTOFMEMORY and
+device-removed, CUDA and CPU messages), halve the tile size down to a floor (e.g. 64px)
+and retry the failed tile. Below the floor, fall back to CPU once, then report a clear
+error. Log each step.
 
 ### §PB22 Inference logging
 
-Log operation, model, variant, provider, image size, tile size, tile count, retries and
-wall time to a rotating file in userData/logs (electron-log or similar), and show the
-last run time in the UI.
+Log operation, model, variant, provider, adapter, image size, tile size, tile count,
+retries and wall time to a rotating file under %LOCALAPPDATA%\PhotoBoost\logs, and show
+the last run time in the status bar.
 
 ### §PB23 Open image screen
 
-A drop zone plus a native file dialog (through main) for PNG, JPG, WebP, TIFF. Main
-reads the file and returns an id and a preview; full-resolution pixels stay in the main
-process.
+A drop zone accepting files dragged from Explorer plus the common open dialog, for PNG,
+JPG, WebP, TIFF and whatever WIC decodes (HEIC, AVIF when installed). --open <path>
+reaches the same state without either, which is how winwright cases get there: it has no
+verb for a drop from Explorer.
 
 ### §PB24 Operations panel
 
@@ -163,34 +201,52 @@ are missing. Built so face restore and background removal slot in as entries lat
 
 ### §PB25 Export
 
-Save dialog in main; sharp writes PNG, JPG (quality slider) or WebP (quality, lossless
-option). Warn when exporting a transparent image to JPG and offer a background colour.
-Preserve or strip metadata by choice.
+Save dialog plus an --export <path> route for cases. WIC writes PNG and JPG (quality
+slider); WebP via a library if WIC lacks an encoder. Warn when a transparent image goes
+to JPG and offer a background colour. Keep or strip metadata by choice.
 
 ### §PB26 End-to-end test
 
-Automate with Playwright for Electron: launch, open a fixture image, run 4x upscale with
-INT8 on CPU, export PNG, and assert dimensions and a PSNR floor against a reference.
-Also run it by hand on the GPU providers available.
+cases/upscale.cases.json: a fixture stages a test image and the tiny model from the
+cases fixture task into {files}, launches with --open, --models and --provider cpu,
+invokes the 4x upscale, waits on the progress reading, exports with --export and checks
+the file with sameBytesAs against a committed reference. Run it in the VM, never on the
+operator's desktop. Also run the real models by hand on DirectML.
+
+### §PB41 Tile size from VRAM
+
+Read the local budget and usage with DXGI QueryVideoMemoryInfo through Vortice, multiply
+by the bytes per tile pixel in meta.json, and pick the largest tile from 128 to 1024
+that fits with a margin. On CPU, size from available RAM. The OOM retry stays as the
+safety net. Log the choice.
+
+### §PB42 Tiny model fixture for cases
+
+export-and-quantize.py also emits a tiny ONNX model (e.g. a nearest-neighbour 4x or a
+3x3 conv) with a matching meta.json, committed under cases/fixtures/models. Fixtures
+stage it into {files} and pass --models and --provider cpu, so the exported bytes are
+stable and checkable with sameBytesAs.
 
 ## Block D — Editor: comparison, history and quality modes
 
 ### §PB27 Before/after comparator
 
-Overlay both images with a draggable divider, synced zoom and pan, and a toggle for side
-by side. The before image is scaled to the output size so details line up.
+Draw both versions in the GPU surface from the display spike, with a draggable divider,
+synced zoom and pan and a side-by-side toggle. The before image is scaled to the output
+size so details line up. The divider is a Slider-like element with an automation id, so
+a case can set its range.
 
 ### §PB28 History and undo/redo
 
-Each operation produces a new image version kept in main (on disk in a temp folder for
-large images). The renderer shows the list; undo and redo move a pointer, and a new
-operation after undo drops the forward branch. Ctrl/Cmd+Z and Shift+Ctrl/Cmd+Z.
+Each operation produces a new image version kept in memory, spilled to a temp folder for
+large images. A list shows the history; undo and redo move a pointer, and a new
+operation after undo drops the forward branch. Ctrl+Z and Ctrl+Y / Ctrl+Shift+Z.
 
 ### §PB29 Quality mode selector
 
-A Fast (INT8) / High quality toggle per operation or globally. If the High quality files
-are not downloaded, offer to fetch them through the model download flow. On GPU
-providers prefer FP16 when available.
+A Fast (INT8) / High quality toggle per operation or globally. INT8 dynamic quantization
+mostly pays on the CPU; on DirectML prefer FP16. If the High quality files are not
+downloaded, offer to fetch them through the model download flow.
 
 ## Block E — Face restoration and background removal
 
@@ -202,25 +258,25 @@ pipeline of Block B, with verified URLs. Compute landmarks, warp each face to th
 
 ### §PB31 Face restore pipeline
 
-src/main/pipelines/faceRestore.ts: detect, align, run GFPGANv1.4 per face, paste back
-with the mask, optionally upscale the background with Real-ESRGAN first. Expose a
+Pipelines/FaceRestore.cs: detect, align, run GFPGANv1.4 per face, paste back with the
+mask, optionally upscale the background with Real-ESRGAN first. Expose a
 fidelity/strength blend. CodeFormer can be added later as an alternative model behind
 the same interface.
 
 ### §PB32 Background removal pipeline
 
-src/main/pipelines/removeBackground.ts: resize to the RMBG-1.4 input (1024px), run,
-upscale the mask to the original size, refine edges, and attach it as alpha. Export
-defaults to PNG or WebP. Keep the license caveat from PB6 visible in the app's About
-screen.
+Pipelines/RemoveBackground.cs: resize to the RMBG-1.4 input (1024px), run, upscale the
+mask to the original size, refine edges and attach it as alpha. Export defaults to PNG
+or WebP. Keep the license caveat from PB6 visible in the app's About page.
 
 ## Block F — Delivery: README, benchmarks and installers
 
 ### §PB33 README
 
-Sections: what PhotoBoost is, npm install && npm run dev, how to run download-models and
-export-and-quantize (Python version, pip requirements, CUDA optional), where models
-live, hardware requirements per provider, licenses of each model.
+Sections: what PhotoBoost is, dotnet build and run (SDK version, Windows 10/11 x64), how
+to run download_models.py and export-and-quantize.py (Python version, requirements.txt,
+CUDA optional), where models live, hardware requirements (DX12 GPU for DirectML, RAM,
+VRAM per tile size), how to run tests and winwright cases, and each model's license.
 
 ### §PB34 FP32 vs INT8 benchmark
 
@@ -228,13 +284,14 @@ A script that runs each model and variant on fixed test images per available pro
 and prints a Markdown table of file size, peak memory, time and PSNR/SSIM against FP32.
 Paste the result into the README with the hardware it ran on.
 
-### §PB35 electron-builder packaging
+### §PB35 Installer
 
-electron-builder targets: NSIS for Windows, dmg for macOS (arm64 and x64), AppImage and
-deb for Linux. asarUnpack onnxruntime-node and sharp binaries, and ship the right
-onnxruntime build per platform for DirectML/CUDA/CoreML. Models are not bundled.
-Smoke-test each installer offline after models are downloaded. The non-goal Web or
-mobile builds does not apply: these are desktop builds only.
+Follow claude-tray: a self-contained single-file publish (ReadyToRun), an Inno Setup
+per-user installer built by a build-installer.cmd, and optionally winget manifests. The
+version lives in one place and is checked against app.manifest, as pportal does. Models
+are not bundled. Smoke-test the installed app offline after models are downloaded. The
+non-goal Builds for macOS, Linux, web or mobile does not apply: this is the one Windows
+build.
 
 ## Block G — Phase 2: denoising
 
