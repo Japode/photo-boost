@@ -42,24 +42,6 @@ WW552 asks winwright for a capture route for this surface.
 
 ## Block B — Model management
 
-### §PB8 ONNX export
-
-Python with torch, onnx and onnxruntime, pinned in scripts/requirements.txt and
-installed in .venv. Export FP32 with dynamic axes for batch, height and width at opset
-17, plus an FP16 variant where the graph converts cleanly (judged by PSNR against FP32),
-for the High quality option. Every output passes onnx.checker and is compared with
-PyTorch at two untraced sizes.
-
-Landed: Real-ESRGAN x4plus and x2plus, with RRDBNet vendored in scripts/archs because
-the basicsr package no longer imports against current torchvision; strict weight loading
-proves the copy. Left: GFPGAN v1.4, whose GFPGANv1Clean architecture (Apache-2.0, no
-custom CUDA ops) should be vendored the same way, with a fixed 512x512 input since it
-only sees aligned crops; and RMBG-1.4, where Hugging Face already publishes
-onnx/model.onnx (hash in scripts/model-sources.json): verify it against the PyTorch
-weights rather than re-export, or re-export from briarmbg.py if it lacks the axes the
-app needs. The legacy exporter (dynamo=False) is deprecated in torch 2.14 and kept by
-the pin.
-
 ### §PB9 INT8 dynamic quantization
 
 Apply onnxruntime.quantization.quantize_dynamic with weight_type QInt8 to each FP32

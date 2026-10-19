@@ -35,14 +35,36 @@
     },
     {
       "name": "rmbg-1.4",
-      "file": "model.pth",
+      "file": "RMBG-1.4.pth",
       "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/model.pth",
       "size": 176718373,
       "sha256": "893c16c340b1ddafc93e78457a4d94190da9b7179149f8574284c83caebf5e8c",
       "sha256_source": "upstream",
       "license": "bria-rmbg-1.4 (non-commercial)",
       "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/",
-      "note": "Not gated. Pinned to repository commit 2ceba5a5. The repository also publishes onnx/model.onnx (176153355 bytes, sha256 8cafcf770b06757c4eaced21b1a88e57fd2b66de01b8045f35f01535ba742e0f), an upstream ONNX export the export step may use instead. Commercial use needs a license from BRIA; the README and the About page must say so."
+      "note": "Not gated. Pinned to repository commit 2ceba5a5. Commercial use needs a license from BRIA; the README and the About page must say so. Used to verify the upstream ONNX export below."
+    },
+    {
+      "name": "rmbg-1.4-onnx",
+      "file": "RMBG-1.4.onnx",
+      "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/onnx/model.onnx",
+      "size": 176153355,
+      "sha256": "8cafcf770b06757c4eaced21b1a88e57fd2b66de01b8045f35f01535ba742e0f",
+      "sha256_source": "upstream",
+      "license": "bria-rmbg-1.4 (non-commercial)",
+      "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/",
+      "note": "BRIA's own ONNX export: opset 11, input batch x 3 x 1024 x 1024 (pixels / 255 - 0.5), output the sigmoid mask. export-and-quantize.py adopts it after checking it against the PyTorch weights."
+    },
+    {
+      "name": "rmbg-1.4-arch",
+      "file": "briarmbg.py",
+      "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/briarmbg.py",
+      "size": 13101,
+      "sha256": "1dbefbca5c1a3ec1afde2a2164b05274e7f62c861fa62e62a84525ff603a955d",
+      "sha256_source": "computed",
+      "license": "bria-rmbg-1.4 (non-commercial)",
+      "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/",
+      "note": "The BriaRMBG architecture, downloaded rather than vendored because it is under BRIA's license. export-and-quantize.py loads it with its transformers base class replaced by nn.Module."
     },
     {
       "name": "u2net",
