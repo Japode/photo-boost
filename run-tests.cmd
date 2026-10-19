@@ -50,6 +50,25 @@ for /d %%P in (tests\*) do (
     )
 )
 
+rem The model scripts (PB7 onward) are Python and tested with the standard library's unittest.
+rem Python is required to generate models, not to build the app, so a desk without it says so
+rem out loud and the run still fails: a skipped suite is not a green one.
+echo.
+echo === scripts\tests (Python) ===
+where python >nul 2>&1
+if errorlevel 1 (
+    echo   python not found on PATH - the model script tests did not run
+    set /a FAILED+=1
+    set "BROKEN=!BROKEN! scripts\tests^(no python^)"
+) else (
+    python -m unittest discover -s scripts\tests
+    if errorlevel 1 (
+        set /a FAILED+=1
+        set "BROKEN=!BROKEN! scripts\tests"
+    )
+    set /a RAN+=1
+)
+
 echo.
 
 rem Nothing found is not a pass: a suite that silently shrinks to zero is what this guards against.
@@ -60,11 +79,11 @@ if %RAN%==0 (
 )
 
 if %FAILED%==0 (
-    echo All %RAN% test assemblies passed.
+    echo All %RAN% test suites passed.
     popd
     exit /b 0
 )
 
-echo %FAILED% of %RAN% test assemblies failed:!BROKEN!
+echo %FAILED% of %RAN% test suites failed:!BROKEN!
 popd
 exit /b 1

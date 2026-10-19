@@ -46,6 +46,7 @@
     },
     {
       "name": "u2net",
+      "optional": true,
       "file": "u2net.onnx",
       "url": "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx",
       "size": 175997641,

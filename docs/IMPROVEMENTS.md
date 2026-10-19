@@ -42,19 +42,14 @@ WW552 asks winwright for a capture route for this surface.
 
 ## Block B — Model management
 
-### §PB7 Weight download script
-
-Python, since the export step already requires it: download the verified URLs into a
-cache folder, resume partial downloads, print progress and check size or hash.
-Idempotent: a valid file already present is skipped. Pin dependencies in
-scripts/requirements.txt.
-
 ### §PB8 ONNX export
 
 Python with torch, onnx and onnxruntime (plus basicsr/gfpgan architecture code where
 needed). Export FP32 with dynamic_axes for batch, height and width and a fixed opset.
 Also emit an FP16 variant where the graph converts cleanly, for the High quality option.
-Run onnx.checker on every output.
+Run onnx.checker on every output. Read the weights from .cache/weights, where
+download_models.py leaves them, and create scripts/requirements.txt with these pins: the
+download script is standard library only and has none.
 
 ### §PB9 INT8 dynamic quantization
 
