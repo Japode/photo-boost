@@ -14,6 +14,7 @@
 - ✅ **PB7** **No scripts/download_models.py to fetch the original weights** — scripts/download_models.py fetches the listed weights into .cache/weights, resumes partial files, prints progress, verifies size and SHA-256 and skips valid files.
 - ✅ **PB8** **No scripts/export-and-quantize.py to export each model to ONNX with dynamic axes** — export-and-quantize.py now also writes GFPGAN v1.4 at 512x512 and adopts BRIA's RMBG-1.4 ONNX after checking it against PyTorch, each with an FP16 variant kept only above 40 dB.
 - ✅ **PB9** **Exported models are not quantized to INT8** — export-and-quantize.py writes int8.onnx for all four models with QUInt8 dynamic quantization, leaving no float Conv or MatMul; INT8 runs slower than FP32, so it buys size only.
+- ✅ **PB10** **INT8 models are not validated against FP32 on a test image** — export-and-quantize.py checks INT8 and FP16 against FP32 on each model's upstream sample image, writes PSNR and SSIM to meta.json and fails INT8 below a per-model floor.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 

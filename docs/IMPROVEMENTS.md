@@ -42,19 +42,16 @@ WW552 asks winwright for a capture route for this surface.
 
 ## Block B — Model management
 
-### §PB10 PSNR validation
-
-Run one fixed test image through FP32 and INT8 with onnxruntime CPU and compute PSNR
-between outputs (and SSIM if cheap). Fail below a per-model threshold stored in the
-script. Write the numbers to meta.json; they feed the README table.
-
 ### §PB11 Model output layout
 
 meta.json holds: name, task, scale, input/output names, layout (NCHW), value range,
 colour order, recommended tile size and bytes per tile pixel, file sizes, SHA256 of each
-variant, PSNR results, upstream URL and license. A C# record in PhotoBoost.Inference and
-a JSON schema in scripts/ keep app and script in step; a test loads every meta.json the
-script emits.
+variant, PSNR results, upstream URL and license. The PSNR results are already there:
+validate() in export-and-quantize.py writes a "validation" key (image, input shape, PSNR
+and SSIM per variant, the INT8 floor) and keeps the rest of the file, so add the other
+keys beside it. The script writes to .cache/models/<name>/, not a models/ folder in the
+tree. A C# record in PhotoBoost.Inference and a JSON schema in scripts/ keep app and
+script in step; a test loads every meta.json the script emits.
 
 ### §PB12 Model hosting and manifest
 
@@ -216,9 +213,11 @@ everywhere, 5.2 s FP32 against 10.0 s INT8 on CPU, and 352 ms against 1,080 ms o
 DirectML (RTX 4060), where its output also drifted 0.14 from CPU INT8. FP16 on DirectML
 ran 458 ms, also behind FP32. What INT8 buys is size: Real-ESRGAN 67 to 18 MB, RMBG 176
 to 44 MB, GFPGAN 340 to 158 MB. So on DirectML prefer FP32, and present INT8 as the
-small download. Whether INT8 stays the default the brief names is the owner's call once
-PB34's table exists. If the High quality files are not downloaded, offer to fetch them
-through the model download flow.
+small download. PB10 measured its cost on each model's test image: 29 to 33 dB PSNR
+against FP32, and GFPGAN's SSIM fell to 0.87, visible on a face; FP16 stayed above 70
+dB. Whether INT8 stays the default the brief names is the owner's call once PB34's table
+exists. If the High quality files are not downloaded, offer to fetch them through the
+model download flow.
 
 ## Block E — Face restoration and background removal
 

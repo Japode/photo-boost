@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import json
 import shutil
 import sys
 from dataclasses import dataclass
@@ -32,6 +33,7 @@ import onnx
 import onnxruntime as ort
 import torch
 from onnxconverter_common import float16
+from PIL import Image
 from onnxruntime.quantization import QuantType, quantize_dynamic
 from torch import nn
 
@@ -73,6 +75,10 @@ class Export:
     output_range: tuple[float, float] = (0.0, 1.0)
     # An upstream ONNX file (in the weights folder) adopted as fp32.onnx instead of exporting.
     upstream_onnx: str | None = None
+    # PB10: the fixed image (in <weights>/test-images) INT8 and FP16 are checked against FP32 on,
+    # and the lowest INT8 PSNR against FP32 that may ship.
+    test_image: str = ""
+    int8_min_psnr: float = 0.0
 
 
 class ExportError(Exception):
@@ -157,9 +163,14 @@ def build_rmbg(folder: Path) -> nn.Module:
     return FirstOutput(net, lambda out: out[0][0])
 
 
+# PB10: the lowest INT8 PSNR against FP32, on each model's test image, that may ship. Set about
+# 2 dB under what the first export measured on 2026-10-19 (x4plus 33.1, x2plus 33.2, GFPGAN 31.2,
+# RMBG 29.2 dB), so a quantization that got worse fails while run-to-run noise does not.
+INT8_FLOOR = {"realesrgan-x4plus": 31.0, "realesrgan-x2plus": 31.0, "gfpgan-v1.4": 29.0, "rmbg-1.4": 27.0}
+
 EXPORTS = [
-    Export("realesrgan-x4plus", "RealESRGAN_x4plus.pth", build_rrdbnet(4, "RealESRGAN_x4plus.pth")),
-    Export("realesrgan-x2plus", "RealESRGAN_x2plus.pth", build_rrdbnet(2, "RealESRGAN_x2plus.pth"), multiple=2),
+    Export("realesrgan-x4plus", "RealESRGAN_x4plus.pth", build_rrdbnet(4, "RealESRGAN_x4plus.pth"), test_image="0014.jpg", int8_min_psnr=INT8_FLOOR["realesrgan-x4plus"]),
+    Export("realesrgan-x2plus", "RealESRGAN_x2plus.pth", build_rrdbnet(2, "RealESRGAN_x2plus.pth"), multiple=2, test_image="0014.jpg", int8_min_psnr=INT8_FLOOR["realesrgan-x2plus"]),
     Export(
         "gfpgan-v1.4",
         "GFPGANv1.4.pth",
@@ -167,6 +178,8 @@ EXPORTS = [
         size=512,
         input_range=(-1.0, 1.0),
         output_range=(-1.0, 1.0),
+        test_image="Adele_crop.png",
+        int8_min_psnr=INT8_FLOOR["gfpgan-v1.4"],
     ),
     Export(
         "rmbg-1.4",
@@ -175,6 +188,8 @@ EXPORTS = [
         size=1024,
         input_range=(-0.5, 0.5),
         upstream_onnx="RMBG-1.4.onnx",
+        test_image="example_input.jpg",
+        int8_min_psnr=INT8_FLOOR["rmbg-1.4"],
     ),
 ]
 
@@ -241,6 +256,69 @@ def quantize_int8(fp32: Path, target: Path) -> str:
     )
 
 
+def prepare(spec: Export, image: Path) -> np.ndarray:
+    """The test image as the model's input: RGB, resized to a fixed size or cropped to the multiple."""
+    if not image.is_file():
+        raise ExportError(f"{spec.name}: {image} is missing; run scripts/download_models.py first")
+    picture = Image.open(image).convert("RGB")
+    if spec.size is not None:
+        picture = picture.resize((spec.size, spec.size), Image.Resampling.BILINEAR)
+    else:
+        w, h = picture.size
+        picture = picture.crop((0, 0, w - w % spec.multiple, h - h % spec.multiple))
+    pixels = np.asarray(picture, dtype=np.float32).transpose(2, 0, 1)[None] / 255.0
+    low, high = spec.input_range
+    return pixels * (high - low) + low
+
+
+def _box(x: np.ndarray, k: int) -> np.ndarray:
+    """Mean over every k x k window, by summed-area table ('valid' windows only)."""
+    s = np.pad(x, ((1, 0), (1, 0))).cumsum(0).cumsum(1)
+    return (s[k:, k:] - s[:-k, k:] - s[k:, :-k] + s[:-k, :-k]) / (k * k)
+
+
+def ssim(a: np.ndarray, b: np.ndarray, value_range: tuple[float, float] = (0.0, 1.0), k: int = 7) -> float:
+    """SSIM on the channel mean with a uniform k x k window: cheap, and enough to rank variants."""
+    low, high = value_range
+    x = np.clip(a, low, high).astype(np.float64).mean(axis=(0, 1))
+    y = np.clip(b, low, high).astype(np.float64).mean(axis=(0, 1))
+    c1, c2 = (0.01 * (high - low)) ** 2, (0.03 * (high - low)) ** 2
+    mx, my = _box(x, k), _box(y, k)
+    vx, vy = _box(x * x, k) - mx * mx, _box(y * y, k) - my * my
+    cov = _box(x * y, k) - mx * my
+    score = ((2 * mx * my + c1) * (2 * cov + c2)) / ((mx * mx + my * my + c1) * (vx + vy + c2))
+    return float(score.mean())
+
+
+def validate(spec: Export, folder: Path, images: Path) -> list[str]:
+    """PB10: every variant beside fp32.onnx against it on the test image; INT8 below its floor fails.
+
+    The numbers go to <folder>/meta.json under "validation", for the README table.
+    """
+    x = prepare(spec, images / spec.test_image)
+    reference = run(folder / "fp32.onnx", x)
+    results: dict[str, dict] = {}
+    lines = []
+    for variant in ("int8", "fp16"):
+        path = folder / f"{variant}.onnx"
+        if not path.is_file():
+            continue
+        out = run(path, x)
+        quality = psnr(out, reference, spec.output_range)
+        structure = ssim(out, reference, spec.output_range)
+        results[variant] = {"psnr_db": round(quality, 2), "ssim": round(structure, 4)}
+        lines.append(f"{variant} vs fp32 on {spec.test_image}: PSNR {quality:.1f} dB, SSIM {structure:.4f}")
+        if variant == "int8":
+            results[variant]["min_psnr_db"] = spec.int8_min_psnr
+            if quality < spec.int8_min_psnr:
+                raise ExportError(f"{spec.name}: int8 PSNR {quality:.1f} dB is below its floor of {spec.int8_min_psnr} dB")
+    meta_path = folder / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else {}
+    meta["validation"] = {"image": spec.test_image, "input": list(x.shape), "against": "fp32", **results}
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    return lines
+
+
 def run(path: Path, x: np.ndarray) -> np.ndarray:
     session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
     name = session.get_inputs()[0].name
@@ -303,7 +381,7 @@ def export(spec: Export, weights: Path, out: Path, fp16: bool = True, int8: bool
         lines.append(f"fp16 dropped: below {FP16_MIN_PSNR} dB, so only fp32 is written")
     if int8:
         lines.append(quantize_int8(fp32_path, folder / "int8.onnx"))
-    return lines
+    return lines + validate(spec, folder, weights / "test-images")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -313,6 +391,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--only", action="append", default=[], metavar="NAME", help="export just this model; repeatable")
     parser.add_argument("--no-fp16", action="store_true", help="skip the FP16 variant")
     parser.add_argument("--no-int8", action="store_true", help="skip the INT8 variant")
+    parser.add_argument("--validate-only", action="store_true", help="only re-check the variants already in --out")
     args = parser.parse_args(argv)
 
     known = {e.name for e in EXPORTS}
@@ -326,9 +405,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.only and spec.name not in args.only:
             continue
         try:
-            for line in export(spec, args.weights, args.out, fp16=not args.no_fp16, int8=not args.no_int8):
+            if args.validate_only:
+                lines = validate(spec, args.out / spec.name, args.weights / "test-images")
+            else:
+                lines = export(spec, args.weights, args.out, fp16=not args.no_fp16, int8=not args.no_int8)
+            for line in lines:
                 print(f"{spec.name}: {line}")
-            print(f"{spec.name}: exported to {args.out / spec.name}")
+            print(f"{spec.name}: {'validated' if args.validate_only else 'exported to'} {args.out / spec.name}")
         except ExportError as error:
             print(f"ERROR {error}", file=sys.stderr)
             failed.append(spec.name)

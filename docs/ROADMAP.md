@@ -9,8 +9,7 @@
 
 ## Block B — Model management
 
-- 📋 **PB10** (deps: PB9 ✅) **INT8 models are not validated against FP32 on a test image** — A quantized model that silently degrades quality must fail the script, not ship. → §PB10
-- 📋 **PB11** (deps: PB9 ✅, PB10) **No models/<name>/{fp32.onnx, int8.onnx, meta.json} layout with SHA256 hashes** — The app verifies downloads by hash and reads scale, input layout and thresholds from meta.json. → §PB11
+- 📋 **PB11** (deps: PB9 ✅, PB10 ✅) **No models/<name>/{fp32.onnx, int8.onnx, meta.json} layout with SHA256 hashes** — The app verifies downloads by hash and reads scale, input layout and thresholds from meta.json. → §PB11
 - 📋 **PB12** (deps: PB11) **Generated ONNX models have no download location the app can fetch from** — First launch downloads models, so the exported files need a stable published home and a manifest. → §PB12
 - 📋 **PB13** (deps: PB12, PB37) **First launch has no Download models screen with progress and hash verification** — Without models nothing works, and a corrupt file must be caught before onnxruntime loads it. → §PB13
 
@@ -48,7 +47,7 @@
 ## Block F — Delivery: README, benchmarks and installers
 
 - 📋 **PB33** (deps: PB12, PB26) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
-- 📋 **PB34** (deps: PB10, PB22, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
+- 📋 **PB34** (deps: PB10 ✅, PB22, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
 - 📋 **PB35** (deps: PB26) **Release build produces no self-contained Windows installer** — Installers are a deliverable, and native ONNX Runtime binaries break easily in a single-file publish. → §PB35
 
 ## Block G — Phase 2: denoising

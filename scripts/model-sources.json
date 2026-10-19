@@ -78,5 +78,39 @@
       "license_url": "https://github.com/xuebinqin/U-2-Net/blob/master/LICENSE",
       "note": "Permissive fallback for background removal if RMBG-1.4's non-commercial license is unacceptable. Already ONNX. Not part of the default download until it is chosen."
     }
+  ],
+  "$comment_test_images": "PB10: the fixed images export-and-quantize.py checks INT8 and FP16 against FP32 on, one per model, each the upstream's own sample input. Downloaded into test-images/ beside the weights; never committed.",
+  "test_images": [
+    {
+      "name": "image-realesrgan",
+      "file": "0014.jpg",
+      "url": "https://raw.githubusercontent.com/xinntao/Real-ESRGAN/a4abfb2979a7bbff3f69f58f58ae324608821e27/inputs/0014.jpg",
+      "size": 9605,
+      "sha256": "444d2cc3bd9304b9a54e676e10081c8cdd2f3f2665e8c742760c97da481523a2",
+      "sha256_source": "computed",
+      "license": "BSD-3-Clause (repository)",
+      "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE"
+    },
+    {
+      "name": "image-gfpgan",
+      "file": "Adele_crop.png",
+      "url": "https://raw.githubusercontent.com/TencentARC/GFPGAN/7552a7791caad982045a7bbe5634bbf1cd5c8679/inputs/cropped_faces/Adele_crop.png",
+      "size": 303199,
+      "sha256": "2b7bbdb26005585ed4af616406cc8e6a4253fa3f8a8a3bd2cd0e4d687d51a7a1",
+      "sha256_source": "computed",
+      "license": "Apache-2.0 with third-party terms (repository)",
+      "license_url": "https://github.com/TencentARC/GFPGAN/blob/master/LICENSE",
+      "note": "An aligned 512x512 face crop, which is what GFPGAN sees."
+    },
+    {
+      "name": "image-rmbg",
+      "file": "example_input.jpg",
+      "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/example_input.jpg",
+      "size": 326645,
+      "sha256": "1e9cff13a43d13ec0d0d733a55234e862a35c282cdbfa197c85223a937f28a56",
+      "sha256_source": "computed",
+      "license": "bria-rmbg-1.4 (non-commercial)",
+      "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/"
+    }
   ]
 }

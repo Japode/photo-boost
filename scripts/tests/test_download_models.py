@@ -112,13 +112,19 @@ class SelectionTests(unittest.TestCase):
     def test_include_adds_an_optional_model(self):
         self.assertIn("u2net", [s.name for s in dm.select(self.sources, [], ["u2net"])])
 
+    def test_test_images_are_downloaded_by_default_into_their_folder(self):
+        # PB10: the validation images come with the weights, under test-images/.
+        images = [s for s in dm.select(self.sources, [], []) if s.name.startswith("image-")]
+        self.assertEqual(3, len(images))
+        self.assertTrue(all(s.file.startswith("test-images/") for s in images))
+
     def test_unknown_name_is_refused(self):
         with self.assertRaises(dm.DownloadError):
             dm.select(self.sources, ["nope"], [])
 
     def test_every_recorded_source_is_complete(self):
         data = json.loads(dm.SOURCES.read_text(encoding="utf-8"))
-        for model in data["models"]:
+        for model in data["models"] + data["test_images"]:
             with self.subTest(model["name"]):
                 self.assertRegex(model["sha256"], r"^[0-9a-f]{64}$")
                 self.assertTrue(model["url"].startswith("https://"))

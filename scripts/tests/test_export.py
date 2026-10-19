@@ -7,6 +7,7 @@ skipped and unittest says so in its summary.
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,7 @@ try:
     import numpy as np
     import onnx
     import torch
+    from PIL import Image
 except ImportError:
     torch = None
 
@@ -110,6 +112,43 @@ class ExportTests(unittest.TestCase):
         weights = [i for i in onnx.load(str(int8)).graph.initializer if i.name.endswith("_quantized")]
         self.assertTrue(weights)
         self.assertTrue(all(w.data_type == onnx.TensorProto.UINT8 for w in weights))
+
+    def validation_folder(self, floor: float):
+        """A tiny x4 export with an int8 variant, and a test image, laid out as the script expects."""
+        model, _, fp32, _ = self.exported(4)
+        self.ex.quantize_int8(fp32, self.folder / "int8.onnx")
+        images = self.folder / "test-images"
+        images.mkdir()
+        rng = np.random.default_rng(3)
+        Image.fromarray(rng.integers(0, 256, (20, 30, 3), dtype=np.uint8)).save(images / "probe.png")
+        return self.spec(4, test_image="probe.png", int8_min_psnr=floor), images
+
+    def test_validation_writes_psnr_and_ssim_to_meta_json(self):
+        # PB10: the numbers the README table reads.
+        spec, images = self.validation_folder(floor=0.0)
+        lines = self.ex.validate(spec, self.folder, images)
+        meta = json.loads((self.folder / "meta.json").read_text(encoding="utf-8"))["validation"]
+        self.assertEqual([1, 3, 20, 30], meta["input"])
+        self.assertIn("psnr_db", meta["int8"])
+        self.assertIn("ssim", meta["fp16"])
+        self.assertEqual(2, len(lines))
+
+    def test_int8_below_its_floor_fails_the_script(self):
+        spec, images = self.validation_folder(floor=200.0)
+        with self.assertRaises(self.ex.ExportError):
+            self.ex.validate(spec, self.folder, images)
+
+    def test_ssim_is_one_for_identical_images_and_lower_otherwise(self):
+        rng = np.random.default_rng(5)
+        a = rng.random((1, 3, 32, 32)).astype(np.float32)
+        self.assertAlmostEqual(1.0, self.ex.ssim(a, a), places=6)
+        self.assertLess(self.ex.ssim(a, np.clip(a + rng.normal(0, 0.2, a.shape), 0, 1)), 0.9)
+
+    def test_every_model_has_a_test_image_and_an_int8_floor(self):
+        for spec in self.ex.EXPORTS:
+            with self.subTest(spec.name):
+                self.assertTrue(spec.test_image)
+                self.assertGreater(spec.int8_min_psnr, 0)
 
     def test_psnr_uses_the_output_range(self):
         a = np.zeros((1, 1, 4, 4), dtype=np.float32)

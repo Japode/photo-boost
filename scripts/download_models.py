@@ -46,10 +46,12 @@ class DownloadError(Exception):
 
 
 def load_sources(path: Path = SOURCES) -> list[Source]:
+    """The weights, then the test images export-and-quantize.py validates on (in test-images/)."""
     data = json.loads(path.read_text(encoding="utf-8"))
+    entries = [(m, "") for m in data["models"]] + [(m, "test-images/") for m in data.get("test_images", [])]
     return [
-        Source(m["name"], m["file"], m["url"], int(m["size"]), m["sha256"].lower(), bool(m.get("optional", False)))
-        for m in data["models"]
+        Source(m["name"], folder + m["file"], m["url"], int(m["size"]), m["sha256"].lower(), bool(m.get("optional", False)))
+        for m, folder in entries
     ]
 
 
@@ -77,8 +79,8 @@ def is_valid(path: Path, source: Source) -> bool:
 
 def fetch(source: Source, dest: Path, out=sys.stdout) -> str:
     """Make dest/<file> a valid copy of source. Returns 'present' or 'downloaded'."""
-    dest.mkdir(parents=True, exist_ok=True)
     final = dest / source.file
+    final.parent.mkdir(parents=True, exist_ok=True)
     if is_valid(final, source):
         print(f"{source.name}: present and valid, skipped", file=out)
         return "present"
