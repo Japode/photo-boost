@@ -25,6 +25,7 @@
 - ✅ **PB16** **ONNX sessions are not loaded on demand nor released after idle minutes** — SessionCache loads a model variant's session on first use, lends it out by lease, drops the model's other variant on a switch and releases sessions idle for 5 minutes.
 - ✅ **PB17** **No preprocessing to and from model tensors, and no unit tests for it** — ImageDecoder now reads any WIC format into RgbaImage upright per EXIF, converted to sRGB, with alpha, grayscale and 16-bit samples kept, tested on JPEG, PNG and WebP.
 - ✅ **PB18** **Large images cannot be processed: no tiling with overlap** — Tiler runs a model over 256px tiles with 16px overlap and stitches exact cores, padding odd sizes for even-only models; a neighbour-reading model matches a whole-image run bit for bit.
+- ✅ **PB19** **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscale runs Real-ESRGAN x4plus, or native x2plus for 2x, through the tiler and a ModelLibrary session, with 32 px overlap measured at 45 dB against a whole run and alpha resized bilinearly.
 
 ## Block D — Editor: comparison, history and quality modes
 

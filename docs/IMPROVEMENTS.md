@@ -71,12 +71,6 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB19 Upscale pipeline
-
-PhotoBoost.Inference/Pipelines/Upscale.cs drives the tiled run of RealESRGAN_x4plus. 2x
-is either the x2plus model or x4 followed by a Lanczos downscale; decide from quality
-and download size. Alpha channels are upscaled separately with a plain resampler.
-
 ### §PB20 Inference progress
 
 The pipeline reports {jobId, tile, totalTiles, stage} through IProgress, throttled. The
@@ -126,8 +120,9 @@ operator's desktop. Also run the real models by hand on DirectML.
 
 Read the local budget and usage with DXGI QueryVideoMemoryInfo through Vortice, multiply
 by the bytes per tile pixel in meta.json, and pick the largest tile from 128 to 1024
-that fits with a margin. On CPU, size from available RAM. The OOM retry stays as the
-safety net. Log the choice.
+that fits with a margin. On CPU, size from available RAM. Size the input, not the core:
+a tile reads Upscale.DefaultOverlap (32 px, measured in PB19) on each side. The OOM
+retry stays as the safety net. Log the choice.
 
 ### §PB42 Tiny model fixture for cases
 
