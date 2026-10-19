@@ -26,10 +26,12 @@ Claude plugin at project scope. Friction goes to winwright's roadmap (WW).
 ### §PB39 Command-line flags
 
 Flags in the quickshell style, documented in docs/COMMAND-LINE.md: --open <path>,
---models <dir>, --provider dml|cpu|cuda, --export <path> (write the current result and
-stay open), --quality fast|high. Parsed in one place, unit tested, and ignored values
-rejected with a clear message. These stand in for WW550 (drop from Explorer) and WW551
-(Open/Save dialogs); once those ship, add cases that drive the real drop and dialogs.
+--models <dir>, --provider auto|dml|cpu (parsed by ProviderDetector.TryParse from PB14
+and handed to ProviderDetector.Detect in MainWindow; CUDA is not shipped), --export
+<path> (write the current result and stay open), --quality compact|high (PB29 renamed
+fast). Parsed in one place, unit tested, and ignored values rejected with a clear
+message. These stand in for WW550 (drop from Explorer) and WW551 (Open/Save dialogs);
+once those ship, add cases that drive the real drop and dialogs.
 
 ### §PB40 GPU image display spike
 
@@ -68,18 +70,6 @@ card style. Later launches only re-check presence and hashes. INT8 is the defaul
 download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
-
-### §PB14 Execution provider detection
-
-Use Microsoft.ML.OnnxRuntime.DirectML 1.24.4, the package the PB5 spike chose
-(spike/onnx-runtime/README.md). Try DirectML on the DXGI adapter with the most video
-memory, then CPU, by creating a session on a tiny probe model; keep the first that
-works. Put AppendExecutionProvider_DML itself inside the try: in the spike it threw
-887A0004 once in about thirty runs on a working GPU, before any session existed.
-DirectML needs EnableMemoryPattern off and sequential execution. CUDA is not shipped
-(rejected by the spike); Windows ML is PB43, waiting for the owner. Name the adapter
-through DXGI, show provider and GPU in the status bar, and accept --provider to force
-one.
 
 ### §PB15 InferenceService queue
 

@@ -5,5 +5,13 @@
         Width="1100"
         Height="720"
         WindowStartupLocation="CenterScreen">
-  <Grid />
+  <DockPanel>
+    <!-- PB14: where inference runs, so a slow upscale on CPU is never a mystery. -->
+    <StatusBar DockPanel.Dock="Bottom">
+      <StatusBarItem>
+        <TextBlock x:Name="ProviderStatus" AutomationProperties.AutomationId="ProviderStatus" Text="Detecting GPU…" />
+      </StatusBarItem>
+    </StatusBar>
+    <Grid />
+  </DockPanel>
 </Window>

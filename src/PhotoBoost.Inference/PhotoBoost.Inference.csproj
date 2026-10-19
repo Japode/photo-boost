@@ -8,6 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The PB5 spike's choice (spike/onnx-runtime/README.md): any DX12 GPU, exact against CPU,
+         nothing fetched from Windows Update. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+    <!-- Only to list adapters and their video memory; rendering stays in PhotoBoost.Render. -->
+    <PackageReference Include="Vortice.DXGI" Version="3.8.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\PhotoBoost.Imaging\PhotoBoost.Imaging.csproj" />
   </ItemGroup>
 

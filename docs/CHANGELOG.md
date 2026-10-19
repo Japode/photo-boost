@@ -20,6 +20,8 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
+- ✅ **PB14** **Execution provider is neither detected at runtime nor shown in the UI** — ProviderDetector runs a probe session on DirectML on the GPU with the most video memory, falls back to CPU with the reason, and the status bar shows the provider and GPU.
+
 ## Block D — Editor: comparison, history and quality modes
 
 ## Block E — Face restoration and background removal
