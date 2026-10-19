@@ -2,23 +2,34 @@ using System.Threading.Channels;
 
 namespace PhotoBoost.Inference;
 
-/// <summary>How far a job has got, e.g. tile 3 of 12.</summary>
+/// <summary>How far a job has got, e.g. tile 3 of 12 of the upscale stage, about 40 s left.</summary>
 /// <param name="JobId">The job reporting.</param>
-/// <param name="Done">Steps finished.</param>
-/// <param name="Total">Steps in all.</param>
-public readonly record struct JobProgress(long JobId, int Done, int Total);
+/// <param name="Done">Steps finished in this stage.</param>
+/// <param name="Total">Steps in this stage.</param>
+/// <param name="Stage">What the steps are, e.g. "upscale"; empty for a job with one stage.</param>
+/// <param name="Remaining">The time left in this stage from the steps' pace so far, or null before the first.</param>
+public readonly record struct JobProgress(long JobId, int Done, int Total, string Stage = "", TimeSpan? Remaining = null);
 
 /// <summary>What a running job sees: its cancellation and its progress report.</summary>
 public sealed class JobContext
 {
     private readonly IProgress<JobProgress>? progress;
+    private readonly TimeProvider time;
+    private readonly TimeSpan interval;
+    private string stage = string.Empty;
+    private long stageStarted;
+    private long lastSent;
+    private bool sentAny;
 
-    internal JobContext(long id, string operation, CancellationToken cancellation, IProgress<JobProgress>? progress)
+    internal JobContext(long id, string operation, CancellationToken cancellation, IProgress<JobProgress>? progress, TimeProvider time, TimeSpan interval)
     {
         Id = id;
         Operation = operation;
         Cancellation = cancellation;
         this.progress = progress;
+        this.time = time;
+        this.interval = interval;
+        stageStarted = time.GetTimestamp();
     }
 
     /// <summary>The job's id.</summary>
@@ -30,12 +41,33 @@ public sealed class JobContext
     /// <summary>Signalled when the job is cancelled; a job checks it between tiles.</summary>
     public CancellationToken Cancellation { get; }
 
-    /// <summary>Reports progress and then stops the job if it was cancelled meanwhile.</summary>
-    /// <param name="done">Steps finished.</param>
-    /// <param name="total">Steps in all.</param>
-    public void Report(int done, int total)
+    /// <summary>
+    /// Reports progress, at most once per interval (PB20: a 4x upscale of a large photo has
+    /// thousands of tiles, and the UI thread should not hear of every one), and then stops the job
+    /// if it was cancelled meanwhile. The first step, the last step and a new stage always go out.
+    /// </summary>
+    /// <param name="done">Steps finished in this stage.</param>
+    /// <param name="total">Steps in this stage.</param>
+    /// <param name="stageName">What the steps are; a new name starts the stage's clock again.</param>
+    public void Report(int done, int total, string stageName = "")
     {
-        progress?.Report(new JobProgress(Id, done, total));
+        long now = time.GetTimestamp();
+        bool newStage = !string.Equals(stageName, stage, StringComparison.Ordinal);
+        if (newStage)
+        {
+            stage = stageName;
+            stageStarted = now;
+        }
+
+        if (progress is not null && (newStage || !sentAny || done >= total || time.GetElapsedTime(lastSent, now) >= interval))
+        {
+            TimeSpan elapsed = time.GetElapsedTime(stageStarted, now);
+            TimeSpan? remaining = done > 0 && !newStage ? elapsed / done * (total - done) : null;
+            progress.Report(new JobProgress(Id, done, total, stage, remaining));
+            lastSent = now;
+            sentAny = true;
+        }
+
         Cancellation.ThrowIfCancellationRequested();
     }
 }
@@ -77,11 +109,22 @@ public sealed class InferenceService : IAsyncDisposable
     private readonly Channel<Func<Task>> queue = Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions { SingleReader = true });
     private readonly CancellationTokenSource shutdown = new();
     private readonly Task worker;
+    private readonly TimeProvider time;
+    private readonly TimeSpan progressInterval;
     private long lastId;
 
+    /// <summary>The longest a progress report waits behind the one before it, unless configured.</summary>
+    public static readonly TimeSpan DefaultProgressInterval = TimeSpan.FromMilliseconds(100);
+
     /// <summary>Starts the queue's thread.</summary>
-    public InferenceService() =>
+    /// <param name="progressInterval">The least time between two progress reports of a job.</param>
+    /// <param name="time">The clock progress is paced and estimated with; TimeProvider.System in the app.</param>
+    public InferenceService(TimeSpan? progressInterval = null, TimeProvider? time = null)
+    {
+        this.time = time ?? TimeProvider.System;
+        this.progressInterval = progressInterval ?? DefaultProgressInterval;
         worker = Task.Factory.StartNew(Drain, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
+    }
 
     /// <summary>Queues work. The progress callback runs where <paramref name="progress"/> was made,
     /// so a <see cref="Progress{T}"/> created on the UI thread reports there.</summary>
@@ -104,7 +147,7 @@ public sealed class InferenceService : IAsyncDisposable
             try
             {
                 cancellation.Token.ThrowIfCancellationRequested();
-                completion.TrySetResult(work(new JobContext(id, operation, cancellation.Token, progress)));
+                completion.TrySetResult(work(new JobContext(id, operation, cancellation.Token, progress, time, progressInterval)));
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
             {

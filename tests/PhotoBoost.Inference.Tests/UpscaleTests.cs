@@ -72,6 +72,25 @@ public sealed class UpscaleTests : IDisposable
     }
 
     [Fact]
+    public async Task AQueuedUpscaleReportsTilesUnderItsStageAndFinishes()
+    {
+        // PB20: the job the operations panel will start, through the queue with tile progress.
+        using ModelLibrary library = new(root, Cpu);
+        await using InferenceService service = new(TimeSpan.Zero);
+        List<JobProgress> seen = [];
+        SyncProgress progress = new(seen);
+
+        InferenceJob<RgbaImage> job = UpscaleJob.Enqueue(service, library, Pattern(300, 40, opaque: true), 2, "fp32", progress);
+        RgbaImage result = await job.Completion.WaitAsync(TimeSpan.FromSeconds(60), TestContext.Current.CancellationToken);
+
+        Assert.Equal((600, 80), (result.Width, result.Height));
+        Assert.NotEmpty(seen);
+        Assert.All(seen, p => Assert.Equal(UpscaleJob.Stage, p.Stage));
+        Assert.Equal(seen[^1].Total, seen[^1].Done);
+        Assert.Equal(TimeSpan.Zero, seen[^1].Remaining);
+    }
+
+    [Fact]
     public void FactorsOtherThanTwoAndFourAreRefused() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => Upscale.ModelFor(3));
 
@@ -95,6 +114,11 @@ public sealed class UpscaleTests : IDisposable
         // RRDBNet sees further than any practical overlap, so seams are close rather than exact:
         // 45.0 dB at the default 32 px when measured, 36.2 dB at the tiler's generic 16.
         Assert.True(Psnr(tiled, whole) > 42, $"tiled vs whole: {Psnr(tiled, whole):F1} dB");
+    }
+
+    private sealed class SyncProgress(List<JobProgress> seen) : IProgress<JobProgress>
+    {
+        public void Report(JobProgress value) => seen.Add(value);
     }
 
     private static RgbaImage Pattern(int w, int h, bool opaque)

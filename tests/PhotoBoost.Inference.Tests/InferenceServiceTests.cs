@@ -97,7 +97,7 @@ public sealed class InferenceServiceTests
     [Fact]
     public async Task ProgressCarriesTheJobAndTileCounts()
     {
-        await using InferenceService service = new();
+        await using InferenceService service = new(progressInterval: TimeSpan.Zero);
         List<JobProgress> seen = [];
         SynchronousProgress progress = new(seen);
 
@@ -112,7 +112,56 @@ public sealed class InferenceServiceTests
         }, progress);
         await job.Completion.WaitAsync(Patience, TestContext.Current.CancellationToken);
 
-        Assert.Equal([new(job.Id, 1, 3), new(job.Id, 2, 3), new(job.Id, 3, 3)], seen);
+        Assert.Equal([(job.Id, 1, 3), (job.Id, 2, 3), (job.Id, 3, 3)], seen.Select(p => (p.JobId, p.Done, p.Total)));
+    }
+
+    [Fact]
+    public async Task ReportsAreThrottledButTheFirstAndLastAlwaysGoOut()
+    {
+        // PB20: ten 30 ms tiles against a 100 ms interval.
+        ManualClock clock = new();
+        await using InferenceService service = new(TimeSpan.FromMilliseconds(100), clock);
+        List<JobProgress> seen = [];
+
+        InferenceJob<int> job = service.Enqueue("upscale", context =>
+        {
+            for (int tile = 1; tile <= 10; tile++)
+            {
+                clock.Advance(TimeSpan.FromMilliseconds(30));
+                context.Report(tile, 10, "upscale");
+            }
+
+            return 10;
+        }, new SynchronousProgress(seen));
+        await job.Completion.WaitAsync(Patience, TestContext.Current.CancellationToken);
+
+        Assert.Equal([1, 5, 9, 10], seen.Select(p => p.Done));
+    }
+
+    [Fact]
+    public async Task TheTimeLeftComesFromThePaceOfTheStage()
+    {
+        ManualClock clock = new();
+        await using InferenceService service = new(TimeSpan.Zero, clock);
+        List<JobProgress> seen = [];
+
+        InferenceJob<int> job = service.Enqueue("restore", context =>
+        {
+            context.Report(0, 5, "detect");
+            clock.Advance(TimeSpan.FromSeconds(1));
+            context.Report(5, 5, "detect");
+            context.Report(0, 10, "restore");
+            clock.Advance(TimeSpan.FromSeconds(4));
+            context.Report(2, 10, "restore");
+            return 0;
+        }, new SynchronousProgress(seen));
+        await job.Completion.WaitAsync(Patience, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["detect", "detect", "restore", "restore"], seen.Select(p => p.Stage));
+        Assert.Null(seen[0].Remaining);
+        Assert.Equal(TimeSpan.Zero, seen[1].Remaining);
+        Assert.Null(seen[2].Remaining);
+        Assert.Equal(TimeSpan.FromSeconds(16), seen[3].Remaining);
     }
 
     [Fact]
@@ -148,5 +197,17 @@ public sealed class InferenceServiceTests
     private sealed class SynchronousProgress(List<JobProgress> seen) : IProgress<JobProgress>
     {
         public void Report(JobProgress value) => seen.Add(value);
+    }
+
+    /// <summary>A timestamp clock the job itself moves, so pacing is exact.</summary>
+    private sealed class ManualClock : TimeProvider
+    {
+        private long ticks;
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp() => Interlocked.Read(ref ticks);
+
+        public void Advance(TimeSpan by) => Interlocked.Add(ref ticks, by.Ticks);
     }
 }

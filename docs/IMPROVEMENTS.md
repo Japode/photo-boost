@@ -71,12 +71,6 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB20 Inference progress
-
-The pipeline reports {jobId, tile, totalTiles, stage} through IProgress, throttled. The
-operations panel shows a progress bar with an automation id cases can read, an ETA from
-tile timings and a cancel button.
-
 ### §PB21 OOM retry
 
 Recognise allocation failures from ONNX Runtime (DirectML E_OUTOFMEMORY and
@@ -101,6 +95,10 @@ verb for a drop from Explorer.
 
 Side panel listing operations; upscale offers 2x/4x. Disabled while a job runs or models
 are missing. Built so face restore and background removal slot in as entries later.
+Start the run with UpscaleJob.Enqueue (PB20) and a Progress&lt;JobProgress&gt; made on
+the UI thread: show "tile Done of Total" in a ProgressBar with AutomationId
+"JobProgress" for cases, the Remaining estimate once it is not null, and a cancel button
+calling the job's Cancel.
 
 ### §PB25 Export
 
