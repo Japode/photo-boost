@@ -71,12 +71,6 @@ download; FP16 for GPU and FP32 are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB15 InferenceService queue
-
-A single queue in PhotoBoost.Inference running on a background thread. Jobs carry an id,
-operation and options, can be cancelled while queued or between tiles, and report
-results and progress through IProgress back to the UI thread.
-
 ### §PB16 Session lifecycle
 
 Load a session on first use of a model/variant, cache it, and release it after N idle

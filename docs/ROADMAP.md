@@ -14,8 +14,7 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB15** (deps: PB14 ✅) **No InferenceService queue that runs one inference at a time** — Two concurrent sessions on one GPU or in limited RAM is the fastest route to OOM. → §PB15
-- 📋 **PB16** (deps: PB15) **ONNX sessions are not loaded on demand nor released after idle minutes** — Keeping every model resident wastes memory the user needs for large images. → §PB16
+- 📋 **PB16** (deps: PB15 ✅) **ONNX sessions are not loaded on demand nor released after idle minutes** — Keeping every model resident wastes memory the user needs for large images. → §PB16
 - 📋 **PB17** (deps: PB2 ✅, PB5 ✅) **No preprocessing to and from model tensors, and no unit tests for it** — Every pipeline converts images to normalized NCHW float tensors and back; one bug corrupts all outputs. → §PB17
 - 📋 **PB18** (deps: PB17) **Large images cannot be processed: no tiling with overlap** — Running Real-ESRGAN on a full 12 MP image exhausts memory; tiles keep peak usage bounded. → §PB18
 - 📋 **PB19** (deps: PB11 ✅, PB16, PB18) **No Real-ESRGAN upscale pipeline for 2x and 4x** — Upscaling is the first operation and the one the end-to-end flow is built around. → §PB19
