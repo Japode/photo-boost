@@ -1,0 +1,54 @@
+; PB35: the per-user installer, after claude-tray's. Built by build\build-installer.cmd, which
+; publishes first. Every relative path is resolved against this file's folder (build\).
+; Output: artifacts\installer\PhotoBoost-Setup-<version>.exe
+
+#define MyAppName "PhotoBoost"
+#define MyAppPublisher "Alexandre Oliveira"
+#define MyAppExeName "PhotoBoost.exe"
+#define MyPublishDir "..\artifacts\publish"
+; Read from the published exe, whose version comes from Directory.Build.props: one place to bump.
+#define MyAppVersion GetStringFileInfo(MyPublishDir + "\" + MyAppExeName, PRODUCT_VERSION)
+
+[Setup]
+AppId={{08E0D5A3-3E55-4B47-9528-FD1AA1E43DD0}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+; Per user, no administrator: models download into the user's own folder anyway.
+PrivilegesRequired=lowest
+DefaultDirName={localappdata}\Programs\PhotoBoost
+DisableProgramGroupPage=yes
+DefaultGroupName={#MyAppName}
+UninstallDisplayIcon={app}\{#MyAppExeName}
+OutputDir=..\artifacts\installer
+OutputBaseFilename=PhotoBoost-Setup-{#MyAppVersion}
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+; x64 only, as the build is (Directory.Build.props), on Windows 10 1809 or later.
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+MinVersion=10.0.17763
+CloseApplications=yes
+RestartApplications=no
+
+[Languages]
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+[Files]
+; The single-file exe and the natives ONNX Runtime, DirectML, WPF and SkiaSharp load from beside
+; it (the PB5 spike ran DirectML this way). The licenses folder is collect-notices.ps1's.
+Source: "{#MyPublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; \
+    Excludes: "*.pdb,DirectML.Debug.dll,*.lib,*.xml"
+
+[Icons]
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent

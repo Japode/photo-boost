@@ -108,19 +108,6 @@ Paste the result into the README with the hardware it ran on. The PB5 spike's Or
 --model already times a model file on CPU and DirectML from C#; PB9's first numbers are
 in the PB29 design.
 
-### §PB35 Installer
-
-Follow claude-tray: a self-contained single-file publish (ReadyToRun), an Inno Setup
-per-user installer built by a build-installer.cmd, and optionally winget manifests. The
-version lives in one place and is checked against app.manifest, as pportal does. Models
-are not bundled. The PB5 spike ran DirectML from a single-file exe both with natives
-beside it and self-extracted; exclude DirectML.Debug.dll, the .pdb files and
-onnxruntime.lib the package copies (about 14.5 MB). libSkiaSharp.dll ships too: WebP
-export (PB25) needs it, MIT, to be credited beside ONNX Runtime and DirectML in the
-third-party notices. Smoke-test the installed app offline after models are downloaded.
-The non-goal Builds for macOS, Linux, web or mobile does not apply: this is the one
-Windows build.
-
 ### §PB46 About page with model licenses
 
 Found by PB31. The roadmap's sections for face restore (PB31) and background removal

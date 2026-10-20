@@ -26,7 +26,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Deterministic>true</Deterministic>
 
+    <!-- The one place the version lives (PB35): the installer reads it back from the published
+         exe, and a test holds app.manifest to it. No commit hash appended, so it reads as written. -->
     <Version>0.1.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
