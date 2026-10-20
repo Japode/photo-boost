@@ -13,6 +13,11 @@ export const repoUrl = "https://github.com/Japode/photo-boost";
 
 export const asset = (path: string) => `${BASE}${path}`;
 
+// PB49: the Japode storefront, at the root of the origin this site is served from, so the link
+// keeps working when the site moves from japode.github.io to its own domain.
+export const familyHref = "/";
+export const familyName = "Japode";
+
 export type Lang = "en" | "pt";
 export type Backdrop = "checker" | "white" | "clay" | "night";
 
@@ -117,6 +122,7 @@ type OperationWords = {
 type Words = {
   meta: { title: string; description: string };
   nav: { links: { href: string; label: string }[]; cta: string; themeLabel: (next: string) => string };
+  family: { pre: string; title: string };
   hero: {
     eyebrow: string;
     title: string;
@@ -184,6 +190,10 @@ const en: Words = {
     ],
     cta: "Download",
     themeLabel: (next) => `Switch to the ${next} theme`,
+  },
+  family: {
+    pre: "part of",
+    title: "Japode: small software that does one job",
   },
   hero: {
     eyebrow: "For Windows · runs on your computer",
@@ -348,8 +358,9 @@ const en: Words = {
       { href: "#privacy", label: "Privacy" },
       { href: "#download", label: "Download" },
       { href: repoUrl, label: "GitHub" },
+      { href: familyHref, label: "More from Japode" },
     ],
-    disclaimer: "PhotoBoost is an independent project. The models' names belong to their authors.",
+    disclaimer: "PhotoBoost is a Japode product. The models' names belong to their authors.",
   },
 };
 
@@ -368,6 +379,10 @@ const pt: Words = {
     ],
     cta: "Baixar",
     themeLabel: (next) => (next === "dark" ? "Mudar para o tema escuro" : "Mudar para o tema claro"),
+  },
+  family: {
+    pre: "parte da",
+    title: "Japode: softwares pequenos que fazem uma coisa bem",
   },
   hero: {
     eyebrow: "Para Windows · roda no seu computador",
@@ -532,8 +547,9 @@ const pt: Words = {
       { href: "#privacy", label: "Privacidade" },
       { href: "#download", label: "Baixar" },
       { href: repoUrl, label: "GitHub" },
+      { href: familyHref, label: "Mais da Japode" },
     ],
-    disclaimer: "PhotoBoost é um projeto independente. Os nomes dos modelos pertencem aos seus autores.",
+    disclaimer: "PhotoBoost é um produto Japode. Os nomes dos modelos pertencem aos seus autores.",
   },
 };
 

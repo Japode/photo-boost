@@ -112,15 +112,4 @@ Paste the result into the README with the hardware it ran on. The PB5 spike's Or
 --model already times a model file on CPU and DirectML from C#; PB9's first numbers are
 in the PB29 design.
 
-### §PB49 Linking back to the Japode storefront
-
-The storefront at the organization root (`Japode/japode.github.io`, JP7 there) lists
-PhotoBoost with a card and a page of its own at `/products/photo-boost/`. The way back
-is missing: nothing on this site says PhotoBoost is a Japode product. The design
-system's `SiteNav` already takes a `parent` chip (`{ href, name, pre }`) for exactly
-this, so the change is one prop in `site/src/components/Chrome.tsx`: `parent={{ href:
-"/", name: "Japode", pre: "part of" }}`, plus the same link in the footer. The href is
-the root of the origin this site is served from, so it keeps working when `SITE_ORIGIN`
-moves to https://japode.com. Copy in both languages, through `content.ts`.
-
 ## Block G — Phase 2: denoising

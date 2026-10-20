@@ -25,7 +25,6 @@
 
 - 📋 **PB33** (deps: PB12 ⏳, PB26 ✅) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
 - 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
-- 📋 **PB49** (deps: —) **PhotoBoost's site does not say it is a Japode product or link to the brand's site** — Someone who arrives through PhotoBoost never learns the other Japode products exist. → §PB49
 
 ## Block G — Phase 2: denoising
 

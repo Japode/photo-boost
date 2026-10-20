@@ -84,9 +84,19 @@ section {
 
 /* On a phone the nav keeps the language and the theme: the download is one of the hero's own
    two buttons, and the three together are wider than the screen. */
+/* PB49's family chip takes the room the download gave back, so the bar also trades its 24 px
+   gutter for 16 px and closes its gaps, or the theme toggle leaves the screen. */
 @media (max-width: 560px) {
   .vg-site-nav .vg-site-btn-primary {
     display: none;
+  }
+  .vg-site-nav .vg-site-wrap {
+    padding: 0 16px;
+    gap: 10px;
+  }
+  .vg-site-nav-left,
+  .vg-site-nav-links {
+    gap: 10px;
   }
 }
 

@@ -1,5 +1,5 @@
 import { SiteButton, SiteFooter, SiteNav, SiteThemeToggle } from "@viglet/viglet-design-system/site";
-import { asset, creditsFor, languages, pageHref, type Lang } from "../content";
+import { asset, creditsFor, familyHref, familyName, languages, pageHref, type Lang } from "../content";
 import { useLang, useWords } from "../i18n";
 
 // The nav and the footer, drawn by the design system's site layer so PhotoBoost sits in the
@@ -14,6 +14,8 @@ export function Nav() {
   return (
     <SiteNav
       brand={{ href: pageHref(lang), name: "PhotoBoost", logo: asset("icon.svg") }}
+      // PB49: the family chip, the way back to the Japode storefront.
+      parent={{ href: familyHref, name: familyName, pre: w.family.pre, title: w.family.title }}
       links={w.nav.links}
       actions={
         <>
