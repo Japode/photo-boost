@@ -6,25 +6,26 @@
 
 ## Block B — Model management
 
-- ⏳ **PB12** (deps: PB11 ✅, owner chooses the host and clears redistribution) **Generated ONNX models have no download location the app can fetch from** — The staged models are not published anywhere yet; that needs the owner's account and a license check. → §PB12
-- 📋 **PB13** (deps: PB12 ⏳, PB37 ✅) **First launch has no Download models screen with progress and hash verification** — Without models nothing works, and a corrupt file must be caught before onnxruntime loads it. → §PB13
+- ⏳ **PB12** (deps: PB11 ✅, owner creates the Hugging Face account and logs in) **The optional FP32 models have no public location the app can download them from** — The optional FP32 set needs a public host the app can fetch from; the owner chose Hugging Face and has to create the account. → §PB12
+- 📋 **PB13** (deps: PB12 ⏳, PB37 ✅, PB51) **The app has no button to download the optional FP32 models with progress and hash verification** — On a PC without a GPU FP32 runs about twice as fast as the bundled FP16, and a corrupt file must be caught before ONNX Runtime loads it. → §PB13
+- 📋 **PB51** (deps: PB35 ✅) **The installer carries no models, so a fresh install cannot run any operation** — The owner chose to ship the FP16 set inside the installer, so the app works offline from the first launch. → §PB51
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
+- 📋 **PB43** (deps: PB14 ✅) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, and the owner approved Windows ML as an option beside it. → §PB43
 
 ## Block D — Editor: comparison, history and quality modes
 
-- 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between INT8 and the High quality FP16/FP32 models** — The brief requires both variants selectable, trading speed and memory for fidelity. → §PB29
+- 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between the bundled FP16 models and the downloaded FP32 High quality set** — High quality, and on a CPU speed too, comes from FP32, so the reader needs a way to pick it once it is downloaded. → §PB29
 
 ## Block E — Face restoration and background removal
 
-- ⏳ **PB48** (deps: PB47 ✅, owner decides on a matting model download) **Background removal's edge stays soft where subject and background have the same brightness** — The grey guided filter cut the specks but widened the edge band by a third, so hair and pale fur still blur into a pale background. → §PB48
+- ⏳ **PB48** (deps: PB47 ✅) **Background removal's edge stays soft where subject and background have the same brightness** — The grey guided filter cut the specks but widened the edge band by a third, so hair and pale fur still blur into a pale background. → §PB48
 
 ## Block F — Delivery: README, benchmarks and installers
 
-- 📋 **PB33** (deps: PB12 ⏳, PB26 ✅) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
-- 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
+- 📋 **PB33** (deps: PB26 ✅, PB51) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
+- 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing the FP16 and FP32 sets' size, inference time and quality on GPU and CPU** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
 
 ## Block G — Phase 2: denoising
 
