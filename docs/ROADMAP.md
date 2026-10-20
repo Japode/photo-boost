@@ -12,8 +12,7 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB23** (deps: PB37 ✅, PB39 ✅) **No screen to open an image by drag and drop or file picker** — Opening a photo is the first step of every flow. → §PB23
-- 📋 **PB24** (deps: PB20 ✅, PB23) **No operations panel to run an upscale and pick 2x or 4x** — The user needs a control to trigger the pipeline and see its progress. → §PB24
+- 📋 **PB24** (deps: PB20 ✅, PB23 ✅) **No operations panel to run an upscale and pick 2x or 4x** — The user needs a control to trigger the pipeline and see its progress. → §PB24
 - ⏳ **PB25** (deps: PB19 ✅, PB24, PB39 ✅) **Results cannot be exported as PNG, JPG or WebP** — No save dialog, --export route or keep-metadata choice yet; they need the screens and flags that PB24 and PB39 add. → §PB25
 - 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24, PB25 ⏳, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB41** (deps: PB14 ✅, PB18 ✅) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41

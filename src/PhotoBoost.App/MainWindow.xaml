@@ -5,6 +5,9 @@
         Width="1100"
         Height="720"
         FontFamily="{StaticResource AppFont}"
+        AllowDrop="True"
+        DragOver="OnDragOver"
+        Drop="OnDrop"
         WindowStartupLocation="CenterScreen">
   <DockPanel>
     <!-- PB14: where inference runs, so a slow upscale on CPU is never a mystery. A chip that
@@ -16,6 +19,31 @@
         </Border>
       </StatusBarItem>
     </StatusBar>
-    <Grid />
+
+    <!-- PB23: the open screen. A drop zone and a button until an image is open, then the image. -->
+    <Grid Margin="24">
+      <Border x:Name="DropZone" AutomationProperties.AutomationId="DropZone" Style="{StaticResource GroupCard}"
+              Padding="48" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel HorizontalAlignment="Center">
+          <TextBlock Text="Drop a photo here" Style="{StaticResource StatValue}" HorizontalAlignment="Center" />
+          <TextBlock Text="PNG, JPG, WebP, TIFF and whatever else Windows can open" Style="{StaticResource StatCaption}"
+                     HorizontalAlignment="Center" Margin="0,6,0,20" />
+          <Button x:Name="OpenButton" AutomationProperties.AutomationId="OpenButton" Content="Open image…"
+                  HorizontalAlignment="Center" Padding="16,6" Click="OnOpenClick" />
+          <TextBlock x:Name="OpenError" AutomationProperties.AutomationId="OpenError" Visibility="Collapsed"
+                     Margin="0,16,0,0" TextWrapping="Wrap" MaxWidth="420" TextAlignment="Center"
+                     Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+        </StackPanel>
+      </Border>
+
+      <DockPanel x:Name="Viewer" Visibility="Collapsed">
+        <TextBlock x:Name="ImageInfo" AutomationProperties.AutomationId="ImageInfo" DockPanel.Dock="Top"
+                   Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
+        <Border x:Name="Backdrop" Style="{StaticResource GroupCard}" Padding="0" ClipToBounds="True">
+          <Image x:Name="Picture" AutomationProperties.AutomationId="OpenedImage" Stretch="Uniform"
+                 RenderOptions.BitmapScalingMode="HighQuality" />
+        </Border>
+      </DockPanel>
+    </Grid>
   </DockPanel>
 </Window>

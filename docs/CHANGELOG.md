@@ -33,6 +33,7 @@
 - ✅ **PB21** **An out-of-memory failure aborts the inference instead of retrying with smaller tiles** — An out-of-memory tile is retried at half size down to 64 px, then the run moves once to a CPU session; a lost GPU goes straight to CPU, and each step is logged.
 - ✅ **PB22** **Inference time and the provider used are not logged per operation** — Every queued upscale appends a JSON line with model, variant, provider, adapter, size, tiles, retries, wall time and outcome to a rotating log under LOCALAPPDATA.
 - ✅ **PB25 (encoder half)** **Results cannot be exported as PNG, JPG or WebP** — ImageEncoder writes PNG at 8 or 16 bits with alpha and JPEG with quality through WIC, flattening alpha on a chosen background, and WebP through SkiaSharp.
+- ✅ **PB23** **No screen to open an image by drag and drop or file picker** — The window opens on a drop zone with an Open button; a drop, the dialog or --open decode off the UI thread and show the photo upright with its name and size, or say why not.
 
 ## Block D — Editor: comparison, history and quality modes
 

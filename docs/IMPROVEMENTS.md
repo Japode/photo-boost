@@ -51,14 +51,6 @@ are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB23 Open image screen
-
-A drop zone accepting files dragged from Explorer plus the common open dialog, for PNG,
-JPG, WebP, TIFF and whatever WIC decodes (HEIC, AVIF when installed). --open <path>
-reaches the same state without either, which is how winwright cases get there: it has no
-verb for a drop from Explorer. The parsed value is MainWindow.Options.Open (PB39); a
-path that does not exist or does not decode shows the same error the drop zone would.
-
 ### §PB24 Operations panel
 
 Side panel listing operations; upscale offers 2x/4x. Disabled while a job runs or models

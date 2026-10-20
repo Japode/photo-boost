@@ -8,6 +8,18 @@
       "shareable": true
     },
     {
+      // PB23: --open stands in for a drop from Explorer, which winwright cannot drive (WW550).
+      // The path is relative to winwright.json's folder, where the app is started (WW508).
+      "name": "a window opened on the rotated JPEG fixture",
+      "arguments": ["--open", "tests/fixtures/images/rotated-exif6.jpg", "--provider", "cpu"],
+      "shareable": true
+    },
+    {
+      "name": "a window asked to open a file that is not there",
+      "arguments": ["--open", "tests/fixtures/images/missing.png", "--provider", "cpu"],
+      "shareable": true
+    },
+    {
       // PB39: --provider cpu, which a case uses to be the same on every desk.
       "name": "a window forced onto the CPU",
       "arguments": ["--provider", "cpu"],
@@ -65,6 +77,64 @@
           "reads": "name",
           "expect": "CPU",
           "named": "the provider chip says CPU and nothing else"
+        }
+      ]
+    },
+
+    {
+      "name": "a default installation opens on the drop zone with a way to pick a file",
+      "catches": "a first screen with nothing on it to open a photo with",
+      "filed": "PB23",
+      "tags": ["smoke", "open"],
+      "fixture": "the window a default installation opens",
+      "steps": [
+        {
+          "locator": "Button#OpenButton",
+          "act": "read",
+          "reads": "name",
+          "expect": "Open image…",
+          "named": "the open button is on the first screen"
+        }
+      ]
+    },
+
+    {
+      "name": "--open shows the photo upright with its name and size",
+      "catches": "an open that ignores EXIF orientation, shows nothing, or reports the wrong size",
+      "filed": "PB23",
+      "tags": ["open"],
+      "fixture": "a window opened on the rotated JPEG fixture",
+      "steps": [
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "the caption names the file and its upright size"
+        },
+        {
+          "locator": "Image#OpenedImage",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg",
+          "named": "the photo is on screen, named for its file"
+        }
+      ]
+    },
+
+    {
+      "name": "--open on a missing file says so on the drop zone",
+      "catches": "an open that fails silently or crashes the app on a bad path",
+      "filed": "PB23",
+      "tags": ["open"],
+      "fixture": "a window asked to open a file that is not there",
+      "steps": [
+        {
+          "locator": "Text#OpenError",
+          "act": "read",
+          "reads": "name",
+          "expect": "missing.png was not found.",
+          "named": "the drop zone names the missing file"
         }
       ]
     }
