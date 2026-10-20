@@ -15,6 +15,12 @@ setlocal
 cd /d "%~dp0.."
 
 set "PUBLISH=%CD%\artifacts\publish"
+
+rem Nothing may be running from the folder this is about to empty and rewrite: the guard names the
+rem pid and the path, and stops nothing on its own.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0guard-publish.ps1" -PublishDir "%PUBLISH%"
+if errorlevel 1 exit /b 1
+
 if exist "%PUBLISH%" rd /s /q "%PUBLISH%"
 if exist "%CD%\artifacts\installer" rd /s /q "%CD%\artifacts\installer"
 
