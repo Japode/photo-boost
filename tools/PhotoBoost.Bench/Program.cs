@@ -26,18 +26,18 @@ if (gpu.Provider == ExecutionProvider.DirectML)
 
 Operation[] operations =
 [
-    new("Ampliar 4×", "realesrgan-x4plus", "0014.jpg", (library, image, variant) => Upscale.Run(library, image, 4, variant, tile: 256)),
-    new("Ampliar 2×", "realesrgan-x2plus", "0014.jpg", (library, image, variant) => Upscale.Run(library, image, 2, variant, tile: 256)),
-    new("Restaurar rostos", "gfpgan-v1.4", "Blake_Lively.jpg", (library, image, variant) => FaceRestore.Run(library, image, variant).Image),
-    new("Remover fundo", "rmbg-1.4", "example_input.jpg", (library, image, variant) => RemoveBackground.Run(library, image, variant, refine: false), AlphaOnly: true),
-    new("Remover ruído", "scunet-color-real-psnr", "building.png", (library, image, variant) => Denoise.Run(library, image, variant, tile: 256)),
+    new("Upscale 4×", "realesrgan-x4plus", "0014.jpg", (library, image, variant) => Upscale.Run(library, image, 4, variant, tile: 256)),
+    new("Upscale 2×", "realesrgan-x2plus", "0014.jpg", (library, image, variant) => Upscale.Run(library, image, 2, variant, tile: 256)),
+    new("Restore faces", "gfpgan-v1.4", "Blake_Lively.jpg", (library, image, variant) => FaceRestore.Run(library, image, variant).Image),
+    new("Remove background", "rmbg-1.4", "example_input.jpg", (library, image, variant) => RemoveBackground.Run(library, image, variant, refine: false), AlphaOnly: true),
+    new("Remove noise", "scunet-color-real-psnr", "building.png", (library, image, variant) => Denoise.Run(library, image, variant, tile: 256)),
 ];
 
 string[] variants = ["fp16", "fp32"];
 StringBuilder table = new();
-table.AppendLine(CultureInfo.InvariantCulture, $"Medido em {DateTime.Now:yyyy-MM-dd}: {Cpu()}; {(gpu.Adapter is { } adapter ? adapter.Label : "sem GPU DirectML")}.");
+table.AppendLine(CultureInfo.InvariantCulture, $"Measured on {DateTime.Now:yyyy-MM-dd}: {Cpu()}; {(gpu.Adapter is { } adapter ? adapter.Label : "no DirectML GPU")}.");
 table.AppendLine();
-table.AppendLine("| Operação | Provedor | Variante | Arquivo | 1ª execução | Execução | Pico de memória | PSNR vs FP32 | SSIM vs FP32 |");
+table.AppendLine("| Operation | Provider | Variant | File | First run | Run | Peak memory | PSNR vs FP32 | SSIM vs FP32 |");
 table.AppendLine("| --- | --- | --- | --: | --: | --: | --: | --: | --: |");
 
 foreach (Operation operation in operations)

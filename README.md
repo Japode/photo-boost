@@ -1,66 +1,74 @@
 # PhotoBoost
 
-PhotoBoost é um aplicativo para Windows que melhora fotos com modelos de IA rodando no próprio
-computador, sem enviar nada para a nuvem. Ele faz quatro operações:
+PhotoBoost is a Windows app that improves photos with AI models running on your own computer.
+Nothing is uploaded. It does four things:
 
-| Operação | Modelo |
+| Operation | Model |
 | --- | --- |
-| Ampliar 2× e 4× | Real-ESRGAN x2plus e x4plus |
-| Restaurar rostos | YuNet (detecção) e GFPGAN v1.4 (restauração) |
-| Remover o fundo | RMBG-1.4, com a borda refinada pelo ViTMatte |
-| Remover ruído | SCUNet (real, PSNR) |
+| Upscale 2× and 4× | Real-ESRGAN x2plus and x4plus |
+| Restore faces | YuNet (detection) and GFPGAN v1.4 (restoration) |
+| Remove the background | RMBG-1.4, its edge refined by ViTMatte |
+| Remove noise | SCUNet (real, PSNR) |
 
-A interface é WPF. A inferência usa o ONNX Runtime do Windows ML, na GPU por DirectML ou na CPU,
-e o resultado pode ser comparado com o original, desfeito e exportado em PNG, JPEG ou WebP.
+The interface is WPF. Inference runs on Windows ML's ONNX Runtime, on the GPU through DirectML
+or on the CPU. A result can be compared with the original, undone, and exported as PNG, JPEG or
+WebP.
 
-## Requisitos
+## Requirements
 
-- **Windows 10 versão 1903 (19H1) ou posterior, ou Windows 11, x64.** O Windows ML não roda em
-  versões anteriores, e não há build para ARM, x86, macOS ou Linux.
-- **GPU com DirectX 12** para rodar na placa de vídeo. Sem ela, ou se a GPU falhar no teste de
-  inicialização, tudo roda na CPU, mais devagar, e a barra de status diz o motivo.
-- **Memória:** o tamanho de cada bloco (tile) é escolhido pela memória livre, a de vídeo na GPU
-  ou a RAM na CPU, de 128 a 1024 px. Para o Real-ESRGAN x4, o modelo mais pesado, a conta dá
-  cerca de 1,1 GB para blocos de 128 px, 3,1 GB para 256 px e 6,2 GB para 384 px. Com menos
-  memória o bloco só fica menor, e uma falta de memória no meio da execução tenta de novo com
-  blocos menores e depois na CPU.
-- **Espaço em disco:** cerca de 610 MB para os modelos que acompanham o instalador.
+- **Windows 10 version 1903 (19H1) or later, or Windows 11, x64.** Windows ML does not run on
+  older versions, and there is no build for ARM, x86, macOS or Linux.
+- **A DirectX 12 GPU** to run on the graphics card. Without one, or if the GPU fails the startup
+  check, everything runs on the CPU, more slowly, and the status bar says why.
+- **Memory:** each tile's size is picked from the free memory (video memory on the GPU, RAM on
+  the CPU), from 128 to 1024 px. For Real-ESRGAN x4, the heaviest model, that works out to about
+  1.1 GB for 128 px tiles, 3.1 GB for 256 px and 6.2 GB for 384 px. With less memory the tile is
+  simply smaller, and running out of memory mid-run retries with smaller tiles, then on the CPU.
+- **Disk space:** about 610 MB for the models the installer carries.
 
-## Instalar
+## Install
 
-O instalador (`PhotoBoost-Setup-<versão>.exe`) instala só para o usuário atual, sem pedir
-administrador, e já traz os modelos em FP16, então o aplicativo funciona offline desde a primeira
-vez que abre.
+Download `PhotoBoost-Setup-<version>.exe` from the
+[releases](https://github.com/Japode/photo-boost/releases). It installs for the current user,
+without administrator rights, and carries the models, so the app works offline from its first
+launch.
 
-## Rodar a partir do código
+The **Quality** card at the top of the operations panel chooses between **Standard**, the FP16
+models the installer carries, and **High quality**, the FP32 models. High quality is an optional
+download of up to 690 MB from the About panel. Each file is checked against its SHA-256 before the
+app uses it. On a GPU the two run at about the same speed, and on the CPU FP32 is also about twice
+as fast.
 
-É preciso o **.NET SDK 10.0.100** ou um feature band mais novo (`global.json`).
+## Run from source
+
+You need the **.NET SDK 10.0.100** or a later feature band (`global.json`).
 
 ```
 dotnet build PhotoBoost.slnx
 .\run.cmd
 ```
 
-`.\run.cmd` compila em Debug e abre um menu de cenários de teste manual, cada um com uma imagem.
-Com argumentos, abre o aplicativo direto com eles, por exemplo
-`.\run.cmd --open foto.jpg --provider cpu`. As opções de linha de comando estão em
-[docs/COMMAND-LINE.md](docs/COMMAND-LINE.md). Chame-o como `.\run.cmd`: um `run.cmd` sem o
-caminho pode encontrar outro no PATH antes deste.
+`.\run.cmd` builds Debug and opens a menu of manual test scenarios, each with an image. Given
+arguments, it starts the app with them instead, for example
+`.\run.cmd --open photo.jpg --provider cpu`. The command-line options are in
+[docs/COMMAND-LINE.md](docs/COMMAND-LINE.md). Call it as `.\run.cmd`: a bare `run.cmd` can find
+another one on the PATH first.
 
-### Onde ficam os modelos
+### Where the models live
 
-O aplicativo procura cada modelo nesta ordem:
+The app looks for each model in this order:
 
-1. a pasta `models` ao lado do executável, que o instalador preenche;
-2. `%LOCALAPPDATA%\PhotoBoost\models`, para onde vão os downloads.
+1. the `models` folder beside the executable, which the installer fills;
+2. `%LOCALAPPDATA%\PhotoBoost\models`, where downloads go.
 
-`--models <pasta>` troca as duas por uma só. O `run.cmd` usa `.cache\models` quando essa pasta
-existe, que é onde o script de exportação grava. Nenhum modelo fica no repositório.
+`--models <folder>` replaces both with one folder. `run.cmd` uses `.cache\models` when that
+folder exists, which is where the export script writes. No model is stored in the repository.
 
-## Gerar os modelos
+## Build the models
 
-Os modelos são baixados das fontes originais e convertidos para ONNX por dois scripts em Python.
-Testado com **Python 3.13**. O PyTorch da CPU basta: a exportação não precisa de CUDA nem de GPU.
+The models are downloaded from their original sources and converted to ONNX by two Python
+scripts. Tested with **Python 3.13**. The CPU build of PyTorch is enough: the export needs neither
+CUDA nor a GPU.
 
 ```
 python -m venv .venv
@@ -68,131 +76,136 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r scripts\requirements.txt
 ```
 
-1. **Baixar os pesos** (cerca de 1 GB, em `.cache\weights`):
+1. **Download the weights** (about 1 GB, into `.cache\weights`):
 
    ```
    .venv\Scripts\python scripts\download_models.py
    ```
 
-   Usa só a biblioteca padrão. Cada arquivo é conferido pelo tamanho e pelo SHA-256 registrados em
-   `scripts\model-sources.json`, um download interrompido continua de onde parou, e o que já está
-   certo não é baixado de novo.
+   Standard library only. Each file is checked against the size and SHA-256 recorded in
+   `scripts\model-sources.json`, an interrupted download resumes where it stopped, and a file
+   already correct is not downloaded again.
 
-2. **Exportar para ONNX** (em `.cache\models`):
+2. **Export to ONNX** (into `.cache\models`):
 
    ```
    .venv\Scripts\python scripts\export-and-quantize.py
    .venv\Scripts\python scripts\export-and-quantize.py --only gfpgan-v1.4
    ```
 
-   Para cada modelo grava `fp32.onnx`, `fp16.onnx` e `int8.onnx` com um `meta.json` que o
-   aplicativo lê. Cada variante é comparada com o PyTorch e com a FP32 na imagem de teste do
-   próprio modelo; uma exportação que difere além da tolerância, ou um INT8 abaixo do seu piso de
-   PSNR, faz o script falhar em vez de gravar um modelo errado. O ViTMatte não tem FP16 e o YuNet
-   só tem FP32.
+   For each model it writes `fp32.onnx`, `fp16.onnx` and `int8.onnx`, with a `meta.json` the app
+   reads. Each variant is compared with PyTorch and with FP32 on the model's own test image. An
+   export that differs past the tolerance, or an INT8 below its PSNR floor, fails the script
+   instead of writing a wrong model. ViTMatte has no FP16, and YuNet has FP32 only.
 
-## Gerar o instalador
+The FP32 set the app downloads is published with `scripts\publish-models.py` to
+[alegauss/photo-boost-models](https://huggingface.co/alegauss/photo-boost-models), with a manifest
+pinned to a commit. RMBG-1.4 is not re-hosted; its entry points at BRIA's own repository.
+
+## Build the installer
 
 ```
 build\build-installer.cmd
 ```
 
-Publica em Release (win-x64, self-contained), junta as licenças dos pacotes, copia o conjunto FP16
-de `.cache\models` e compila o instalador com o Inno Setup 6. Falta de algum modelo interrompe o
-build. `build\update-release.cmd <versão>` define a versão, roda os testes e chama o
-`build-installer.cmd`.
+It publishes Release (win-x64, self-contained), collects the packages' licenses, copies the
+bundled model set from `.cache\models` and compiles the installer with Inno Setup 6. A missing
+model stops the build. `build\update-release.cmd <version>` sets the version, runs the tests and
+calls `build-installer.cmd`.
 
-## Testes
+## Tests
 
 ```
 run-tests.cmd
 ```
 
-Compila a solução com avisos tratados como erros e os analisadores de desempenho ligados, roda
-cada aplicativo de teste em `tests\`, os casos de interface do winwright (`cases\*.cases.json`,
-pulados com o motivo numa máquina onde a tela não pode ser observada) e os testes em Python de
-`scripts\tests`. O resultado só é verde se tudo rodou: uma suíte ausente ou sem Python no PATH
-conta como falha. Os testes que usam os modelos reais rodam quando `.cache\models` existe e são
-pulados, com o motivo, quando não.
+It builds the solution with warnings as errors and the performance analyzers on, then runs every
+test application in `tests\`, the winwright UI cases (`cases\*.cases.json`, skipped with the
+reason on a machine whose screen cannot be observed) and the Python tests in `scripts\tests`. The
+result is green only if everything ran: a missing suite, or no Python on the PATH, counts as a
+failure. Tests that use the real models run when `.cache\models` exists and are skipped, with the
+reason, when it does not.
 
-## Provedores de execução
+The UI cases take over the desktop while they run, so run the suite in a VMware guest with
+winwright's `run-tests-vm.cmd -Tree <this repository>`.
 
-Por padrão (`--provider auto`) a inferência roda no DirectML, na GPU com mais memória de vídeo,
-e cai para a CPU se ela não rodar. Numa placa NVIDIA RTX em que o Windows ML instalou o
-TensorRT-RTX, o auto usa o TensorRT-RTX só na ampliação. O motor de cada modelo leva de 10 a 17 s
-para ser montado. Ele é montado em segundo plano na primeira abertura e guardado em
-`%LOCALAPPDATA%\PhotoBoost\engines`, e até lá a ampliação segue no DirectML. Medido numa RTX 4060,
-a ampliação 4× de uma foto de 933 × 1405 caiu de 47 s para 5,4 s. A remoção de fundo ficou três
-vezes mais lenta no TensorRT-RTX, por isso as outras operações continuam no DirectML.
-`--provider winml` usa o provedor do Windows ML (TensorRT-RTX ou OpenVINO) em todos os modelos que
-ele consegue montar.
+## Execution providers
 
-## FP16 e FP32 medidos
+By default (`--provider auto`) inference runs on DirectML, on the GPU with the most video memory,
+and falls back to the CPU if that does not run. On an NVIDIA RTX card where Windows ML has
+installed TensorRT-RTX, auto uses TensorRT-RTX for upscaling only. Each model's engine takes 10 to
+17 s to build. It is built in the background on first launch and kept in
+`%LOCALAPPDATA%\PhotoBoost\engines`, and until then upscaling stays on DirectML. Measured on an
+RTX 4060, a 4× upscale of a 933 × 1405 photo went from 47 s to 5.4 s. Background removal ran three
+times slower on TensorRT-RTX, which is why the other operations stay on DirectML.
+`--provider winml` uses the Windows ML provider (TensorRT-RTX or OpenVINO) for every model it can
+build.
 
-O instalador traz o conjunto FP16; o FP32 é o de alta qualidade. A tabela abaixo saiu de
-`tools\PhotoBoost.Bench`, que roda cada operação pelos mesmos pipelines do aplicativo, na foto de
-teste do próprio modelo, nas duas variantes, na CPU e no DirectML:
+## FP16 and FP32, measured
+
+The installer carries the FP16 set; FP32 is High quality. The table below comes from
+`tools\PhotoBoost.Bench`. It runs each operation through the app's own pipelines, on the model's
+own test photo, in both variants, on the CPU and on DirectML:
 
 ```
 dotnet run --project tools\PhotoBoost.Bench -c Release -- --out bench.md
 ```
 
-"1ª execução" inclui carregar a sessão; "Execução" é a mais rápida de duas execuções seguintes.
-O pico de memória é amostrado a cada 10 ms a partir de antes de carregar a sessão: memória de
-vídeo no DirectML, memória privada do processo na CPU. PSNR e SSIM comparam o resultado FP16 com
-o FP32 no mesmo provedor (só o canal alfa na remoção de fundo). Ampliação e remoção de ruído
-usam blocos de 256 px.
+"First run" includes loading the session; "Run" is the faster of the two runs after it. Peak
+memory is sampled every 10 ms from before the session loads: video memory on DirectML, the
+process's private memory on the CPU. PSNR and SSIM compare the FP16 result with FP32 on the same
+provider (the alpha channel only, for background removal). Upscaling and denoising use 256 px
+tiles.
 
-Medido em 2026-10-20: Intel Core i7-14700; NVIDIA GeForce RTX 4060, 8 GB.
+Measured on 2026-10-20: Intel Core i7-14700; NVIDIA GeForce RTX 4060, 8 GB.
 
-| Operação | Provedor | Variante | Arquivo | 1ª execução | Execução | Pico de memória | PSNR vs FP32 | SSIM vs FP32 |
+| Operation | Provider | Variant | File | First run | Run | Peak memory | PSNR vs FP32 | SSIM vs FP32 |
 | --- | --- | --- | --: | --: | --: | --: | --: | --: |
-| Ampliar 4× | CPU | FP16 | 32.2 MB | 7.53 s | 5.73 s | 1143 MB | 70.9 dB | 1.0000 |
-| Ampliar 4× | CPU | FP32 | 63.9 MB | 2.92 s | 2.06 s | 1151 MB | — | — |
-| Ampliar 4× | DirectML | FP16 | 32.2 MB | 1.99 s | 0.21 s | 413 MB | 60.1 dB | 0.9999 |
-| Ampliar 4× | DirectML | FP32 | 63.9 MB | 1.11 s | 0.16 s | 520 MB | — | — |
-| Ampliar 2× | CPU | FP16 | 32.2 MB | 3.08 s | 0.92 s | 191 MB | 71.9 dB | 1.0000 |
-| Ampliar 2× | CPU | FP32 | 64.0 MB | 1.41 s | 0.52 s | 282 MB | — | — |
-| Ampliar 2× | DirectML | FP16 | 32.2 MB | 2.02 s | 0.06 s | 146 MB | 59.7 dB | 1.0000 |
-| Ampliar 2× | DirectML | FP32 | 64.0 MB | 1.17 s | 0.04 s | 225 MB | — | — |
-| Restaurar rostos | CPU | FP16 | 162.5 MB | 3.77 s | 2.66 s | 1974 MB | 76.8 dB | 1.0000 |
-| Restaurar rostos | CPU | FP32 | 324.6 MB | 1.98 s | 1.54 s | 1446 MB | — | — |
-| Restaurar rostos | DirectML | FP16 | 162.5 MB | 1.19 s | 0.08 s | 1306 MB | 12.7 dB | 0.6177 |
-| Restaurar rostos | DirectML | FP32 | 324.6 MB | 1.10 s | 0.13 s | 1551 MB | — | — |
-| Remover fundo | CPU | FP16 | 84.1 MB | 0.90 s | 0.54 s | 1256 MB | 84.8 dB | 1.0000 |
-| Remover fundo | CPU | FP32 | 168.0 MB | 0.84 s | 0.54 s | 2322 MB | — | — |
-| Remover fundo | DirectML | FP16 | 84.1 MB | 0.89 s | 0.09 s | 412 MB | 74.8 dB | 1.0000 |
-| Remover fundo | DirectML | FP32 | 168.0 MB | 0.69 s | 0.07 s | 861 MB | — | — |
-| Remover ruído | CPU | FP16 | 35.6 MB | 5.63 s | 3.57 s | 958 MB | 82.6 dB | 1.0000 |
-| Remover ruído | CPU | FP32 | 69.5 MB | 6.06 s | 3.82 s | 578 MB | — | — |
-| Remover ruído | DirectML | FP16 | 35.6 MB | 10.16 s | 2.59 s | 314 MB | 66.0 dB | 1.0000 |
-| Remover ruído | DirectML | FP32 | 69.5 MB | 8.03 s | 1.41 s | 573 MB | — | — |
+| Upscale 4× | CPU | FP16 | 32.2 MB | 7.53 s | 5.73 s | 1143 MB | 70.9 dB | 1.0000 |
+| Upscale 4× | CPU | FP32 | 63.9 MB | 2.92 s | 2.06 s | 1151 MB | — | — |
+| Upscale 4× | DirectML | FP16 | 32.2 MB | 1.99 s | 0.21 s | 413 MB | 60.1 dB | 0.9999 |
+| Upscale 4× | DirectML | FP32 | 63.9 MB | 1.11 s | 0.16 s | 520 MB | — | — |
+| Upscale 2× | CPU | FP16 | 32.2 MB | 3.08 s | 0.92 s | 191 MB | 71.9 dB | 1.0000 |
+| Upscale 2× | CPU | FP32 | 64.0 MB | 1.41 s | 0.52 s | 282 MB | — | — |
+| Upscale 2× | DirectML | FP16 | 32.2 MB | 2.02 s | 0.06 s | 146 MB | 59.7 dB | 1.0000 |
+| Upscale 2× | DirectML | FP32 | 64.0 MB | 1.17 s | 0.04 s | 225 MB | — | — |
+| Restore faces | CPU | FP16 | 162.5 MB | 3.77 s | 2.66 s | 1974 MB | 76.8 dB | 1.0000 |
+| Restore faces | CPU | FP32 | 324.6 MB | 1.98 s | 1.54 s | 1446 MB | — | — |
+| Restore faces | DirectML | FP16 | 162.5 MB | 1.19 s | 0.08 s | 1306 MB | 12.7 dB | 0.6177 |
+| Restore faces | DirectML | FP32 | 324.6 MB | 1.10 s | 0.13 s | 1551 MB | — | — |
+| Remove background | CPU | FP16 | 84.1 MB | 0.90 s | 0.54 s | 1256 MB | 84.8 dB | 1.0000 |
+| Remove background | CPU | FP32 | 168.0 MB | 0.84 s | 0.54 s | 2322 MB | — | — |
+| Remove background | DirectML | FP16 | 84.1 MB | 0.89 s | 0.09 s | 412 MB | 74.8 dB | 1.0000 |
+| Remove background | DirectML | FP32 | 168.0 MB | 0.69 s | 0.07 s | 861 MB | — | — |
+| Remove noise | CPU | FP16 | 35.6 MB | 5.63 s | 3.57 s | 958 MB | 82.6 dB | 1.0000 |
+| Remove noise | CPU | FP32 | 69.5 MB | 6.06 s | 3.82 s | 578 MB | — | — |
+| Remove noise | DirectML | FP16 | 35.6 MB | 10.16 s | 2.59 s | 314 MB | 66.0 dB | 1.0000 |
+| Remove noise | DirectML | FP32 | 69.5 MB | 8.03 s | 1.41 s | 573 MB | — | — |
 
-O que a tabela mostra:
+What the table shows:
 
-- **O FP16 tem metade do tamanho e, fora um caso, a mesma imagem:** de 59,7 a 84,8 dB contra o
-  FP32, SSIM de 0,9999 ou mais.
-- **A exceção é o GFPGAN em FP16 no DirectML, que sai errado** (12,7 dB): os rostos viram um
-  quadrado liso. Na CPU o mesmo arquivo está certo. Por isso o instalador traz o GFPGAN em FP32,
-  e numa GPU o aplicativo restaura rostos com ele mesmo no modo padrão. A linha da tabela foi
-  medida antes dessa troca; medida de novo, ela mostra o FP32 que o aplicativo usa.
-- **Na CPU o FP32 é mais rápido** na ampliação e na restauração de rostos (2,8× na ampliação 4×);
-  é o que o download do conjunto FP32 resolve. No DirectML as duas variantes têm tempos
-  próximos, fora a remoção de ruído, e o FP16 usa menos memória de vídeo.
+- **FP16 is half the size and, except in one case, the same image:** 59.7 to 84.8 dB against
+  FP32, SSIM 0.9999 or higher.
+- **The exception is GFPGAN in FP16 on DirectML, which comes out wrong** (12.7 dB): each face
+  becomes a flat square. The same file is right on the CPU. So the installer carries GFPGAN in
+  FP32, and on a GPU the app restores faces with it even in Standard. That row was measured before
+  the switch; measured again, it shows the FP32 the app uses.
+- **On the CPU FP32 is faster** for upscaling and face restoration (2.8× for the 4× upscale),
+  which is what the FP32 download is for. On DirectML the two variants take about the same time,
+  except for denoising, and FP16 uses less video memory.
 
-## Licenças dos modelos
+## Model licenses
 
-| Modelo | Licença |
+| Model | License |
 | --- | --- |
-| Real-ESRGAN x4plus e x2plus | BSD-3-Clause |
-| GFPGAN v1.4 | Apache-2.0, com partes sob licenças **não comerciais** (StyleGAN2, DFDNet) |
+| Real-ESRGAN x4plus and x2plus | BSD-3-Clause |
+| GFPGAN v1.4 | Apache-2.0, with parts under **non-commercial** licenses (StyleGAN2, DFDNet) |
 | YuNet 2023mar | MIT |
-| RMBG-1.4 | Licença da BRIA, **uso não comercial**; uso comercial exige licença da BRIA |
-| ViTMatte small | Apache-2.0 (código MIT) |
+| RMBG-1.4 | BRIA's license, **non-commercial use**; commercial use needs a license from BRIA |
+| ViTMatte small | Apache-2.0 (code MIT) |
 | SCUNet | Apache-2.0 |
 
-Como o GFPGAN v1.4 e o RMBG-1.4 só podem ser usados sem fins comerciais, confira cada licença
-antes de usar um resultado comercialmente. O painel Sobre do aplicativo lista cada modelo
-instalado com a licença do seu `meta.json`, e a pasta `licenses` da instalação traz as licenças
-dos pacotes de terceiros. As fontes e os links de cada licença estão em
-`scripts\model-sources.json`.
+GFPGAN v1.4 and RMBG-1.4 may only be used non-commercially, so check each license before using a
+result commercially. The app's About panel lists each installed model with the license from its
+`meta.json`, and the installation's `licenses` folder holds the third-party packages' licenses.
+Each model's source and license link are in `scripts\model-sources.json`.

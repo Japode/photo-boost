@@ -40,35 +40,35 @@ set "EXPORT=off"
 
 :menu
 cls
-echo  PhotoBoost - cenarios de teste manual
-echo  =====================================
+echo  PhotoBoost - manual test scenarios
+echo  ==================================
 echo.
-echo  Modelos reais (scripts\download_models.py e export-and-quantize.py)
-echo    1  Upscale           0014.jpg, foto pequena e ruidosa (179 x 179)
-echo    2  Restaurar rostos  Blake_Lively.jpg, dois rostos lado a lado
-echo    3  Rosto alinhado    Adele_crop.png, recorte 512 ja alinhado
-echo    4  Remover fundo     example_input.jpg, duas girafas sobre o ceu
-echo    5  Remover ruido     building.png, foto real com ruido (SCUNet)
+echo  Real models (scripts\download_models.py and export-and-quantize.py)
+echo    1  Upscale           0014.jpg, a small noisy photo (179 x 179)
+echo    2  Restore faces     Blake_Lively.jpg, two faces side by side
+echo    3  Aligned face      Adele_crop.png, a 512 crop already aligned
+echo    4  Remove background example_input.jpg, two giraffes against the sky
+echo    5  Remove noise      building.png, a real noisy photo (SCUNet)
 echo.
-echo  Fixtures do repositorio
-echo    6  Orientacao EXIF   rotated-exif6.jpg, deve abrir em pe (8 x 16)
-echo    7  Transparencia     alpha-lossless.webp, aviso ao exportar JPEG
-echo    8  Perfil de cor     p3-swatch.png, Display P3 convertido para sRGB
-echo    9  Perfil quebrado   broken-profile.png, deve abrir sem converter
-echo   10  Dados da camera   exif-camera.jpg, "Manter dados da camera"
+echo  Repository fixtures
+echo    6  EXIF orientation  rotated-exif6.jpg, must open upright (8 x 16)
+echo    7  Transparency      alpha-lossless.webp, a warning when exporting JPEG
+echo    8  Colour profile    p3-swatch.png, Display P3 converted to sRGB
+echo    9  Broken profile    broken-profile.png, must open without converting
+echo   10  Camera details    exif-camera.jpg, "Keep camera details"
 echo.
-echo  Outros
-echo   11  Modelos minusculos (offline): rotated-exif6.jpg em cases\fixtures\models
-echo   12  Sem modelos: o painel diz qual modelo falta
-echo   13  Arquivo inexistente: a tela inicial diz que nao abriu
-echo   14  Argumento invalido: o app recusa e sai com codigo 2
-echo   15  Tela vazia, sem imagem
+echo  Other
+echo   11  Tiny models (offline): rotated-exif6.jpg on cases\fixtures\models
+echo   12  No models: the panel says which model is missing
+echo   13  Missing file: the first screen says it did not open
+echo   14  Invalid argument: the app refuses and exits with code 2
+echo   15  Empty screen, no image
 echo.
-echo  Opcoes:  P provedor [!PROVIDER!]   Q qualidade [!QUALITY!]   E exportar ao terminar [!EXPORT!]
-echo           S sair
+echo  Options:  P provider [!PROVIDER!]   Q quality [!QUALITY!]   E export when done [!EXPORT!]
+echo            S stop
 echo.
 set "PICK="
-set /p "PICK=Escolha: "
+set /p "PICK=Choose: "
 if not defined PICK goto :menu
 
 set "IMG="
@@ -104,13 +104,13 @@ if not exist "!IMG!" goto :absent
 goto :launch
 
 :unknown
-echo  Opcao desconhecida: !PICK!
+echo  Unknown option: !PICK!
 pause
 goto :menu
 
 :absent
 echo.
-echo  !IMG! nao existe. Rode antes:
+echo  !IMG! does not exist. Run these first:
 echo    .venv\Scripts\python scripts\download_models.py
 echo    .venv\Scripts\python scripts\export-and-quantize.py
 pause
@@ -126,7 +126,7 @@ rem --export never overwrites, so each run gets a fresh name under artifacts\man
 if /i "!EXPORT!"=="on" if defined IMG if not exist "artifacts\manual" mkdir "artifacts\manual"
 if /i "!EXPORT!"=="on" if defined IMG set ARGS=!ARGS! --export "artifacts\manual\result-!RANDOM!!RANDOM!.png"
 echo.
-echo  Abrindo: PhotoBoost.exe !ARGS!
+echo  Starting: PhotoBoost.exe !ARGS!
 start "PhotoBoost" "%EXE%" !ARGS!
 timeout /t 2 >nul 2>&1
 goto :menu
