@@ -40,6 +40,7 @@
 - ✅ **PB44** **Decoding a wide-gamut image to sRGB is untested, so a wrong colour transform would pass the suite** — A Display P3 PNG fixture with a self-built profile decodes to the sRGB that the colorant maths and LittleCMS predict, and one with a broken profile decodes unconverted.
 - ✅ **PB45** **Exports drop the source photo's camera, date, copyright and GPS metadata, with no choice to keep it** — A Keep camera details box, off by default, copies camera, lens, exposure, dates, copyright and GPS into a JPEG export with Orientation 1; PNG and WebP say they cannot.
 - ✅ **PB42** **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Nearest-neighbour 4x/2x stand-ins under cases/fixtures/models; a case upscales, exports byte-exact, compares at 25 and undoes offline (WW556 workaround).
+- ✅ **PB26** **Open, upscale and export flow has no winwright case proving it end to end** — cases/upscale.cases.json opens, upscales 4x on the tiny model, reads progress and the run chip, exports and matches bytes; real model run by hand on DirectML (12.4 s).
 
 ## Block D — Editor: comparison, history and quality modes
 

@@ -1,0 +1,176 @@
+{
+  // PB26: the open, upscale and export flow end to end, on the tiny stand-in models (PB42: a
+  // nearest-neighbour 4x and 2x, cases/fixtures/models), so a whole run happens offline on the
+  // CPU and its export is byte-for-byte checkable. The real models on DirectML are run by hand.
+
+  "fixtures": [
+    {
+      // Not lent: it runs and writes. Started inside the staged folder, with the models staged
+      // beside the photo, because an argument cannot name '{files}' (winwright WW556).
+      "name": "a window on the tiny models, exporting into its own folder",
+      "files": [
+        "tests/fixtures/images/rotated-exif6.jpg",
+        { "from": "cases/fixtures/models/realesrgan-x4plus/fp32.onnx", "to": "models/realesrgan-x4plus/fp32.onnx" },
+        { "from": "cases/fixtures/models/realesrgan-x4plus/int8.onnx", "to": "models/realesrgan-x4plus/int8.onnx" },
+        { "from": "cases/fixtures/models/realesrgan-x4plus/meta.json", "to": "models/realesrgan-x4plus/meta.json" },
+        { "from": "cases/fixtures/models/realesrgan-x2plus/fp32.onnx", "to": "models/realesrgan-x2plus/fp32.onnx" },
+        { "from": "cases/fixtures/models/realesrgan-x2plus/int8.onnx", "to": "models/realesrgan-x2plus/int8.onnx" },
+        { "from": "cases/fixtures/models/realesrgan-x2plus/meta.json", "to": "models/realesrgan-x2plus/meta.json" }
+      ],
+      "workingDirectory": "{files}",
+      "arguments": ["--open", "rotated-exif6.jpg", "--models", "models", "--provider", "cpu", "--export", "out.png"],
+      "shareable": false
+    }
+  ],
+
+  "cases": [
+    {
+      "name": "an opened photo is upscaled and exported end to end",
+      "catches": "any break between opening a photo, running Real-ESRGAN 4x through the tiles and writing the result to disk",
+      "filed": "PB26",
+      "tags": ["operations", "export"],
+      "fixture": "a window on the tiny models, exporting into its own folder",
+      "steps": [
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "the photo is open, upright"
+        },
+        {
+          // The models are listed after the window shows, so the button is enabled a moment later.
+          "locator": "Button#UpscaleButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "enabled",
+          "named": "the models are loaded"
+        },
+        {
+          "locator": "Button#UpscaleButton",
+          "act": "invoke",
+          "named": "Upscale 4x is started"
+        },
+        {
+          "locator": "Text#JobStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "Done.",
+          "named": "the run finishes"
+        },
+        {
+          // An 8 x 16 photo is one tile, so the bar ends at one of one.
+          "locator": "ProgressBar#JobProgress",
+          "act": "read",
+          "reads": "range",
+          "expect": "1",
+          "named": "with the progress bar at its last tile"
+        },
+        {
+          "locator": "Text#LastRun",
+          "act": "read",
+          "reads": "name",
+          // The operation log's own words (PB22); the seconds are in the desk's culture.
+          "matches": "^upscale x4: [0-9.,]+ s on Cpu$",
+          "named": "and the run's time and provider on the status bar"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Upscale 4× — 32 × 64",
+          "named": "the result is four times the upright photo"
+        },
+        {
+          "locator": "Text#ExportStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "Saved out.png",
+          "named": "--export wrote the result"
+        },
+        {
+          "file": "{files}/out.png",
+          "act": "read",
+          "sameBytesAs": "cases/fixtures/expected/rotated-exif6-x4.png",
+          "named": "with exactly the expected bytes"
+        }
+      ]
+    },
+
+    {
+      "name": "an upscaled result is compared and undone",
+      "catches": "a break in Compare's divider or in undo and redo once a real result exists, which PB27 and PB28 checked by hand",
+      "filed": "PB42",
+      "tags": ["history", "compare"],
+      "fixture": "a window on the tiny models, exporting into its own folder",
+      "steps": [
+        {
+          // The models are listed after the window shows, so the button is enabled a moment later.
+          "locator": "Button#UpscaleButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "enabled",
+          "named": "the models are loaded"
+        },
+        {
+          "locator": "Button#UpscaleButton",
+          "act": "invoke",
+          "named": "Upscale 4x is started"
+        },
+        {
+          "locator": "Text#JobStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "Done.",
+          "named": "the run finishes"
+        },
+        {
+          "locator": "RadioButton#ModeDivider",
+          "act": "select",
+          "reads": "selected",
+          "expect": "selected",
+          "named": "the comparison is turned on"
+        },
+        {
+          "locator": "Slider#Surface",
+          "act": "set range",
+          "with": "25",
+          "reads": "range",
+          "expect": "25",
+          "named": "the divider is moved to a quarter"
+        },
+        {
+          "locator": "Slider#Surface",
+          "act": "read",
+          "reads": "status",
+          "matches": "^zoom 1x, Divider",
+          "named": "and the surface shows the divider"
+        },
+        {
+          "locator": "Button#UndoButton",
+          "act": "invoke",
+          "named": "the upscale is undone"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "the opened photo is back"
+        },
+        {
+          "locator": "Button#RedoButton",
+          "act": "invoke",
+          "named": "and redone"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Upscale 4× — 32 × 64",
+          "named": "the result is back without running again"
+        }
+      ]
+    }
+  ]
+}

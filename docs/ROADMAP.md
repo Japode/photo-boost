@@ -11,7 +11,6 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24 ✅, PB25 ✅, PB42 ✅) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
 
 ## Block D — Editor: comparison, history and quality modes
@@ -20,15 +19,15 @@
 
 ## Block E — Face restoration and background removal
 
-- 📋 **PB30** (deps: PB26) **No face detection and alignment to feed GFPGAN crops and paste results back** — GFPGAN expects aligned 512px face crops, so a whole photo cannot be passed in directly. → §PB30
+- 📋 **PB30** (deps: PB26 ✅) **No face detection and alignment to feed GFPGAN crops and paste results back** — GFPGAN expects aligned 512px face crops, so a whole photo cannot be passed in directly. → §PB30
 - 📋 **PB31** (deps: PB30) **No GFPGAN face restoration pipeline** — Face restoration is the second operation the brief lists. → §PB31
-- 📋 **PB32** (deps: PB26) **No background removal pipeline producing a transparent image** — Background removal is the third operation the brief lists. → §PB32
+- 📋 **PB32** (deps: PB26 ✅) **No background removal pipeline producing a transparent image** — Background removal is the third operation the brief lists. → §PB32
 
 ## Block F — Delivery: README, benchmarks and installers
 
-- 📋 **PB33** (deps: PB12 ⏳, PB26) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
+- 📋 **PB33** (deps: PB12 ⏳, PB26 ✅) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
 - 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
-- 📋 **PB35** (deps: PB26) **Release build produces no self-contained Windows installer** — Installers are a deliverable, and native ONNX Runtime binaries break easily in a single-file publish. → §PB35
+- 📋 **PB35** (deps: PB26 ✅) **Release build produces no self-contained Windows installer** — Installers are a deliverable, and native ONNX Runtime binaries break easily in a single-file publish. → §PB35
 
 ## Block G — Phase 2: denoising
 

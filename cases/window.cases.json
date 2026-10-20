@@ -33,25 +33,6 @@
       "shareable": false
     },
     {
-      // PB42: the tiny stand-in models (a nearest-neighbour 4x and 2x, cases/fixtures/models), so a
-      // whole run happens offline and its export is byte-for-byte checkable. Not lent: it runs.
-      // Started inside the staged folder, with the models staged beside the photo, because an
-      // argument cannot name '{files}' (winwright WW556).
-      "name": "a window on the tiny models, exporting into its own folder",
-      "files": [
-        "tests/fixtures/images/rotated-exif6.jpg",
-        { "from": "cases/fixtures/models/realesrgan-x4plus/fp32.onnx", "to": "models/realesrgan-x4plus/fp32.onnx" },
-        { "from": "cases/fixtures/models/realesrgan-x4plus/int8.onnx", "to": "models/realesrgan-x4plus/int8.onnx" },
-        { "from": "cases/fixtures/models/realesrgan-x4plus/meta.json", "to": "models/realesrgan-x4plus/meta.json" },
-        { "from": "cases/fixtures/models/realesrgan-x2plus/fp32.onnx", "to": "models/realesrgan-x2plus/fp32.onnx" },
-        { "from": "cases/fixtures/models/realesrgan-x2plus/int8.onnx", "to": "models/realesrgan-x2plus/int8.onnx" },
-        { "from": "cases/fixtures/models/realesrgan-x2plus/meta.json", "to": "models/realesrgan-x2plus/meta.json" }
-      ],
-      "workingDirectory": "{files}",
-      "arguments": ["--open", "rotated-exif6.jpg", "--models", "models", "--provider", "cpu", "--export", "out.png"],
-      "shareable": false
-    },
-    {
       "name": "a window asked to open a file that is not there",
       "arguments": ["--open", "tests/fixtures/images/missing.png", "--provider", "cpu"],
       "shareable": true
@@ -293,94 +274,6 @@
           "reads": "name",
           "matches": "^Only JPEG keeps camera details",
           "named": "the card says PNG will not carry them"
-        }
-      ]
-    },
-
-    {
-      "name": "an upscale runs, exports, compares, and undoes on the tiny model",
-      "catches": "any break in the open, upscale, export, compare and undo chain that the hand-driven runs of PB24, PB25, PB27 and PB28 checked",
-      "filed": "PB42",
-      "tags": ["operations", "export", "history", "compare"],
-      "fixture": "a window on the tiny models, exporting into its own folder",
-      "steps": [
-        {
-          "locator": "Button#UpscaleButton",
-          "act": "invoke",
-          "named": "Upscale 4x is started"
-        },
-        {
-          "locator": "Text#JobStatus",
-          "act": "read",
-          "reads": "name",
-          "expect": "Done.",
-          "named": "the run finishes"
-        },
-        {
-          "locator": "Text#ImageInfo",
-          "act": "read",
-          "reads": "name",
-          "expect": "rotated-exif6.jpg — Upscale 4× — 32 × 64",
-          "named": "the result is four times the upright photo"
-        },
-        {
-          "locator": "Text#ExportStatus",
-          "act": "read",
-          "reads": "name",
-          "expect": "Saved out.png",
-          "named": "--export wrote the result"
-        },
-        {
-          "file": "{files}/out.png",
-          "act": "read",
-          "sameBytesAs": "cases/fixtures/expected/rotated-exif6-x4.png",
-          "named": "with exactly the expected bytes"
-        },
-        {
-          "locator": "RadioButton#ModeDivider",
-          "act": "select",
-          "reads": "selected",
-          "expect": "selected",
-          "named": "the comparison is turned on"
-        },
-        {
-          "locator": "Slider#Surface",
-          "act": "set range",
-          "with": "25",
-          "reads": "range",
-          "expect": "25",
-          "named": "the divider is moved to a quarter"
-        },
-        {
-          "locator": "Slider#Surface",
-          "act": "read",
-          "reads": "status",
-          "matches": "^zoom 1x, Divider",
-          "named": "and the surface shows the divider"
-        },
-        {
-          "locator": "Button#UndoButton",
-          "act": "invoke",
-          "named": "the upscale is undone"
-        },
-        {
-          "locator": "Text#ImageInfo",
-          "act": "read",
-          "reads": "name",
-          "expect": "rotated-exif6.jpg — 8 × 16",
-          "named": "the opened photo is back"
-        },
-        {
-          "locator": "Button#RedoButton",
-          "act": "invoke",
-          "named": "and redone"
-        },
-        {
-          "locator": "Text#ImageInfo",
-          "act": "read",
-          "reads": "name",
-          "expect": "rotated-exif6.jpg — Upscale 4× — 32 × 64",
-          "named": "the result is back without running again"
         }
       ]
     },

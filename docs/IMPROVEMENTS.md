@@ -42,14 +42,6 @@ are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB26 End-to-end test
-
-cases/upscale.cases.json: a fixture stages a test image and the tiny model from the
-cases fixture task into {files}, launches with --open, --models and --provider cpu,
-invokes the 4x upscale, waits on the progress reading, exports with --export and checks
-the file with sameBytesAs against a committed reference. Run it in the VM, never on the
-operator's desktop. Also run the real models by hand on DirectML.
-
 ### §PB43 Windows ML providers
 
 The PB5 spike (spike/onnx-runtime/README.md) ran Microsoft.Windows.AI.MachineLearning
