@@ -2,7 +2,8 @@ import { BASE, languages, words, type Lang } from "./content";
 
 // One page per language. The table is what the design system's prerender reads, and what
 // scripts/prerender.mjs reads to set each page's <html lang> and its hreflang links.
-export const SITE_ORIGIN = "https://japode.github.io";
+// PB50: the Japode organization site's custom domain, which GitHub serves this project under.
+export const SITE_ORIGIN = "https://japode.com";
 
 // Absolute, because a platform fetching the social card is not on this origin.
 export const OG_IMAGE = `${SITE_ORIGIN}${BASE}og.png`;

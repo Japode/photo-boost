@@ -59,6 +59,7 @@
 - ✅ **PB35** **Release build produces no self-contained Windows installer** — build\build-installer.cmd publishes self-contained single-file R2R with natives beside, collects package notices, builds a per-user Inno installer; installed app ran DirectML, uninstalls clean.
 - ✅ **PB46** **App has no About page listing each model's license and the third-party notices** — An About panel from the status bar lists the version, each installed model with its meta.json license, and the installer's notices; a winwright case reads it.
 - ✅ **PB49** **PhotoBoost's site does not say it is a Japode product or link to the brand's site** — The nav carries a "part of Japode" chip to the storefront at the origin's root, the footer a "More from Japode" link and the line that PhotoBoost is a Japode product, in English and Portuguese.
+- ✅ **PB50** **PhotoBoost's site declares japode.github.io as its origin, which now only redirects to japode.com** — The site's canonical links, og:url, hreflang, sitemap and robots.txt name https://japode.com/photo-boost/, the address GitHub serves it at under the organization's domain.
 
 ## Block G — Phase 2: denoising
 

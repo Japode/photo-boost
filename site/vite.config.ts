@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { siteThemeScript } from "@viglet/viglet-design-system/site";
 
 // GitHub Pages serves a project site under the repository's name, so the site lives at
-// https://japode.github.io/photo-boost/ and every asset path carries the prefix. Written here
+// https://japode.com/photo-boost/ and every asset path carries the prefix. Written here
 // and in src/routes.ts, and nowhere else.
 export const BASE = "/photo-boost/";
 

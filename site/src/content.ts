@@ -14,7 +14,7 @@ export const repoUrl = "https://github.com/Japode/photo-boost";
 export const asset = (path: string) => `${BASE}${path}`;
 
 // PB49: the Japode storefront, at the root of the origin this site is served from, so the link
-// keeps working when the site moves from japode.github.io to its own domain.
+// works on japode.com and on japode.github.io alike.
 export const familyHref = "/";
 export const familyName = "Japode";
 
