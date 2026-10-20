@@ -12,7 +12,7 @@
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 - 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24 ✅, PB25 ✅, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
-- 📋 **PB42** (deps: PB11 ✅, PB38 ⏳) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
+- 📋 **PB42** (deps: PB11 ✅) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
 - 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
 
 ## Block D — Editor: comparison, history and quality modes
