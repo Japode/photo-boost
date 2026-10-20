@@ -66,15 +66,41 @@ public sealed class ProviderDetectorTests
             ProviderDetector.Detect(ProviderPreference.Cpu, [], [], new FakeProbe(directMLWorks: false, cpuWorks: false)));
 
     [Fact]
-    public void AutoNeverTriesWindowsML()
+    public void AutoAddsTensorRtForTheUpscalersOnlyAndOnlyFromBuiltEngines()
     {
-        // PB43: TensorRT-RTX builds its engine for 10 to 17 s per session, so DirectML stays the default.
+        // PB52: a 4x upscale of a 933 x 1405 photo took 5.4 s on TensorRT-RTX against 47 to 67 s on
+        // DirectML; RMBG ran three times slower there, so every other model stays on DirectML.
         FakeProbe probe = new(directMLWorks: true, windowsMLWorks: true);
 
-        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto, [Discrete], [TensorRT], probe);
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto, [Integrated, Discrete], [TensorRT], probe);
 
-        Assert.Equal(ExecutionProvider.DirectML, selection.Provider);
-        Assert.DoesNotContain(ExecutionProvider.WindowsML, probe.Tried);
+        Assert.Equal(ExecutionProvider.WindowsML, selection.Provider);
+        Assert.True(selection.EnginesReadyOnly);
+        Assert.Equal(Discrete, selection.Adapter);
+        Assert.Equal("DirectML · NVIDIA RTX 4060, 8 GB · TensorRT-RTX for upscaling", selection.Label);
+        Assert.Equal(ExecutionProvider.WindowsML, selection.For("realesrgan-x4plus").Provider);
+        Assert.Equal(new ProviderSelection(ExecutionProvider.DirectML, Discrete, null), selection.For("rmbg-1.4"));
+    }
+
+    [Fact]
+    public void AutoStaysOnDirectMLWithoutTensorRtOnItsGpu()
+    {
+        // OpenVINO is unmeasured, and a TensorRT-RTX on another GPU than DirectML's is not used.
+        FakeProbe probe = new(directMLWorks: true, windowsMLWorks: true);
+        WindowsMLDevice elsewhere = new(TensorRT.EpName, Nvidia, 5);
+
+        Assert.Equal(ExecutionProvider.DirectML, ProviderDetector.Detect(ProviderPreference.Auto, [Discrete], [OpenVINO], probe).Provider);
+        Assert.Equal(ExecutionProvider.DirectML, ProviderDetector.Detect(ProviderPreference.Auto, [Discrete], [elsewhere], probe).Provider);
+        Assert.Equal(ExecutionProvider.DirectML, ProviderDetector.Detect(ProviderPreference.Auto, [Discrete], [TensorRT], new FakeProbe(directMLWorks: true)).Provider);
+    }
+
+    [Fact]
+    public void TheWindowsMLPreferenceRunsEveryModelOnItsProvider()
+    {
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.WindowsML, [Discrete], [TensorRT], new FakeProbe(directMLWorks: true, windowsMLWorks: true));
+
+        Assert.False(selection.EnginesReadyOnly);
+        Assert.Same(selection, selection.For("rmbg-1.4"));
     }
 
     [Fact]
@@ -196,11 +222,13 @@ public sealed class ProviderDetectorTests
     [Fact]
     public void RealDetectionAlwaysAnswers()
     {
-        // Whatever this desk has: a GPU that runs, one that does not, or none. Never a throw.
+        // Whatever this desk has: a GPU that runs, one that does not, or none. Never a throw. On a
+        // GPU auto runs DirectML, with TensorRT-RTX for the upscalers where it runs there (PB52).
         ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto);
 
         Assert.False(string.IsNullOrWhiteSpace(selection.Label));
-        Assert.Equal(selection.Provider == ExecutionProvider.DirectML, selection.Adapter is not null);
+        Assert.Equal(selection.Provider != ExecutionProvider.Cpu, selection.Adapter is not null);
+        Assert.Equal(selection.Provider == ExecutionProvider.WindowsML, selection.EnginesReadyOnly);
     }
 
     [Fact]

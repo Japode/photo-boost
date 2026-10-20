@@ -118,10 +118,14 @@ pulados, com o motivo, quando não.
 ## Provedores de execução
 
 Por padrão (`--provider auto`) a inferência roda no DirectML, na GPU com mais memória de vídeo,
-e cai para a CPU se ela não rodar. `--provider winml` usa, quando o Windows ML os instalou, o
-TensorRT-RTX (NVIDIA) ou o OpenVINO (Intel). O TensorRT-RTX processa cada bloco em FP16 cerca de
-três vezes mais rápido, mas monta o motor por 10 a 17 s sempre que uma sessão é criada, por isso
-não é o padrão.
+e cai para a CPU se ela não rodar. Numa placa NVIDIA RTX em que o Windows ML instalou o
+TensorRT-RTX, o auto usa o TensorRT-RTX só na ampliação. O motor de cada modelo leva de 10 a 17 s
+para ser montado. Ele é montado em segundo plano na primeira abertura e guardado em
+`%LOCALAPPDATA%\PhotoBoost\engines`, e até lá a ampliação segue no DirectML. Medido numa RTX 4060,
+a ampliação 4× de uma foto de 933 × 1405 caiu de 47 s para 5,4 s. A remoção de fundo ficou três
+vezes mais lenta no TensorRT-RTX, por isso as outras operações continuam no DirectML.
+`--provider winml` usa o provedor do Windows ML (TensorRT-RTX ou OpenVINO) em todos os modelos que
+ele consegue montar.
 
 ## FP16 e FP32 medidos
 

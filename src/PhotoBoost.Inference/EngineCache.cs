@@ -87,10 +87,15 @@ public sealed class EngineCache(string folder)
                 using SessionOptions cached = SessionOptionsFactory.Create(selection);
                 return new InferenceSession(context, cached);
             }
-            catch (OnnxRuntimeException)
+            catch (OnnxRuntimeException failure)
             {
-                // A file the provider no longer reads: build it again below.
+                // A file the provider no longer reads: build it again below, except under auto
+                // (PB52), where no run builds and the warmup rebuilds it on the next start.
                 File.Delete(context);
+                if (selection.EnginesReadyOnly)
+                {
+                    throw new NotSupportedException($"{selection.Name} could not load its engine for {modelPath}; it is rebuilt on the next start.", failure);
+                }
             }
         }
 
@@ -135,6 +140,18 @@ public sealed class EngineCache(string folder)
         string context = ContextFor(modelPath, selection);
         return File.Exists(context) || File.Exists(Unsupported(context));
     }
+
+    /// <summary>Whether this model's engine is built and on disk (PB52).</summary>
+    /// <param name="modelPath">The ONNX file.</param>
+    /// <param name="selection">A Windows ML selection.</param>
+    /// <returns>True when its context model exists.</returns>
+    public bool Ready(string modelPath, ProviderSelection selection) => File.Exists(ContextFor(modelPath, selection));
+
+    /// <summary>Whether the provider could not build this model on an earlier run (PB55).</summary>
+    /// <param name="modelPath">The ONNX file.</param>
+    /// <param name="selection">A Windows ML selection.</param>
+    /// <returns>True when that was recorded.</returns>
+    public bool Unsupported(string modelPath, ProviderSelection selection) => File.Exists(Unsupported(ContextFor(modelPath, selection)));
 
     private static string Unsupported(string context) => context[..^".onnx".Length] + ".unsupported.txt";
 

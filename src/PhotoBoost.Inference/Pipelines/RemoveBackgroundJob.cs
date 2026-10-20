@@ -53,7 +53,7 @@ public static class RemoveBackgroundJob
                         Operation,
                         RemoveBackground.Model,
                         variant,
-                        library.Provider.Name,
+                        library.RunsOn(RemoveBackground.Model, variant).Name,
                         library.Provider.Adapter?.Name,
                         image.Width,
                         image.Height,

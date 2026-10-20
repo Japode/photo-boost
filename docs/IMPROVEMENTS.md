@@ -42,30 +42,6 @@ measurements). Later launches only re-check presence and hashes.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB52 TensorRT-RTX engine reuse
-
-PB43 measured TensorRT-RTX on the RTX 4060 with Real-ESRGAN x4: FP16 tiles three times
-faster than DirectML, but 10 to 17 s of engine build at every session creation.
-
-Landed:
-- EngineCache keeps each built engine as an EP context model under
-  %LOCALAPPDATA%\PhotoBoost\engines, keyed by model file, provider package, GPU, driver and ORT.
-  First x4 upscale in a new process: 1.8 to 1.9 s from the cache against 8.1 s, 92 ms warm.
-- EngineWarmup builds the operations' engines on the queue at startup on Windows ML.
-- TensorRT-RTX 0.4 builds no engine for Real-ESRGAN x2plus, SCUNet or ViTMatte. The cache
-  records that once, and those models run on DirectML on the same GPU. Before this, 2x upscale,
-  denoise and refined background removal failed on --provider winml.
-
-Left, and waiting on the owner:
-- Whether auto should try TensorRT-RTX first. The owner set DirectML as the default (PB43).
-  With engines cached, the first x4 upscale only matches DirectML's 1.9 s; warm tiles are
-  about twice as fast, and three of the seven models fall back anyway. If yes: auto picks
-  Windows ML once its engines are prepared, DirectML otherwise.
-- The log and the status bar name the library's provider, so a model that fell back to
-  DirectML is logged as TensorRT-RTX. Name the session's provider instead.
-- An explicit optimization profile (nv_profile_min/opt/max_shapes, at the tile sizes PB41
-  picks) may let the three build: SCUNet's error says the default kOPT shape breaks a reshape.
-
 ## Block D — Editor: comparison, history and quality modes
 
 ### §PB29 Quality mode selector

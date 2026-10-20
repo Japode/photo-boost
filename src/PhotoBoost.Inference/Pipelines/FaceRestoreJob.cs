@@ -52,7 +52,7 @@ public static class FaceRestoreJob
                         operation,
                         FaceRestore.Model,
                         FaceRestore.VariantFor(library, variant),
-                        library.Provider.Name,
+                        library.RunsOn(FaceRestore.Model, FaceRestore.VariantFor(library, variant)).Name,
                         library.Provider.Adapter?.Name,
                         image.Width,
                         image.Height,

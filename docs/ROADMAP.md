@@ -25,15 +25,6 @@
   with the real --base-url, every staged file is reachable there, and a download checks
   against the manifest's SHA-256.
 
-## Done when — PB52
-
-- **No user upscale on --provider winml pays the engine build** After the first launch
-  the engines are built in the background; a run started once that finished takes under
-  DirectML's first-run time on the RTX 4060 desk.
-- **Auto runs on TensorRT-RTX where its engine is cached** With an engine cached,
-  --provider auto's status bar names TensorRT-RTX on the RTX 4060 desk, and DirectML
-  still runs where no engine or provider exists.
-
 ## Non-goals
 
 - **Cloud inference or external APIs** Every model runs locally; the network is used

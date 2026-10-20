@@ -37,7 +37,11 @@ public static class EngineWarmup
             keys.Insert(5, new(Matting.Model, matte));
         }
 
-        return [.. keys.Where(key => library.Has(key.Model, key.Variant) && !engines.Has(library.FileOf(key.Model, key.Variant), library.Provider))];
+        // PB52: under auto only the upscalers run on the Windows ML provider, so only they are built.
+        return [.. keys.Where(key =>
+            library.Provider.For(key.Model).Provider == ExecutionProvider.WindowsML
+            && library.Has(key.Model, key.Variant)
+            && !engines.Has(library.FileOf(key.Model, key.Variant), library.Provider))];
     }
 
     /// <summary>Queues one build per model behind whatever is running.</summary>

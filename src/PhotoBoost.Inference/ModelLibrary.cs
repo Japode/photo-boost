@@ -79,6 +79,15 @@ public sealed class ModelLibrary : IDisposable
     /// <returns>The path, in the first root when none has it.</returns>
     public string FileOf(string model, string variant) => PathOf(new ModelKey(model, variant));
 
+    /// <summary>
+    /// Where a model's variant runs, which the log names (PB52): <see cref="Provider"/>, or
+    /// DirectML on its GPU for a model the Windows ML provider does not run or has no engine for.
+    /// </summary>
+    /// <param name="model">The model's folder name.</param>
+    /// <param name="variant">fp32, fp16 or int8.</param>
+    /// <returns>The selection its session is built on.</returns>
+    public ProviderSelection RunsOn(string model, string variant) => ModelSessions.RunsOn(Provider, Engines, model, FileOf(model, variant));
+
     /// <summary>Whether a model's variant is on disk.</summary>
     /// <param name="model">The model's folder name.</param>
     /// <param name="variant">fp32, fp16 or int8.</param>

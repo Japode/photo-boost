@@ -250,26 +250,52 @@ public static class ModelSessions
         return new SessionCache<InferenceSession>(
             key =>
             {
-                ProviderSelection on = provider;
-                if (engines is not null && provider.Provider == ExecutionProvider.WindowsML)
+                string file = path(key);
+                ProviderSelection on = RunsOn(provider, engines, key.Model, file);
+                if (engines is not null && on.Provider == ExecutionProvider.WindowsML)
                 {
                     try
                     {
-                        return engines.Open(path(key), provider);
+                        return engines.Open(file, on);
                     }
                     catch (NotSupportedException)
                     {
-                        // PB52: a model the Windows ML provider cannot build runs on DirectML on the
+                        // PB55: a model the Windows ML provider cannot build runs on DirectML on the
                         // same GPU, or on the CPU, rather than failing its operation.
-                        on = provider.Adapter is { } adapter
-                            ? new ProviderSelection(ExecutionProvider.DirectML, adapter, null)
-                            : new ProviderSelection(ExecutionProvider.Cpu, null, null);
+                        on = on.OnDirectML();
                     }
                 }
 
                 using SessionOptions options = SessionOptionsFactory.Create(on);
-                return new InferenceSession(path(key), options);
+                return new InferenceSession(file, options);
             },
             idle);
+    }
+
+    /// <summary>
+    /// Where one model's session runs (PB52): the selection, or DirectML on its GPU for a model it
+    /// does not accelerate, one the provider could not build, or, under auto, one whose engine is
+    /// not built yet. The log names this rather than the selection.
+    /// </summary>
+    /// <param name="provider">What detection chose.</param>
+    /// <param name="engines">The Windows ML engines, or null.</param>
+    /// <param name="model">The model's folder name.</param>
+    /// <param name="file">Its ONNX file.</param>
+    /// <returns>The selection the session is built on.</returns>
+    public static ProviderSelection RunsOn(ProviderSelection provider, EngineCache? engines, string model, string file)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+        ProviderSelection on = provider.For(model);
+        if (on.Provider != ExecutionProvider.WindowsML || engines is null)
+        {
+            return on;
+        }
+
+        if (engines.Unsupported(file, on) || (on.EnginesReadyOnly && !engines.Ready(file, on)))
+        {
+            return on.OnDirectML();
+        }
+
+        return on;
     }
 }
