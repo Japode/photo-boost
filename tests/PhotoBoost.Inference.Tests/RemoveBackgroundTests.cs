@@ -78,6 +78,32 @@ public sealed class RemoveBackgroundTests
     }
 
     [Fact]
+    public void RefiningZeroesFaintSpecks()
+    {
+        // Subject on the left; on the right a background of 0 with one model pixel at 5%, a faint
+        // speck such as RMBG leaves in a sky. The stretch keeps it; refining removes it.
+        // Far enough from the subject that its edge, smoothed on this flat photo, cannot reach.
+        const int side = 16;
+        RgbaImage photo = Opaque(32, 32, 20000);
+        int speck = (8 * side) + 13;
+        float[] Specks(float[] _) => [.. Enumerable.Range(0, side * side).Select(i => i % side < 8 ? 1f : i == speck ? 0.05f : 0f)];
+
+        RgbaImage raw = RemoveBackground.Matte(photo, side, Meta, Specks);
+        RgbaImage refined = RemoveBackground.Matte(photo, side, Meta, Specks, refine: true);
+
+        Assert.True(raw.Row(17)[(27 * 4) + 3] > 1000, "the speck should be in the raw mask");
+        Assert.Equal(0, refined.Row(17)[(27 * 4) + 3]);
+        Assert.Equal(RgbaImage.Max, refined.Row(16)[(4 * 4) + 3]);
+    }
+
+    [Fact]
+    public void TheRadiusCoversTwoModelPixelsAtThePhotosScale()
+    {
+        Assert.Equal(2, RemoveBackground.RefineRadius(new RgbaImage(500, 300), 1024));
+        Assert.Equal(8, RemoveBackground.RefineRadius(new RgbaImage(4000, 3000), 1024));
+    }
+
+    [Fact]
     public void TheRealModelSeparatesTheSubjectInTheTestPhoto()
     {
         string models = Path.Combine(Repository.Root, ".cache", "models");
@@ -91,13 +117,23 @@ public sealed class RemoveBackgroundTests
         RgbaImage photo = ImageDecoder.Decode(image);
 
         RgbaImage result = RemoveBackground.Run(library, photo, "fp32");
+        RgbaImage raw = RemoveBackground.Run(library, photo, "fp32", refine: false);
 
-        ushort[] alpha = [.. result.Samples.ToArray().Where((_, i) => i % 4 == 3)];
+        ushort[] alpha = Alpha(result);
         double opaque = alpha.Count(a => a > 60000) / (double)alpha.Length;
         double clear = alpha.Count(a => a < 5000) / (double)alpha.Length;
         Assert.InRange(opaque, 0.05, 0.95);
         Assert.InRange(clear, 0.05, 0.95);
+
+        // PB47: refining leaves fewer faint pixels (alpha above 0, under 10%) than BRIA's own result.
+        int Faint(ushort[] values) => values.Count(a => a is > 0 and < 6554);
+        int before = Faint(Alpha(raw));
+        int after = Faint(alpha);
+        TestContext.Current.TestOutputHelper?.WriteLine($"faint pixels {before} -> {after}");
+        Assert.True(after < before, $"faint pixels {before} became {after}");
     }
+
+    private static ushort[] Alpha(RgbaImage image) => [.. image.Samples.ToArray().Where((_, i) => i % 4 == 3)];
 
     private static RgbaImage Opaque(int width, int height, ushort value)
     {

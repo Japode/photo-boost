@@ -76,20 +76,22 @@ model download flow.
 
 ## Block E — Face restoration and background removal
 
-### §PB47 Refining the background mask
+### §PB48 Sharpening the background mask's edge
 
-Found by PB32. RemoveBackground applies BRIA's own postprocess only: the 1024 x 1024
-mask is resized bilinearly to the photo and stretched to its range. On example_input.jpg
-the cut-out is right, but the sky keeps faint specks of low alpha, and on a large photo
-the edge is as soft as a 1024 px mask scaled up, so hair and fur blur into the
-background.
+Found by PB47. The grey guided filter removed RMBG-1.4's faint specks (pixels with alpha
+between 0 and 10% on example_input.jpg: 58248 to 4529) but did not sharpen the edge: the
+semi-transparent band (alpha 10% to 90%) grew from 13481 to 17724 pixels. Filtering the
+whole mask was worse still (a light halo, 31325 band pixels), so PB47 refines only where
+BRIA's mask is unsure. Epsilon 1e-3 and 1e-4 measured the same. The cause is the guide:
+the giraffes' white ears against a white sky have almost no luminance difference, so the
+filter has no edge to follow and averages instead.
 
-Refine the mask at the photo's own resolution: a guided filter (He et al.) with the
-photo's luminance as the guide sharpens the edge to the photo's detail at linear cost,
-and values under a small floor (about 2%) go to zero, which removes the specks without
-eating soft edges. Measure it on example_input.jpg against the unrefined mask: alpha's
-edge width and the count of stray pixels, and check a hair-heavy photo by eye. Keep the
-unrefined path selectable for a comparison in the Compare view.
+Options to measure against the same two counts and by eye on a hair-heavy photo: the
+colour guided filter (a 3 x 3 covariance per window, so a hue edge counts where
+luminance is flat); running RMBG on overlapping 1024 px tiles of a large photo so the
+mask is made nearer full size; or a matting model (ViTMatte, MIT) on a trimap from the
+mask's unsure band, with its weights verified and exported like the others. Keep Refine
+edges and the unrefined path, so the Compare view can show each against the photo.
 
 ## Block F — Delivery: README, benchmarks and installers
 

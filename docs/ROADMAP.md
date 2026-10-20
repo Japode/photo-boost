@@ -19,7 +19,7 @@
 
 ## Block E — Face restoration and background removal
 
-- 📋 **PB47** (deps: PB32 ✅) **Background removal leaves faint specks and a soft upscaled edge, with no refinement at the photo's resolution** — A 1024 px mask scaled to a large photo blurs hair into the background, and stray low alpha shows on any colour behind it. → §PB47
+- 💭 **PB48** (deps: PB47 ✅) **Background removal's edge stays soft where subject and background have the same brightness** — The grey guided filter cut the specks but widened the edge band by a third, so hair and pale fur still blur into a pale background. → §PB48
 
 ## Block F — Delivery: README, benchmarks and installers
 

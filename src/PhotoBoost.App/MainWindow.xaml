@@ -105,6 +105,9 @@
             <TextBlock Text="Remove background" FontSize="15" FontWeight="SemiBold" />
             <TextBlock Text="RMBG-1.4, making everything but the subject transparent" Style="{StaticResource StatCaption}"
                        TextWrapping="Wrap" Margin="0,2,0,12" />
+            <!-- PB47: the mask refined against the full-size photo; off gives BRIA's own result to compare. -->
+            <CheckBox x:Name="RefineEdges" AutomationProperties.AutomationId="RefineEdges" IsChecked="True" Margin="0,0,0,12"
+                      Content="Refine edges against the photo" />
             <Button x:Name="RemoveBackgroundButton" AutomationProperties.AutomationId="RemoveBackgroundButton" Content="Remove background"
                     HorizontalAlignment="Stretch" Padding="12,6" Click="OnRemoveBackgroundClick" IsEnabled="False" />
             <TextBlock x:Name="BackgroundNote" AutomationProperties.AutomationId="BackgroundNote" Visibility="Collapsed"

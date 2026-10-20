@@ -14,10 +14,11 @@ public static class RemoveBackgroundJob
     /// <param name="library">The models.</param>
     /// <param name="image">The photo.</param>
     /// <param name="variant">fp32, fp16 or int8.</param>
+    /// <param name="refine">Whether to refine the mask against the photo (PB47).</param>
     /// <param name="progress">Its one step, done.</param>
     /// <param name="log">Where the finished operation is recorded, whatever its outcome; null records nothing.</param>
     /// <returns>The job.</returns>
-    public static InferenceJob<RgbaImage> Enqueue(InferenceService service, ModelLibrary library, RgbaImage image, string variant, IProgress<JobProgress>? progress = null, OperationLog? log = null)
+    public static InferenceJob<RgbaImage> Enqueue(InferenceService service, ModelLibrary library, RgbaImage image, string variant, bool refine = true, IProgress<JobProgress>? progress = null, OperationLog? log = null)
     {
         ArgumentNullException.ThrowIfNull(service);
         ArgumentNullException.ThrowIfNull(library);
@@ -31,7 +32,7 @@ public static class RemoveBackgroundJob
                 try
                 {
                     context.Cancellation.ThrowIfCancellationRequested();
-                    RgbaImage result = RemoveBackground.Run(library, image, variant);
+                    RgbaImage result = RemoveBackground.Run(library, image, variant, refine);
                     context.Report(1, 1, RemoveBackground.Stage);
                     return result;
                 }

@@ -27,7 +27,8 @@ public partial class MainWindow
             return;
         }
 
-        running = RemoveBackgroundJob.Enqueue(service, library, source, Variant, new Progress<JobProgress>(ShowProgress), log);
+        bool refine = RefineEdges.IsChecked == true;
+        running = RemoveBackgroundJob.Enqueue(service, library, source, Variant, refine, new Progress<JobProgress>(ShowProgress), log);
         JobProgress.Value = 0;
         JobStatus.Text = "Finding the subject…";
         JobPanel.Visibility = Visibility.Visible;
@@ -38,7 +39,7 @@ public partial class MainWindow
         {
             RgbaImage result = await running.Completion.ConfigureAwait(true);
             running = null;
-            PushVersion(result, "Remove background");
+            PushVersion(result, refine ? "Remove background" : "Remove background (unrefined)");
             JobStatus.Text = "Done.";
             await ExportAfterRunAsync().ConfigureAwait(true);
         }

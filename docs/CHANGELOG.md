@@ -52,6 +52,7 @@
 - ✅ **PB30** **No face detection and alignment to feed GFPGAN crops and paste results back** — YuNet (MIT, opencv_zoo f12e127) adopted with meta.json; FaceDetection decodes and suppresses; FaceAlignment fits FFHQ 512, crops and pastes back feathered.
 - ✅ **PB31** **No GFPGAN face restoration pipeline** — FaceRestore aligns each YuNet face, runs GFPGAN, pastes back by strength, optionally upscales first; Restore faces card states its terms; 2 faces in 3.1 s on DirectML.
 - ✅ **PB32** **No background removal pipeline producing a transparent image** — RemoveBackground resizes to RMBG's 1024 square, stretches the mask as BRIA does and sets it as alpha; Remove background card states BRIA's terms; giraffes cut out on DirectML.
+- ✅ **PB47** **Background removal leaves faint specks and a soft upscaled edge, with no refinement at the photo's resolution** — A guided filter refines only the mask's unsure band and floors it: faint pixels on example_input.jpg 58248 to 4529, no halo; edge band widened 13481 to 17724, filed.
 
 ## Block F — Delivery: README, benchmarks and installers
 

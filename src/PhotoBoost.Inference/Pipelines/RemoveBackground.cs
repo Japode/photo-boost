@@ -21,8 +21,9 @@ public static class RemoveBackground
     /// <param name="library">The models and their sessions.</param>
     /// <param name="image">The photo, left as it is.</param>
     /// <param name="variant">fp32, fp16 or int8.</param>
+    /// <param name="refine">Whether to refine the mask against the photo (PB47); off is BRIA's own result.</param>
     /// <returns>The photo with the background transparent.</returns>
-    public static RgbaImage Run(ModelLibrary library, RgbaImage image, string variant)
+    public static RgbaImage Run(ModelLibrary library, RgbaImage image, string variant, bool refine = true)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(image);
@@ -33,7 +34,26 @@ public static class RemoveBackground
         }
 
         using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, variant));
-        return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side));
+        return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine);
+    }
+
+    /// <summary>Mask values under this become fully transparent after refining: the faint specks.</summary>
+    public const float Floor = 0.02f;
+
+    /// <summary>The guided filter's regulariser, on luminance 0 to 1: how much detail the photo needs before the edge follows it.</summary>
+    public const float Epsilon = 1e-4f;
+
+    /// <summary>
+    /// The guided filter's window: about two of the model's pixels at the photo's scale, so the
+    /// blur a 1024 px mask picks up from being scaled is inside the window that removes it.
+    /// </summary>
+    /// <param name="image">The photo.</param>
+    /// <param name="side">The model's square side.</param>
+    /// <returns>The radius in photo pixels, at least 2.</returns>
+    public static int RefineRadius(RgbaImage image, int side)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        return Math.Max(2, (int)Math.Ceiling(2.0 * Math.Max(image.Width, image.Height) / side));
     }
 
     /// <summary>
@@ -44,8 +64,14 @@ public static class RemoveBackground
     /// <param name="side">The model's square input side.</param>
     /// <param name="meta">The model's description, for its value ranges.</param>
     /// <param name="model">1 x 3 x side x side in, side x side mask values out.</param>
+    /// <param name="refine">
+    /// PB47: where the stretched mask is unsure (between <see cref="Floor"/> and 1 minus it),
+    /// replace it with a guided filter of itself on the photo's luminance, so its edge follows the
+    /// full-size photo and a faint isolated speck is averaged away; then zero what is under the
+    /// floor and make opaque what is within it of 1.
+    /// </param>
     /// <returns>A copy of the photo with the mask as its alpha.</returns>
-    public static RgbaImage Matte(RgbaImage image, int side, ModelMeta meta, Func<float[], float[]> model)
+    public static RgbaImage Matte(RgbaImage image, int side, ModelMeta meta, Func<float[], float[]> model, bool refine = false)
     {
         ArgumentNullException.ThrowIfNull(image);
         ArgumentNullException.ThrowIfNull(meta);
@@ -65,6 +91,23 @@ public static class RemoveBackground
             high = (float)meta.Output.ValueRange[1];
         }
 
+        for (int i = 0; i < mask.Length; i++)
+        {
+            mask[i] = Math.Clamp((mask[i] - low) / (high - low), 0f, 1f);
+        }
+
+        if (refine)
+        {
+            // Only where BRIA's mask is unsure. Its confident 0 and 1 stay: on example_input.jpg,
+            // filtering everywhere smoothed the mask out into the flat bright sky around the
+            // giraffes' heads, a halo, since a flat photo gives the filter no edge to follow.
+            float[] filtered = GuidedFilter.Refine(image, mask, RefineRadius(image, side), Epsilon);
+            for (int i = 0; i < mask.Length; i++)
+            {
+                mask[i] = mask[i] < Floor || mask[i] > 1 - Floor ? Snap(mask[i]) : Snap(filtered[i]);
+            }
+        }
+
         RgbaImage result = new(image.Width, image.Height, image.SourceBitDepth);
         image.Samples.CopyTo(result.Samples);
         for (int y = 0; y < image.Height; y++)
@@ -72,13 +115,24 @@ public static class RemoveBackground
             Span<ushort> row = result.Row(y);
             for (int x = 0; x < image.Width; x++)
             {
-                float t = Math.Clamp((mask[(y * image.Width) + x] - low) / (high - low), 0f, 1f);
+                float t = mask[(y * image.Width) + x];
                 ushort alpha = (ushort)MathF.Round(t * RgbaImage.Max);
                 row[(x * 4) + 3] = Math.Min(row[(x * 4) + 3], alpha);
             }
         }
 
         return result;
+    }
+
+    // Within Floor of either end is that end; the guided filter can also overshoot past 0 and 1.
+    private static float Snap(float value)
+    {
+        if (value < Floor)
+        {
+            return 0f;
+        }
+
+        return value > 1 - Floor ? 1f : value;
     }
 
     private static float[] RunModel(InferenceSession session, ModelMeta meta, float[] input, int side)
