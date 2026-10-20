@@ -3,7 +3,6 @@
 ## Block A — Project foundation
 
 - ⏳ **PB38** (deps: PB1 ✅, PB2 ✅, winwright WW554) **No winwright Cases project, winwright.json or first case that opens the main window** — The winwright Claude plugin is not installed: its marketplace name collides with roadkeep's (WW554). → §PB38
-- 📋 **PB40** (deps: PB1 ✅) **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — WPF's own image control renders through DirectX 9 and struggles with very large bitmaps; the comparator needs a direct GPU path. → §PB40
 
 ## Block B — Model management
 
@@ -21,7 +20,7 @@
 
 ## Block D — Editor: comparison, history and quality modes
 
-- 📋 **PB27** (deps: PB24 ✅, PB40) **No before and after slider comparison** — Judging an enhancement needs both versions aligned at the same zoom. → §PB27
+- 📋 **PB27** (deps: PB24 ✅, PB40 ✅) **No before and after slider comparison** — Judging an enhancement needs both versions aligned at the same zoom. → §PB27
 - 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between INT8 and the High quality FP16/FP32 models** — The brief requires both variants selectable, trading speed and memory for fidelity. → §PB29
 
 ## Block E — Face restoration and background removal

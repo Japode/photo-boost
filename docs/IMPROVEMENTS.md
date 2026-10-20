@@ -12,15 +12,6 @@ when the desk cannot be observed. Add DefaultItemExcludes if the app project sit
 tests. Every element a case touches gets a unique automation id. Install the winwright
 Claude plugin at project scope. Friction goes to winwright's roadmap (WW).
 
-### §PB40 GPU image display spike
-
-Compare D3DImage fed by a shared D3D11 texture against a child HWND with a DXGI flip
-swapchain, both through Vortice as in quickshell's Quickshell.Render and its host spike.
-Measure pan and zoom frame time on a 50 MP image, memory, airspace issues with Fluent
-overlays, and a WARP fallback. Note that winwright cannot screenshot a Mica window, so
-the surface must expose what it shows (size, zoom, divider position) through automation;
-WW552 asks winwright for a capture route for this surface.
-
 ## Block B — Model management
 
 ### §PB12 Model hosting and manifest
@@ -127,8 +118,11 @@ DateTimeOriginal through a JPEG.
 
 Draw both versions in the GPU surface from the display spike, with a draggable divider,
 synced zoom and pan and a side-by-side toggle. The before image is scaled to the output
-size so details line up. The divider is a Slider-like element with an automation id, so
-a case can set its range.
+size so details line up. The divider is drawn by the surface's shader and dragged
+through the child HWND's own mouse messages: per the PB40 spike
+(spike/gpu-display/README.md) no ordinary WPF element can sit over the swapchain. A
+RangeValue automation peer on the host publishes and accepts the divider position, so a
+case can set it.
 
 ### §PB29 Quality mode selector
 

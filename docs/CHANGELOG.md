@@ -10,6 +10,7 @@
 - ✅ **PB37** **No design system: Brand, Theme, Appearance and the Fluent page styles from claude-tray are missing** — Brand, Theme, Appearance, Templates and a shared Styles.xaml with the sibling apps' card, header, stat, chip and nav styles now dress the window, and a test refuses colours outside Brand.cs.
 - ✅ **PB38 (cases half)** **No winwright Cases project, winwright.json or first case that opens the main window** — winwright.json, tests/PhotoBoost.Cases on Winwright 1.1.3 and cases/window.cases.json run in run-tests.cmd: the title and the provider chip are read from the live window.
 - ✅ **PB39** **No command-line flags to open a file, force a provider or point at a models folder** — CommandLine parses the five flags in one place and refuses bad input with exit code 2; --provider already drives detection, proved by a case (design recorded in `docs/COMMAND-LINE.md`).
+- ✅ **PB40** **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — A child-HWND flip swapchain shows a 50 MP image with GPU mips in 261 MB and pans and zooms at 60 Hz with no frame over 20 ms, on GPU and WARP (design recorded in `spike/gpu-display/README.md`).
 
 ## Block B — Model management
 
