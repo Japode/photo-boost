@@ -54,7 +54,7 @@
 - ✅ **PB31** **No GFPGAN face restoration pipeline** — FaceRestore aligns each YuNet face, runs GFPGAN, pastes back by strength, optionally upscales first; Restore faces card states its terms; 2 faces in 3.1 s on DirectML.
 - ✅ **PB32** **No background removal pipeline producing a transparent image** — RemoveBackground resizes to RMBG's 1024 square, stretches the mask as BRIA does and sets it as alpha; Remove background card states BRIA's terms; giraffes cut out on DirectML.
 - ✅ **PB47** **Background removal leaves faint specks and a soft upscaled edge, with no refinement at the photo's resolution** — A guided filter refines only the mask's unsure band and floors it: faint pixels on example_input.jpg 58248 to 4529, no halo; edge band widened 13481 to 17724, filed.
-- ✅ **PB48 (ViTMatte export)** **Background removal's edge stays soft where subject and background have the same brightness** — ViTMatte small downloads and exports to fp32 and int8 ONNX with a trimap input, matching PyTorch within 3e-6.
+- ✅ **PB48** **Background removal's edge stays soft where subject and background have the same brightness** — Refine edges runs ViTMatte on RMBG's unsure band in 1024 px tiles, narrowing it from 8699 to 7958 pixels (design recorded in `src/PhotoBoost.Inference/Pipelines/Matting.cs`).
 
 ## Block F — Delivery: README, benchmarks and installers
 

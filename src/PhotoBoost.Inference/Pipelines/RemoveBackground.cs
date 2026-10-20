@@ -7,7 +7,8 @@ namespace PhotoBoost.Inference.Pipelines;
 /// Background removal with RMBG-1.4 (PB32), as BRIA's own example does it: the photo is resized to
 /// the model's square, ignoring its aspect, the mask that comes back is resized to the photo and
 /// stretched so its lowest value is transparent and its highest opaque, and it becomes the alpha.
-/// Colour is left alone; an alpha the photo already had is kept where it is lower.
+/// Colour is left alone; an alpha the photo already had is kept where it is lower. Refined, the
+/// mask's unsure edge goes through ViTMatte where it is on disk (PB48), else a guided filter (PB47).
 /// </summary>
 public static class RemoveBackground
 {
@@ -21,7 +22,10 @@ public static class RemoveBackground
     /// <param name="library">The models and their sessions.</param>
     /// <param name="image">The photo, left as it is.</param>
     /// <param name="variant">fp32, fp16 or int8.</param>
-    /// <param name="refine">Whether to refine the mask against the photo (PB47); off is BRIA's own result.</param>
+    /// <param name="refine">
+    /// Whether to refine the mask against the photo: with ViTMatte where its model is on disk
+    /// (PB48), else with the guided filter (PB47). Off is BRIA's own result.
+    /// </param>
     /// <returns>The photo with the background transparent.</returns>
     public static RgbaImage Run(ModelLibrary library, RgbaImage image, string variant, bool refine = true)
     {
@@ -33,8 +37,11 @@ public static class RemoveBackground
             throw new InvalidDataException($"{Model}'s meta.json does not describe a fixed-size mask model.");
         }
 
+        Action<float[]>? matting = refine && library.Has(Matting.Model, variant)
+            ? mask => Matting.Run(library, image, mask, variant)
+            : null;
         using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, variant));
-        return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine);
+        return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine, matting);
     }
 
     /// <summary>Mask values under this become fully transparent after refining: the faint specks.</summary>
@@ -70,8 +77,12 @@ public static class RemoveBackground
     /// full-size photo and a faint isolated speck is averaged away; then zero what is under the
     /// floor and make opaque what is within it of 1.
     /// </param>
+    /// <param name="matting">
+    /// PB48: with <paramref name="refine"/>, what refines the unsure band in place instead of the
+    /// guided filter (ViTMatte, see <see cref="Matting"/>); null keeps the guided filter.
+    /// </param>
     /// <returns>A copy of the photo with the mask as its alpha.</returns>
-    public static RgbaImage Matte(RgbaImage image, int side, ModelMeta meta, Func<float[], float[]> model, bool refine = false)
+    public static RgbaImage Matte(RgbaImage image, int side, ModelMeta meta, Func<float[], float[]> model, bool refine = false, Action<float[]>? matting = null)
     {
         ArgumentNullException.ThrowIfNull(image);
         ArgumentNullException.ThrowIfNull(meta);
@@ -96,7 +107,15 @@ public static class RemoveBackground
             mask[i] = Math.Clamp((mask[i] - low) / (high - low), 0f, 1f);
         }
 
-        if (refine)
+        if (refine && matting is not null)
+        {
+            matting(mask);
+            for (int i = 0; i < mask.Length; i++)
+            {
+                mask[i] = Snap(mask[i]);
+            }
+        }
+        else if (refine)
         {
             // Only where BRIA's mask is unsure. Its confident 0 and 1 stay: on example_input.jpg,
             // filtering everywhere smoothed the mask out into the flat bright sky around the

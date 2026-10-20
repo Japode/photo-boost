@@ -68,7 +68,9 @@ fp32.onnx) from .cache/models into {app}\models, failing when one is missing; th
 looks there before %LOCALAPPDATA%\PhotoBoost\models, which stays where downloads go; the
 default variant becomes FP16 (Variant in MainWindow.Operations.cs); the About panel and
 the cases keep reading what is on disk. The installer's size and a run of each operation
-from the installed folder are the check.
+from the installed folder are the check. ViTMatte (PB48) has no fp16.onnx (its graph
+does not survive the FP16 converter): bundle its int8 or fp32 and let Matting ask for
+that variant, or Refine edges falls back to the guided filter.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
@@ -116,29 +118,6 @@ fast (PB51's measurements), so the panel says so. --quality compact|high maps to
 Standard and High. PB34's table compares the two sets.
 
 ## Block E — Face restoration and background removal
-
-### §PB48 Sharpening the background mask's edge
-
-Found by PB47. The grey guided filter cut RMBG-1.4's faint specks but widened the
-semi-transparent band (alpha 10% to 90%) on example_input.jpg from 13481 to 17724
-pixels: white ears on a white sky give a luminance guide no edge to follow.
-
-Landed: ViTMatte small (Apache-2.0, owner-approved) is downloaded and exported by the
-scripts: fp32 and int8 (43.8 dB against fp32, floor 41), input 1 x 4 x H x W, H and W
-multiples of 32, RGB in [-1, 1] then the trimap (0, 0.5, 1); out alpha in [0, 1]. FP16
-is dropped: the converter leaves shape casts feeding FP16 ops. A Python prototype on the
-same photo narrowed the band about 12% (9081 to 7599 pixels, trimap floor 0.02, unknown
-grown 8 px).
-
-Left, in C#: RemoveBackground with Refine edges on runs ViTMatte where its model is on
-disk, else the PB47 guided filter. The trimap is RMBG's stretched mask: unknown where it
-is between the floor and 1 minus it, grown by about 8 px at 1405 px (scale it with the
-photo), the rest thresholded at a half; trimap_from_mask in export-and-quantize.py is
-the reference. Run it in tiles (Tiler.Plan, multiple 32, 64 px context), skipping tiles
-with no unknown pixel: the four global-attention blocks grow with the token count
-squared, so a 12 MP photo cannot run whole. Keep only unknown pixels from the model.
-Measure the band on example_input.jpg against RMBG's own in RemoveBackgroundTests, and
-keep the unrefined path for the Compare view.
 
 ## Block F — Delivery: README, benchmarks and installers
 

@@ -80,7 +80,7 @@ public sealed record ModelMeta(
 /// <param name="Name">The ONNX input name.</param>
 /// <param name="Layout">Always NCHW.</param>
 /// <param name="ColourOrder">RGB, or BGR for the face detector (PB30).</param>
-/// <param name="Channels">Always 3.</param>
+/// <param name="Channels">3, or 4 for a matting model whose fourth channel is the trimap (PB48).</param>
 /// <param name="ValueRange">[low, high] that pixel 0 and 255 map to.</param>
 /// <param name="Size">A fixed square side, or null when height and width are free.</param>
 /// <param name="Multiple">Height and width must be a multiple of this.</param>
