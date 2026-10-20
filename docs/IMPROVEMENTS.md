@@ -76,12 +76,6 @@ model download flow.
 
 ## Block E — Face restoration and background removal
 
-### §PB30 Face detection and alignment
-
-Add a face detector in ONNX (RetinaFace or YuNet, as facexlib uses) to the model
-pipeline of Block B, with verified URLs. Compute landmarks, warp each face to the FFHQ
-512 template, and keep the inverse affine and a soft mask for pasting back.
-
 ### §PB31 Face restore pipeline
 
 Pipelines/FaceRestore.cs: detect, align, run GFPGANv1.4 per face, paste back with the

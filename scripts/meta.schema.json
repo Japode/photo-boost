@@ -9,7 +9,7 @@
   "properties": {
     "schema": { "const": 1 },
     "name": { "type": "string", "pattern": "^[a-z0-9.-]+$" },
-    "task": { "enum": ["upscale", "face-restore", "background-removal"] },
+    "task": { "enum": ["upscale", "face-restore", "background-removal", "face-detection"] },
     "scale": { "type": "integer", "minimum": 1 },
     "input": {
       "type": "object",
@@ -18,7 +18,7 @@
       "properties": {
         "name": { "type": "string", "minLength": 1 },
         "layout": { "const": "NCHW" },
-        "colour_order": { "const": "RGB" },
+        "colour_order": { "enum": ["RGB", "BGR"] },
         "channels": { "const": 3 },
         "value_range": { "$ref": "#/$defs/range" },
         "size": { "description": "A fixed square side, or null when height and width are dynamic.", "type": ["integer", "null"], "minimum": 1 },
@@ -31,10 +31,13 @@
       "required": ["name", "channels", "value_range"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "channels": { "enum": [1, 3] },
-        "value_range": { "$ref": "#/$defs/range" }
-      }
+        "name": { "description": "The ONNX output name, or with a decoder the family whose heads are <part>_<stride>.", "type": "string", "minLength": 1 },
+        "channels": { "description": "3 for an image, 1 for a mask; with a decoder, the values per anchor across its heads.", "type": "integer", "minimum": 1 },
+        "value_range": { "$ref": "#/$defs/range" },
+        "decoder": { "description": "PB30: how a detector's heads are read; absent for an image or a mask.", "enum": ["yunet"] },
+        "strides": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 1 }
+      },
+      "dependentRequired": { "decoder": ["strides"] }
     },
     "tile": {
       "type": "object",

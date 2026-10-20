@@ -19,8 +19,7 @@
 
 ## Block E — Face restoration and background removal
 
-- 📋 **PB30** (deps: PB26 ✅) **No face detection and alignment to feed GFPGAN crops and paste results back** — GFPGAN expects aligned 512px face crops, so a whole photo cannot be passed in directly. → §PB30
-- 📋 **PB31** (deps: PB30) **No GFPGAN face restoration pipeline** — Face restoration is the second operation the brief lists. → §PB31
+- 📋 **PB31** (deps: PB30 ✅) **No GFPGAN face restoration pipeline** — Face restoration is the second operation the brief lists. → §PB31
 - 📋 **PB32** (deps: PB26 ✅) **No background removal pipeline producing a transparent image** — Background removal is the third operation the brief lists. → §PB32
 
 ## Block F — Delivery: README, benchmarks and installers

@@ -67,6 +67,17 @@
       "note": "The BriaRMBG architecture, downloaded rather than vendored because it is under BRIA's license. export-and-quantize.py loads it with its transformers base class replaced by nn.Module."
     },
     {
+      "name": "yunet-2023mar",
+      "file": "face_detection_yunet_2023mar.onnx",
+      "url": "https://github.com/opencv/opencv_zoo/raw/f12e12798e8314f7c074a6656816c048dcc95b7a/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
+      "size": 232589,
+      "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+      "sha256_source": "computed",
+      "license": "MIT",
+      "license_url": "https://github.com/opencv/opencv_zoo/blob/f12e12798e8314f7c074a6656816c048dcc95b7a/models/face_detection_yunet/LICENSE",
+      "note": "PB30: the face detector GFPGAN's crops come from, fetched on 2026-10-20 and pinned to the opencv_zoo commit that added it. Already ONNX (opset 11): 1 x 3 x 640 x 640 BGR pixels 0 to 255, out per-stride heads (8, 16, 32) with a box and five landmarks per face. Chosen over facexlib's RetinaFace, which has no upstream ONNX and is 100 MB."
+    },
+    {
       "name": "u2net",
       "optional": true,
       "file": "u2net.onnx",
@@ -101,6 +112,17 @@
       "license": "Apache-2.0 with third-party terms (repository)",
       "license_url": "https://github.com/TencentARC/GFPGAN/blob/master/LICENSE",
       "note": "An aligned 512x512 face crop, which is what GFPGAN sees."
+    },
+    {
+      "name": "image-faces",
+      "file": "Blake_Lively.jpg",
+      "url": "https://raw.githubusercontent.com/TencentARC/GFPGAN/7552a7791caad982045a7bbe5634bbf1cd5c8679/inputs/whole_imgs/Blake_Lively.jpg",
+      "size": 93150,
+      "sha256": "1fae5b7f8b3f315db5b1cc141e4391f474832081fc4c7c5aea7e4d95b8b8aad9",
+      "sha256_source": "computed",
+      "license": "Apache-2.0 with third-party terms (repository)",
+      "license_url": "https://github.com/TencentARC/GFPGAN/blob/master/LICENSE",
+      "note": "PB30: a whole photo with a face in it, which the detector must find and align."
     },
     {
       "name": "image-rmbg",

@@ -115,7 +115,8 @@ class SelectionTests(unittest.TestCase):
     def test_test_images_are_downloaded_by_default_into_their_folder(self):
         # PB10: the validation images come with the weights, under test-images/.
         images = [s for s in dm.select(self.sources, [], []) if s.name.startswith("image-")]
-        self.assertEqual(3, len(images))
+        # One per model, and PB30's whole photo with faces for the detector.
+        self.assertEqual(4, len(images))
         self.assertTrue(all(s.file.startswith("test-images/") for s in images))
 
     def test_unknown_name_is_refused(self):

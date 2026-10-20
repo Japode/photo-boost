@@ -180,6 +180,34 @@ class ExportTests(unittest.TestCase):
             for file in ("fp32.onnx", "int8.onnx", "meta.json"):
                 self.assertEqual((committed / name / file).read_bytes(), (self.folder / name / file).read_bytes(), f"{name}/{file}")
 
+    def test_yunet_heads_decode_as_opencv_does(self):
+        # PB30: the same anchor PhotoBoost.Inference's FaceDetectionTests decodes, so both sides agree.
+        heads = {}
+        for stride in self.ex.DETECTOR_STRIDES:
+            n = (self.ex.DETECTOR_SIZE // stride) ** 2
+            heads.update({f"cls_{stride}": np.zeros((1, n, 1)), f"obj_{stride}": np.ones((1, n, 1)),
+                          f"bbox_{stride}": np.zeros((1, n, 4)), f"kps_{stride}": np.zeros((1, n, 10))})
+        cols = self.ex.DETECTOR_SIZE // 8
+        i = cols + 1
+        heads["cls_8"][0, i, 0] = 0.81
+        heads["bbox_8"][0, i] = [0.5, -0.25, np.log(2), 0]
+        heads["kps_8"][0, i] = [0, 0, 1, 0, 0.5, 0.5, 0, 1, 1, 1]
+        [(score, values)] = self.ex.yunet_faces(heads, threshold=0.5)
+        self.assertAlmostEqual(0.9, score, places=6)
+        np.testing.assert_allclose([4, 2, 16, 8, 8, 8, 16, 8, 12, 12, 8, 16, 16, 16], values, atol=1e-9)
+
+    @unittest.skipIf(jsonschema is None, "jsonschema not installed")
+    def test_the_adopted_detector_finds_a_face_and_writes_a_schema_valid_meta_json(self):
+        weights = self.ex.WEIGHTS
+        if not (weights / self.ex.DETECTOR_FILE).is_file() or not (weights / "test-images" / self.ex.DETECTOR_IMAGE).is_file():
+            self.skipTest("needs scripts/download_models.py to have run")
+        lines = self.ex.adopt_detector(weights, self.folder)
+        meta = json.loads((self.folder / self.ex.DETECTOR / "meta.json").read_text(encoding="utf-8"))
+        jsonschema.validate(meta, json.loads((SCRIPTS / "meta.schema.json").read_text(encoding="utf-8")))
+        self.assertEqual(("face-detection", "BGR", "yunet"), (meta["task"], meta["input"]["colour_order"], meta["output"]["decoder"]))
+        self.assertEqual(["fp32"], list(meta["variants"]))
+        self.assertIn("anchor(s) over 0.9", lines[0])
+
     def test_ssim_is_one_for_identical_images_and_lower_otherwise(self):
         rng = np.random.default_rng(5)
         a = rng.random((1, 3, 32, 32)).astype(np.float32)

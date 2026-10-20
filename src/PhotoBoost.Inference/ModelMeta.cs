@@ -10,7 +10,7 @@ namespace PhotoBoost.Inference;
 /// </summary>
 /// <param name="Schema">The meta.json format version.</param>
 /// <param name="Name">The model's name, e.g. realesrgan-x4plus.</param>
-/// <param name="Task">upscale, face-restore or background-removal.</param>
+/// <param name="Task">upscale, face-restore, background-removal or face-detection.</param>
 /// <param name="Scale">How much larger the output is than the input.</param>
 /// <param name="Input">What the model takes.</param>
 /// <param name="Output">What the model returns.</param>
@@ -79,7 +79,7 @@ public sealed record ModelMeta(
 /// <summary>The model's input tensor.</summary>
 /// <param name="Name">The ONNX input name.</param>
 /// <param name="Layout">Always NCHW.</param>
-/// <param name="ColourOrder">Always RGB.</param>
+/// <param name="ColourOrder">RGB, or BGR for the face detector (PB30).</param>
 /// <param name="Channels">Always 3.</param>
 /// <param name="ValueRange">[low, high] that pixel 0 and 255 map to.</param>
 /// <param name="Size">A fixed square side, or null when height and width are free.</param>
@@ -95,11 +95,13 @@ public sealed record ModelInput(
     int Multiple,
     [property: JsonConverter(typeof(BatchConverter))] int? Batch);
 
-/// <summary>The model's output tensor.</summary>
-/// <param name="Name">The ONNX output name.</param>
-/// <param name="Channels">3 for an image, 1 for a mask.</param>
+/// <summary>The model's output tensor, or a detector's heads.</summary>
+/// <param name="Name">The ONNX output name; with a decoder, the family whose heads are &lt;part&gt;_&lt;stride&gt;.</param>
+/// <param name="Channels">3 for an image, 1 for a mask; with a decoder, the values per anchor.</param>
 /// <param name="ValueRange">[low, high] of the values it returns.</param>
-public sealed record ModelOutput(string Name, int Channels, IReadOnlyList<double> ValueRange);
+/// <param name="Decoder">How a detector's heads are read (PB30: "yunet"); null for an image or a mask.</param>
+/// <param name="Strides">The detector's head strides, with <paramref name="Decoder"/>.</param>
+public sealed record ModelOutput(string Name, int Channels, IReadOnlyList<double> ValueRange, string? Decoder = null, IReadOnlyList<int>? Strides = null);
 
 /// <summary>Tiling hints.</summary>
 /// <param name="Recommended">The tile side to start from, or null for a fixed-size model.</param>

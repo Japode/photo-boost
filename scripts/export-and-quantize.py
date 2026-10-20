@@ -10,6 +10,8 @@ writing a model that is quietly wrong. An FP16 variant that loses too much is dr
     GFPGAN v1.4                 1 x 3 x 512 x 512 aligned face; RGB in [-1, 1], out the same
     RMBG-1.4                    BRIA's own ONNX export, adopted once it matches PyTorch;
                                 batch x 3 x 1024 x 1024, pixels / 255 - 0.5; out the mask
+    YuNet 2023mar               OpenCV Zoo's face detector, adopted once it finds the test
+                                photo's face; 1 x 3 x 640 x 640 BGR 0-255; fp32 only
 
     .venv\\Scripts\\python scripts\\export-and-quantize.py
     .venv\\Scripts\\python scripts\\export-and-quantize.py --only gfpgan-v1.4
@@ -506,6 +508,97 @@ def export(spec: Export, weights: Path, out: Path, fp16: bool = True, int8: bool
     return [*lines, describe(spec, model, folder)]
 
 
+# PB30: the face detector, adopted as OpenCV Zoo ships it. Fixed 640 x 640, BGR pixels 0 to 255,
+# and so small (0.2 MB, 13 ms on a CPU) that FP16 and INT8 would buy nothing: only fp32 is written.
+DETECTOR = "yunet-2023mar"
+DETECTOR_FILE = "face_detection_yunet_2023mar.onnx"
+DETECTOR_SIZE = 640
+DETECTOR_STRIDES = (8, 16, 32)
+DETECTOR_IMAGE = "Blake_Lively.jpg"
+
+
+def letterbox(image: Path, side: int) -> tuple[np.ndarray, float]:
+    """The image scaled to fit side x side, top-left, black beyond it, as YuNet's BGR 0-255 NCHW input."""
+    picture = Image.open(image).convert("RGB")
+    scale = side / max(picture.size)
+    w, h = max(1, round(picture.width * scale)), max(1, round(picture.height * scale))
+    canvas = np.zeros((side, side, 3), dtype=np.float32)
+    canvas[:h, :w] = np.asarray(picture.resize((w, h), Image.Resampling.BILINEAR), dtype=np.float32)
+    return canvas[:, :, ::-1].transpose(2, 0, 1)[None].copy(), scale
+
+
+def yunet_faces(outputs: dict[str, np.ndarray], threshold: float = 0.9) -> list[tuple[float, list[float]]]:
+    """YuNet's heads decoded as OpenCV's FaceDetectorYN does, before NMS.
+
+    Each face is (score, [x, y, w, h, then five landmarks as x, y]) in input pixels; the landmarks
+    are the eye on the image's left, the other eye, the nose tip and the two mouth corners, left first.
+    """
+    faces = []
+    for stride in DETECTOR_STRIDES:
+        cols = DETECTOR_SIZE // stride
+        cls, obj = outputs[f"cls_{stride}"][0, :, 0], outputs[f"obj_{stride}"][0, :, 0]
+        bbox, kps = outputs[f"bbox_{stride}"][0], outputs[f"kps_{stride}"][0]
+        score = np.sqrt(np.clip(cls, 0, 1) * np.clip(obj, 0, 1))
+        for i in np.flatnonzero(score >= threshold):
+            row, col = divmod(int(i), cols)
+            w, h = np.exp(bbox[i, 2]) * stride, np.exp(bbox[i, 3]) * stride
+            box = [(col + bbox[i, 0]) * stride - w / 2, (row + bbox[i, 1]) * stride - h / 2, w, h]
+            marks = [(kps[i, k] + (col if k % 2 == 0 else row)) * stride for k in range(10)]
+            faces.append((float(score[i]), [float(v) for v in box + marks]))
+    return faces
+
+
+def adopt_detector(weights: Path, out: Path) -> list[str]:
+    """Copies YuNet into <out>/yunet-2023mar, proves it finds the test photo's face, and describes it."""
+    source = weights / DETECTOR_FILE
+    image = weights / "test-images" / DETECTOR_IMAGE
+    for needed in (source, image):
+        if not needed.is_file():
+            raise ExportError(f"{DETECTOR}: {needed} is missing; run scripts/download_models.py first")
+    folder = out / DETECTOR
+    folder.mkdir(parents=True, exist_ok=True)
+    fp32 = folder / "fp32.onnx"
+    shutil.copyfile(source, fp32)
+    onnx.checker.check_model(str(fp32), full_check=True)
+
+    x, _ = letterbox(image, DETECTOR_SIZE)
+    session = ort.InferenceSession(str(fp32), providers=["CPUExecutionProvider"])
+    names = [o.name for o in session.get_outputs()]
+    faces = yunet_faces(dict(zip(names, session.run(None, {session.get_inputs()[0].name: x}))))
+    if not faces:
+        raise ExportError(f"{DETECTOR}: found no face in {DETECTOR_IMAGE}")
+    score, best = max(faces)
+    if not best[4] < best[6]:
+        raise ExportError(f"{DETECTOR}: the first landmark is not the eye on the image's left")
+
+    # The largest tensor the graph makes, per input pixel, from ONNX's own shape inference.
+    graph = onnx.shape_inference.infer_shapes(onnx.load(str(fp32))).graph
+    largest = max(
+        int(np.prod([d.dim_value for d in v.type.tensor_type.shape.dim]))
+        for v in [*graph.value_info, *graph.output]
+        if all(d.dim_value > 0 for d in v.type.tensor_type.shape.dim)
+    )
+    sources = json.loads(SOURCES.read_text(encoding="utf-8"))
+    upstream = next(m for m in sources["models"] if m["name"] == DETECTOR)
+    meta = {
+        "schema": META_SCHEMA_VERSION,
+        "name": DETECTOR,
+        "task": "face-detection",
+        "scale": 1,
+        "input": {"name": session.get_inputs()[0].name, "layout": "NCHW", "colour_order": "BGR", "channels": 3,
+                  "value_range": [0.0, 255.0], "size": DETECTOR_SIZE, "multiple": 1, "batch": 1},
+        # A detector's heads: <part>_<stride> for each part, 15 values per anchor in all.
+        "output": {"name": "yunet", "channels": 15, "value_range": [0.0, 1.0], "decoder": "yunet",
+                   "strides": list(DETECTOR_STRIDES)},
+        "tile": {"recommended": None, "largest_activation_bytes_per_pixel": round(largest * 4 / DETECTOR_SIZE**2, 2)},
+        "variants": {"fp32": {"file": fp32.name, "bytes": fp32.stat().st_size, "sha256": sha256_of(fp32)}},
+        "upstream": {"url": upstream["url"], "license": upstream["license"], "license_url": upstream["license_url"]},
+    }
+    (folder / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    return [f"{len(faces)} anchor(s) over 0.9 on {DETECTOR_IMAGE}, best {score:.3f}",
+            f"meta.json: fp32; largest activation {meta['tile']['largest_activation_bytes_per_pixel']} B/px"]
+
+
 def tiny_upscaler(scale: int) -> onnx.ModelProto:
     """A nearest-neighbour Resize with Real-ESRGAN's interface: same names, dynamic axes, [0, 1] RGB.
 
@@ -577,7 +670,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"fixture {name} -> {args.fixtures / name}")
         return 0
 
-    known = {e.name for e in EXPORTS}
+    known = {e.name for e in EXPORTS} | {DETECTOR}
     unknown = [n for n in args.only if n not in known]
     if unknown:
         print(f"ERROR unknown model(s): {', '.join(unknown)}; known: {', '.join(sorted(known))}", file=sys.stderr)
@@ -600,7 +693,21 @@ def main(argv: list[str] | None = None) -> int:
         except ExportError as error:
             print(f"ERROR {error}", file=sys.stderr)
             failed.append(spec.name)
+    if (not args.only or DETECTOR in args.only) and not report_detector(args.weights, args.out):
+        failed.append(DETECTOR)
     return 1 if failed else 0
+
+
+def report_detector(weights: Path, out: Path) -> bool:
+    """Adopts the detector and prints what happened; False when it failed."""
+    try:
+        for line in adopt_detector(weights, out):
+            print(f"{DETECTOR}: {line}")
+    except ExportError as error:
+        print(f"ERROR {error}", file=sys.stderr)
+        return False
+    print(f"{DETECTOR}: adopted into {out / DETECTOR}")
+    return True
 
 
 if __name__ == "__main__":
