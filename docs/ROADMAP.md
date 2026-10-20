@@ -12,9 +12,8 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB24** (deps: PB20 ✅, PB23 ✅) **No operations panel to run an upscale and pick 2x or 4x** — The user needs a control to trigger the pipeline and see its progress. → §PB24
-- ⏳ **PB25** (deps: PB19 ✅, PB24, PB39 ✅) **Results cannot be exported as PNG, JPG or WebP** — No save dialog, --export route or keep-metadata choice yet; they need the screens and flags that PB24 and PB39 add. → §PB25
-- 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24, PB25 ⏳, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
+- ⏳ **PB25** (deps: PB19 ✅, PB24 ✅, PB39 ✅) **Results cannot be exported as PNG, JPG or WebP** — No save dialog, --export route or keep-metadata choice yet; they need the screens and flags that PB24 and PB39 add. → §PB25
+- 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24 ✅, PB25 ⏳, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB41** (deps: PB14 ✅, PB18 ✅) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
 - 📋 **PB42** (deps: PB11 ✅, PB38 ⏳) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
 - 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
@@ -22,8 +21,8 @@
 
 ## Block D — Editor: comparison, history and quality modes
 
-- 📋 **PB27** (deps: PB24, PB40) **No before and after slider comparison** — Judging an enhancement needs both versions aligned at the same zoom. → §PB27
-- 📋 **PB28** (deps: PB24) **No operation history with undo and redo** — Users chain operations and must be able to step back without reprocessing from scratch. → §PB28
+- 📋 **PB27** (deps: PB24 ✅, PB40) **No before and after slider comparison** — Judging an enhancement needs both versions aligned at the same zoom. → §PB27
+- 📋 **PB28** (deps: PB24 ✅) **No operation history with undo and redo** — Users chain operations and must be able to step back without reprocessing from scratch. → §PB28
 - 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between INT8 and the High quality FP16/FP32 models** — The brief requires both variants selectable, trading speed and memory for fidelity. → §PB29
 
 ## Block E — Face restoration and background removal

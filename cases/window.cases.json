@@ -15,6 +15,12 @@
       "shareable": true
     },
     {
+      // PB24: a photo open and a models folder with nothing in it, so the panel must say so.
+      "name": "a window with a photo open and no models",
+      "arguments": ["--open", "tests/fixtures/images/rotated-exif6.jpg", "--models", "tests/fixtures/images", "--provider", "cpu"],
+      "shareable": true
+    },
+    {
       "name": "a window asked to open a file that is not there",
       "arguments": ["--open", "tests/fixtures/images/missing.png", "--provider", "cpu"],
       "shareable": true
@@ -118,6 +124,32 @@
           "reads": "name",
           "expect": "rotated-exif6.jpg",
           "named": "the photo is on screen, named for its file"
+        }
+      ]
+    },
+
+    {
+      // A run with real models needs PB42's tiny model fixture; until then the panel's other half
+      // was driven by hand on the PB24 desk (0014.jpg to 716 x 716 on DirectML in 1.8 s).
+      "name": "with no models the operations panel says which one is missing",
+      "catches": "an Upscale button that starts a run doomed to fail, or a panel that hides why it cannot run",
+      "filed": "PB24",
+      "tags": ["operations"],
+      "fixture": "a window with a photo open and no models",
+      "steps": [
+        {
+          "locator": "Text#OperationNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^realesrgan-x4plus \\(int8\\) is not in .*Download the models first\\.$",
+          "named": "the note names the 4x model and its variant"
+        },
+        {
+          "locator": "Button#UpscaleButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and the upscale button cannot start a run"
         }
       ]
     },

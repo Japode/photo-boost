@@ -18,7 +18,45 @@
           <TextBlock x:Name="ProviderStatus" AutomationProperties.AutomationId="ProviderStatus" Text="Detecting GPU…" />
         </Border>
       </StatusBarItem>
+      <!-- PB24: the last run's wall time and provider, from its OperationRecord (PB22). -->
+      <StatusBarItem>
+        <Border x:Name="LastRunChip" Style="{StaticResource StatusChip}" Visibility="Collapsed">
+          <TextBlock x:Name="LastRun" AutomationProperties.AutomationId="LastRun" />
+        </Border>
+      </StatusBarItem>
     </StatusBar>
+
+    <!-- PB24: the operations panel. Upscale today; face restore and background removal join as
+         further cards in this stack. Shown once an image is open. -->
+    <ScrollViewer x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,24,24,24"
+                  VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+      <StackPanel>
+        <TextBlock Text="Operations" Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
+        <Border Style="{StaticResource GroupCard}" Padding="16">
+          <StackPanel>
+            <TextBlock Text="Upscale" FontSize="15" FontWeight="SemiBold" />
+            <TextBlock Text="Real-ESRGAN, enlarging and restoring detail" Style="{StaticResource StatCaption}" Margin="0,2,0,12" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+              <RadioButton x:Name="Scale2" AutomationProperties.AutomationId="Scale2" Content="2×" GroupName="Scale" Margin="0,0,16,0" />
+              <RadioButton x:Name="Scale4" AutomationProperties.AutomationId="Scale4" Content="4×" GroupName="Scale" IsChecked="True" />
+            </StackPanel>
+            <Button x:Name="UpscaleButton" AutomationProperties.AutomationId="UpscaleButton" Content="Upscale"
+                    HorizontalAlignment="Stretch" Padding="12,6" Click="OnUpscaleClick" IsEnabled="False" />
+            <TextBlock x:Name="OperationNote" AutomationProperties.AutomationId="OperationNote" Visibility="Collapsed"
+                       Style="{StaticResource StatCaption}" Margin="0,10,0,0" />
+          </StackPanel>
+        </Border>
+
+        <Border x:Name="JobPanel" Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0" Visibility="Collapsed">
+          <StackPanel>
+            <ProgressBar x:Name="JobProgress" AutomationProperties.AutomationId="JobProgress" Height="6" Minimum="0" />
+            <TextBlock x:Name="JobStatus" AutomationProperties.AutomationId="JobStatus" Style="{StaticResource StatCaption}" Margin="0,8,0,8" />
+            <Button x:Name="CancelButton" AutomationProperties.AutomationId="CancelButton" Content="Cancel"
+                    HorizontalAlignment="Left" Padding="12,4" Click="OnCancelClick" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
 
     <!-- PB23: the open screen. A drop zone and a button until an image is open, then the image. -->
     <Grid Margin="24">

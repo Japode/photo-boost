@@ -51,17 +51,6 @@ are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB24 Operations panel
-
-Side panel listing operations; upscale offers 2x/4x. Disabled while a job runs or models
-are missing. Built so face restore and background removal slot in as entries later.
-Start the run with UpscaleJob.Enqueue (PB20) and a Progress&lt;JobProgress&gt; made on
-the UI thread: show "tile Done of Total" in a ProgressBar with AutomationId
-"JobProgress" for cases, the Remaining estimate once it is not null, and a cancel button
-calling the job's Cancel. Pass an OperationLog on OperationLog.DefaultFolder (PB22) and,
-when a job ends, show its wall time and provider beside ProviderStatus in the status
-bar.
-
 ### §PB25 Export
 
 Save dialog plus an --export <path> route for cases. WIC writes PNG and JPG (quality

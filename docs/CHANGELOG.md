@@ -34,6 +34,7 @@
 - ✅ **PB22** **Inference time and the provider used are not logged per operation** — Every queued upscale appends a JSON line with model, variant, provider, adapter, size, tiles, retries, wall time and outcome to a rotating log under LOCALAPPDATA.
 - ✅ **PB25 (encoder half)** **Results cannot be exported as PNG, JPG or WebP** — ImageEncoder writes PNG at 8 or 16 bits with alpha and JPEG with quality through WIC, flattening alpha on a chosen background, and WebP through SkiaSharp.
 - ✅ **PB23** **No screen to open an image by drag and drop or file picker** — The window opens on a drop zone with an Open button; a drop, the dialog or --open decode off the UI thread and show the photo upright with its name and size, or say why not.
+- ✅ **PB24** **No operations panel to run an upscale and pick 2x or 4x** — An operations panel runs a 2x or 4x upscale on the queue with tile progress, time left and cancel, shows the result, logs it and sums it in the status bar; missing models disable it.
 
 ## Block D — Editor: comparison, history and quality modes
 

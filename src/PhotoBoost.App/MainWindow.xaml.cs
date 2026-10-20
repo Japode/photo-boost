@@ -72,6 +72,8 @@ public partial class MainWindow : Window
         OpenError.Visibility = Visibility.Collapsed;
         DropZone.Visibility = Visibility.Collapsed;
         Viewer.Visibility = Visibility.Visible;
+        Result = null;
+        RefreshOperations();
     }
 
     private void ShowError(string message)
@@ -93,6 +95,7 @@ public partial class MainWindow : Window
         ProviderSelection selection = await Task.Run(() => ProviderDetector.Detect(Options.Provider)).ConfigureAwait(true);
         Provider = selection;
         ProviderStatus.Text = selection.Label;
+        StartOperations(selection);
     }
 
     private async void OnOpenClick(object sender, RoutedEventArgs e)
