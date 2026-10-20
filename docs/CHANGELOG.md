@@ -11,7 +11,7 @@
 - ✅ **PB38** **No winwright Cases project, winwright.json or first case that opens the main window** — The winwright plugin installs at project scope as winwright@winwright, beside roadkeep's, completing the adoption.
 - ✅ **PB39** **No command-line flags to open a file, force a provider or point at a models folder** — CommandLine parses the five flags in one place and refuses bad input with exit code 2; --provider already drives detection, proved by a case (design recorded in `docs/COMMAND-LINE.md`).
 - ✅ **PB40** **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — A child-HWND flip swapchain shows a 50 MP image with GPU mips in 261 MB and pans and zooms at 60 Hz with no frame over 20 ms, on GPU and WARP (design recorded in `spike/gpu-display/README.md`).
-- ✅ **PB57 (winwright 1.1.4 and the drop case)** **The UI cases still work around five winwright gaps that 1.1.4 closed, and the drop zone and Save dialog have no case** — The cases run on winwright 1.1.4 with {configuration} and {files} in arguments, the WW555 workaround gone, and a real drop case.
+- ✅ **PB57** **The UI cases still work around five winwright gaps that 1.1.4 closed, and the drop zone and Save dialog have no case** — On winwright 1.1.5 a Save as case writes saved.png through the Save dialog and reads it back, green in two guest runs in a row.
 
 ## Block B — Model management
 

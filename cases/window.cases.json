@@ -54,6 +54,13 @@
       "name": "an empty window to drop a photo on",
       "arguments": ["--provider", "cpu"],
       "shareable": false
+    },
+    {
+      // PB57: a photo staged in a folder of its own, so the Save dialog writes there.
+      "name": "a window on a staged photo, to save through the dialog",
+      "files": ["tests/fixtures/images/rotated-exif6.jpg"],
+      "arguments": ["--open", "{files}/rotated-exif6.jpg", "--provider", "cpu"],
+      "shareable": false
     }
   ],
 
@@ -167,6 +174,41 @@
           "reads": "name",
           "expect": "rotated-exif6.jpg — 8 × 16",
           "named": "it opens, named and upright"
+        }
+      ]
+    },
+
+    {
+      // PB57: choose file types the name and reads it back before confirming (winwright WW561).
+      "name": "Save as writes the photo where the Save dialog is told",
+      "catches": "a Save as whose dialog closes and writes nothing, or writes under another name",
+      "filed": "PB57",
+      "tags": ["export", "dialog"],
+      "fixture": "a window on a staged photo, to save through the dialog",
+      "steps": [
+        {
+          "locator": "Button#SaveButton",
+          "act": "invoke",
+          "named": "Save as is pressed"
+        },
+        {
+          "locator": "Window[class=\"#32770\"]",
+          "act": "choose file",
+          "with": "{files}/saved.png",
+          "named": "the dialog is told to save saved.png in the staged folder"
+        },
+        {
+          "locator": "Window[class=\"#32770\"]",
+          "act": "read",
+          "absent": true,
+          "named": "the dialog closed"
+        },
+        {
+          "locator": "Text#ExportStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "Saved saved.png",
+          "named": "the export card says it saved saved.png"
         }
       ]
     },

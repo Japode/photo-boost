@@ -2,26 +2,6 @@
 
 ## Block A — Project foundation
 
-### §PB57 Winwright 1.1.4 adoption
-
-Winwright 1.1.4 (2026-10-20) ships what this project's cases worked around, each still
-named in a comment where the workaround lives:
-
-- WW550 'drop file': PB23's drop zone gets a real case (a drop of rotated-exif6.jpg on the
-  empty screen), where --open stood in for it.
-- WW551 'choose file': the Export dialog gets a case (choose a name in the Save dialog, read
-  ExportStatus), where --export covered the write.
-- WW556: a fixture's arguments take {files}, so upscale.cases.json can stop starting inside
-  the staged folder just to name its photo and models relatively.
-- WW521: winwright.json's executable can carry {configuration}, so CasesRun stops copying
-  winwright.json with /bin/Debug/ rewritten for a Release suite.
-- WW555: the select after expand in window.cases.json drops its workaround.
-
-What to build: PackageReference Winwright 1.1.3 to 1.1.4 in tests/PhotoBoost.Cases, then
-each item above as its own change inside this one task, keeping every case passing on
-the host and on the VMware guest (winwright's run-tests-vm.cmd -Tree <this repo>). A
-refusal or a gap found on the way goes to winwright's roadmap.
-
 ## Block B — Model management
 
 ### §PB12 FP32 models on Hugging Face
