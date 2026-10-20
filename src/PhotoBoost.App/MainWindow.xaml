@@ -36,8 +36,8 @@
       </StatusBarItem>
     </StatusBar>
 
-    <!-- PB24: the operations panel. Upscale and face restore (PB31); background removal joins as
-         a further card in this stack. Shown once an image is open. -->
+    <!-- PB24: the operations panel: upscale, face restore (PB31) and background removal (PB32).
+         Shown once an image is open. -->
     <ScrollViewer x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,24,24,24"
                   VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
       <StackPanel>
@@ -79,6 +79,22 @@
             <TextBlock x:Name="FaceLicence" AutomationProperties.AutomationId="FaceLicence"
                        Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,10,0,0"
                        Text="GFPGAN's StyleGAN2 and DFDNet parts are under non-commercial licences: research or evaluation use only." />
+          </StackPanel>
+        </Border>
+
+        <!-- PB32: RMBG-1.4's mask as the image's alpha; export as PNG or WebP keeps it. -->
+        <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock Text="Remove background" FontSize="15" FontWeight="SemiBold" />
+            <TextBlock Text="RMBG-1.4, making everything but the subject transparent" Style="{StaticResource StatCaption}"
+                       TextWrapping="Wrap" Margin="0,2,0,12" />
+            <Button x:Name="RemoveBackgroundButton" AutomationProperties.AutomationId="RemoveBackgroundButton" Content="Remove background"
+                    HorizontalAlignment="Stretch" Padding="12,6" Click="OnRemoveBackgroundClick" IsEnabled="False" />
+            <TextBlock x:Name="BackgroundNote" AutomationProperties.AutomationId="BackgroundNote" Visibility="Collapsed"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,10,0,0" />
+            <TextBlock x:Name="BackgroundLicence" AutomationProperties.AutomationId="BackgroundLicence"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                       Text="RMBG-1.4 is licensed by BRIA for non-commercial use; commercial use needs a license from BRIA." />
           </StackPanel>
         </Border>
 

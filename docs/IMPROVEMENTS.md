@@ -76,12 +76,20 @@ model download flow.
 
 ## Block E — Face restoration and background removal
 
-### §PB32 Background removal pipeline
+### §PB47 Refining the background mask
 
-Pipelines/RemoveBackground.cs: resize to the RMBG-1.4 input (1024px), run, upscale the
-mask to the original size, refine edges and attach it as alpha. Export defaults to PNG
-or WebP. Keep RMBG-1.4's non-commercial license (scripts/model-sources.json) visible in
-the app's About page; U2-Net, listed there too, is the permissive fallback.
+Found by PB32. RemoveBackground applies BRIA's own postprocess only: the 1024 x 1024
+mask is resized bilinearly to the photo and stretched to its range. On example_input.jpg
+the cut-out is right, but the sky keeps faint specks of low alpha, and on a large photo
+the edge is as soft as a 1024 px mask scaled up, so hair and fur blur into the
+background.
+
+Refine the mask at the photo's own resolution: a guided filter (He et al.) with the
+photo's luminance as the guide sharpens the edge to the photo's detail at linear cost,
+and values under a small floor (about 2%) go to zero, which removes the specks without
+eating soft edges. Measure it on example_input.jpg against the unrefined mask: alpha's
+edge width and the count of stray pixels, and check a hair-heavy photo by eye. Keep the
+unrefined path selectable for a comparison in the Compare view.
 
 ## Block F — Delivery: README, benchmarks and installers
 

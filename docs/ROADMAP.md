@@ -19,7 +19,7 @@
 
 ## Block E — Face restoration and background removal
 
-- 📋 **PB32** (deps: PB26 ✅) **No background removal pipeline producing a transparent image** — Background removal is the third operation the brief lists. → §PB32
+- 📋 **PB47** (deps: PB32 ✅) **Background removal leaves faint specks and a soft upscaled edge, with no refinement at the photo's resolution** — A 1024 px mask scaled to a large photo blurs hair into the background, and stray low alpha shows on any colour behind it. → §PB47
 
 ## Block F — Delivery: README, benchmarks and installers
 
@@ -30,7 +30,7 @@
 
 ## Block G — Phase 2: denoising
 
-- 📋 **PB36** (deps: PB31 ✅, PB32) **No denoising operation** — Denoising is listed as an optional phase 2 operation. → §PB36
+- 📋 **PB36** (deps: PB31 ✅, PB32 ✅) **No denoising operation** — Denoising is listed as an optional phase 2 operation. → §PB36
 
 ## Done when — PB12
 

@@ -57,6 +57,7 @@ public partial class MainWindow
         {
             UpscaleButton.IsEnabled = false;
             RestoreFacesButton.IsEnabled = false;
+            RemoveBackgroundButton.IsEnabled = false;
             return;
         }
 
@@ -65,6 +66,7 @@ public partial class MainWindow
         OperationNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
         UpscaleButton.IsEnabled = Image is not null && missing is null && !Busy;
         RefreshFaces();
+        RefreshBackground();
     }
 
     /// <summary>The note naming the first model not on disk, or null when all are.</summary>
@@ -129,8 +131,12 @@ public partial class MainWindow
         string left = p.Remaining is { } remaining && p.Done < p.Total
             ? $" · about {Math.Ceiling(remaining.TotalSeconds).ToString(CultureInfo.CurrentCulture)} s left"
             : string.Empty;
-        string step = p.Stage == FaceRestore.Stage ? "Face" : "Tile";
-        JobStatus.Text = $"{step} {p.Done} of {p.Total}{left}";
+        JobStatus.Text = p.Stage switch
+        {
+            FaceRestore.Stage => $"Face {p.Done} of {p.Total}{left}",
+            RemoveBackground.Stage => "Background found.",
+            _ => $"Tile {p.Done} of {p.Total}{left}",
+        };
     }
 
     private void ShowLastRun()

@@ -215,6 +215,39 @@
     },
 
     {
+      // PB32: RMBG-1.4 is real-model only; a run was driven by hand (example_input.jpg, both
+      // giraffes cut out, exported as a 933 x 1405 RGBA PNG on DirectML).
+      "name": "with no models the Remove background card says so and shows RMBG-1.4's terms",
+      "catches": "a Remove background button that starts a run doomed to fail, or BRIA's non-commercial terms dropped from the card",
+      "filed": "PB32",
+      "tags": ["operations", "background"],
+      "fixture": "a window with a photo open and no models",
+      "steps": [
+        {
+          "locator": "Text#BackgroundNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^rmbg-1\\.4 \\(int8\\) is not in .*Download the models first\\.$",
+          "named": "the note names RMBG-1.4 and its variant"
+        },
+        {
+          "locator": "Button#RemoveBackgroundButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and the button cannot start a run"
+        },
+        {
+          "locator": "Text#BackgroundLicence",
+          "act": "read",
+          "reads": "name",
+          "matches": "^RMBG-1\\.4 is licensed by BRIA for non-commercial use",
+          "named": "the card states BRIA's terms"
+        }
+      ]
+    },
+
+    {
       // The save dialog itself waits on winwright WW551; --export covers the write.
       "name": "choosing JPEG for a transparent photo warns and offers a background",
       "catches": "a JPEG export that silently turns transparent pixels black",
