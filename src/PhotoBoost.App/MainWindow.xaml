@@ -35,6 +35,19 @@
           <TextBlock x:Name="LastRun" AutomationProperties.AutomationId="LastRun" />
         </Border>
       </StatusBarItem>
+      <!-- PB60: the run in progress, seen from anywhere, About and the download offer included. -->
+      <StatusBarItem>
+        <Border x:Name="JobChip" Style="{StaticResource StatusChip}" Visibility="Collapsed">
+          <TextBlock x:Name="JobChipText" AutomationProperties.AutomationId="JobChip">
+            <TextBlock.Text>
+              <MultiBinding StringFormat="{}{0}: {1}">
+                <Binding ElementName="JobTitle" Path="Text" />
+                <Binding ElementName="JobStatus" Path="Text" />
+              </MultiBinding>
+            </TextBlock.Text>
+          </TextBlock>
+        </Border>
+      </StatusBarItem>
       <!-- PB58: a model download in progress, wherever the card that started it has scrolled to. -->
       <StatusBarItem>
         <Border x:Name="DownloadChip" Style="{StaticResource StatusChip}" Visibility="Collapsed">
@@ -49,10 +62,23 @@
 
     <!-- PB24: the operations panel: upscale, denoise (PB36), face restore (PB31) and background
          removal (PB32). Shown once an image is open. -->
-    <ScrollViewer x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,24,24,24"
-                  VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+    <DockPanel x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,24,24,24" Visibility="Collapsed">
+      <TextBlock DockPanel.Dock="Top" Text="Operations" Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
+      <!-- PB60: the run in progress, pinned above the cards rather than below them, so its
+           progress and its end are seen without scrolling a panel taller than the window. -->
+      <Border x:Name="JobPanel" DockPanel.Dock="Top" Style="{StaticResource GroupCard}" Padding="16" Margin="0,0,0,12" Visibility="Collapsed">
+        <StackPanel>
+          <DockPanel>
+            <Button x:Name="CancelButton" AutomationProperties.AutomationId="CancelButton" DockPanel.Dock="Right" Content="Cancel"
+                    Padding="12,2" Click="OnCancelClick" />
+            <TextBlock x:Name="JobTitle" AutomationProperties.AutomationId="JobTitle" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+          </DockPanel>
+          <ProgressBar x:Name="JobProgress" AutomationProperties.AutomationId="JobProgress" Height="6" Minimum="0" Margin="0,10,0,0" />
+          <TextBlock x:Name="JobStatus" AutomationProperties.AutomationId="JobStatus" Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+    <ScrollViewer x:Name="OperationsScroll" VerticalScrollBarVisibility="Auto">
       <StackPanel>
-        <TextBlock Text="Operations" Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
         <!-- PB29: every operation runs the bundled FP16 set or the downloaded FP32 one. -->
         <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,0,0,12">
           <StackPanel>
@@ -217,16 +243,9 @@
           </StackPanel>
         </Border>
 
-        <Border x:Name="JobPanel" Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0" Visibility="Collapsed">
-          <StackPanel>
-            <ProgressBar x:Name="JobProgress" AutomationProperties.AutomationId="JobProgress" Height="6" Minimum="0" />
-            <TextBlock x:Name="JobStatus" AutomationProperties.AutomationId="JobStatus" Style="{StaticResource StatCaption}" Margin="0,8,0,8" />
-            <Button x:Name="CancelButton" AutomationProperties.AutomationId="CancelButton" Content="Cancel"
-                    HorizontalAlignment="Left" Padding="12,4" Click="OnCancelClick" />
-          </StackPanel>
-        </Border>
       </StackPanel>
     </ScrollViewer>
+    </DockPanel>
 
     <!-- PB23: the open screen. A drop zone and a button until an image is open, then the image.
          PB46: the About panel takes the stage's place while open, since nothing WPF draws can lie

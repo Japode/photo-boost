@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using PhotoBoost.Inference;
 using PhotoBoost.Inference.Pipelines;
 
@@ -24,7 +24,7 @@ public partial class MainWindow
 
         // PB58: GFPGAN itself is downloaded on first use, so only the others can be "missing".
         bool fetch = FirstUse.Needed(FirstUse.Faces, library!, ModelDownloads.Embedded, Variant).Count > 0;
-        string? missing = Missing([.. needed.Where(one => !fetch || one.Item1 != FaceRestore.Model)]);
+        string? missing = TooLarge(FaceUpscaleFactor) ?? Missing([.. needed.Where(one => !fetch || one.Item1 != FaceRestore.Model)]);
         FaceNote.Text = missing ?? string.Empty;
         FaceNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
         fetch = RefreshFirstUse(faceFirstUse!, Variant, blocked: missing is not null) && missing is null;
@@ -50,11 +50,7 @@ public partial class MainWindow
         int upscale = FaceUpscaleFactor;
         double strength = FaceStrength.Value / 100;
         restoring = FaceRestoreJob.Enqueue(service, library, source, Variant, strength, upscale, new Progress<JobProgress>(ShowProgress), log);
-        JobProgress.Value = 0;
-        JobStatus.Text = "Finding faces…";
-        JobPanel.Visibility = Visibility.Visible;
-        CancelButton.IsEnabled = true;
-        RefreshOperations();
+        BeginJob(upscale == 1 ? FirstUse.Faces.Title : $"Upscale {upscale}× + Restore faces", upscale == 1 ? "Finding faces…" : "Upscaling first…");
 
         try
         {
@@ -69,20 +65,21 @@ public partial class MainWindow
             string label = upscale == 1 ? "Restore faces" : $"Upscale {upscale}× + Restore faces";
             PushVersion(result.Image, label);
             JobStatus.Text = result.Faces == 1 ? "Done: 1 face." : $"Done: {result.Faces} faces.";
+            JobProgress.Value = JobProgress.Maximum;
             await ExportAfterRunAsync().ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
             JobStatus.Text = "Cancelled.";
         }
-        catch (Exception failure) when (failure is InvalidOperationException or InsufficientMemoryException or System.IO.IOException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
+        catch (Exception failure) when (failure is InvalidOperationException or OutOfMemoryException or ArithmeticException or System.IO.IOException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
         {
             JobStatus.Text = failure.Message;
         }
         finally
         {
             restoring = null;
-            CancelButton.IsEnabled = false;
+            EndJob();
             ShowLastRun();
             RefreshOperations();
         }

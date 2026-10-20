@@ -53,8 +53,23 @@
           "locator": "Text#JobStatus",
           "act": "read",
           "reads": "name",
-          "expect": "Done.",
+          "expect": "Done: 32 × 64.",
           "named": "the run finishes"
+        },
+        {
+          // PB60: the card above the operations names the run, so it is seen without scrolling.
+          "locator": "Text#JobTitle",
+          "act": "read",
+          "reads": "name",
+          "expect": "Upscale 4×",
+          "named": "the pinned card names the run"
+        },
+        {
+          // Cancel and the status bar's chip are only for a run in progress.
+          "locator": "Button#CancelButton",
+          "act": "read",
+          "absent": true,
+          "named": "and offers no cancel once it is done"
         },
         {
           // An 8 x 16 photo is one tile, so the bar ends at one of one.
@@ -213,7 +228,7 @@
           "locator": "Text#JobStatus",
           "act": "read",
           "reads": "name",
-          "expect": "Done.",
+          "expect": "Done: 32 × 64.",
           "named": "the run finishes"
         },
         {

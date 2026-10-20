@@ -76,6 +76,12 @@ public partial class MainWindow
         card.Badge.Parent.SetValue(VisibilityProperty, Visibility.Visible);
         if (!fetching)
         {
+            if (card.AutoRunning && !Busy && pendingRun is null)
+            {
+                card.AutoRunning = false;
+                card.Ready = $"Ready: {card.Operation.Title} now works offline.";
+            }
+
             card.Stage = FirstUseStage.Offered;
             card.Badge.Parent.SetValue(VisibilityProperty, Visibility.Collapsed);
             card.Detail.Text = card.Ready ?? string.Empty;
@@ -265,7 +271,10 @@ public partial class MainWindow
             card.Ready = $"Ready: {card.Operation.Title} now works offline.";
             if (card.RunWhenReady)
             {
+                // Said on the card, since the button it greys out is where the person is looking.
                 card.RunWhenReady = false;
+                card.AutoRunning = true;
+                card.Ready = $"Downloaded and verified. {card.Operation.Title} is running on this photo; its progress is at the top.";
                 pendingRun = card.Run;
             }
         }
@@ -353,6 +362,8 @@ public partial class MainWindow
         public string? Ready { get; set; }
 
         public bool RunWhenReady { get; set; }
+
+        public bool AutoRunning { get; set; }
 
         public System.Diagnostics.Stopwatch Shown { get; } = new();
     }

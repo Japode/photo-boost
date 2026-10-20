@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using PhotoBoost.Imaging;
 using PhotoBoost.Inference;
 using PhotoBoost.Inference.Pipelines;
@@ -39,11 +39,7 @@ public partial class MainWindow
 
         bool refine = RefineEdges.IsChecked == true;
         running = RemoveBackgroundJob.Enqueue(service, library, source, Variant, refine, new Progress<JobProgress>(ShowProgress), log);
-        JobProgress.Value = 0;
-        JobStatus.Text = "Finding the subject…";
-        JobPanel.Visibility = Visibility.Visible;
-        CancelButton.IsEnabled = true;
-        RefreshOperations();
+        BeginJob(FirstUse.Background.Title, "Finding the subject…");
 
         try
         {
@@ -57,14 +53,14 @@ public partial class MainWindow
         {
             JobStatus.Text = "Cancelled.";
         }
-        catch (Exception failure) when (failure is InvalidOperationException or InsufficientMemoryException or System.IO.IOException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
+        catch (Exception failure) when (failure is InvalidOperationException or OutOfMemoryException or ArithmeticException or System.IO.IOException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
         {
             JobStatus.Text = failure.Message;
         }
         finally
         {
             running = null;
-            CancelButton.IsEnabled = false;
+            EndJob();
             ShowLastRun();
             RefreshOperations();
         }

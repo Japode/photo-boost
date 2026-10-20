@@ -23,6 +23,21 @@ public partial class MainWindow : Window
         QualityHigh.IsChecked = options.Quality == QualityMode.High;
         QualityStandard.IsChecked = options.Quality != QualityMode.High;
         Loaded += OnLoaded;
+        Dispatcher.UnhandledException += OnUnhandled;
+    }
+
+    /// <summary>
+    /// PB60: a failure no handler expected is said in the run's card instead of closing the app:
+    /// a 4x of an 8192 px photo threw an overflow past every catch and took the window with it.
+    /// The photo and its history are left as they were.
+    /// </summary>
+    private void OnUnhandled(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        JobTitle.Text = "Something went wrong";
+        JobStatus.Text = $"{e.Exception.Message} The photo and its history are unchanged.";
+        JobPanel.Visibility = Visibility.Visible;
+        EndJob();
+        e.Handled = true;
     }
 
     /// <summary>What the command line asked for; the screens that open, export and pick quality read it.</summary>

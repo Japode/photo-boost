@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using PhotoBoost.Imaging;
 using PhotoBoost.Inference;
@@ -64,7 +64,7 @@ public partial class MainWindow
         }
 
         RefreshQuality();
-        string? missing = Missing((Upscale.ModelFor(Factor), Variant));
+        string? missing = TooLarge(Factor) ?? Missing((Upscale.ModelFor(Factor), Variant));
         OperationNote.Text = missing ?? string.Empty;
         OperationNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
         UpscaleButton.IsEnabled = Image is not null && missing is null && !Busy;
@@ -97,6 +97,19 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>The note saying an upscale by the factor would be too large to hold, or null when it fits.</summary>
+    private string? TooLarge(int factor)
+    {
+        if (Image is not { } image || Upscale.Fits(image.Width, image.Height, factor))
+        {
+            return null;
+        }
+
+        int side = (int)Math.Sqrt(Upscale.MaxOutputPixels);
+        string smaller = factor == 4 && Upscale.Fits(image.Width, image.Height, 2) ? "Choose 2×, or" : "Use";
+        return $"{factor}× would make this photo {(long)image.Width * factor} × {(long)image.Height * factor}, past the {side} × {side} PhotoBoost can hold. {smaller} a smaller photo.";
+    }
+
     /// <summary>The note naming the first model not on disk, or null when all are.</summary>
     private string? Missing(params (string Model, string Variant)[] needed) =>
         needed.FirstOrDefault(one => !library!.Has(one.Model, one.Variant)) is { Model: not null } absent
@@ -113,35 +126,56 @@ public partial class MainWindow
         int factor = Factor;
         Progress<JobProgress> progress = new(ShowProgress);
         running = UpscaleJob.Enqueue(service, library, source, factor, Variant, progress, log);
-        JobProgress.Value = 0;
-        JobStatus.Text = "Starting…";
-        JobPanel.Visibility = Visibility.Visible;
-        CancelButton.IsEnabled = true;
-        RefreshOperations();
+        BeginJob($"Upscale {factor}×", "Starting…");
 
         try
         {
             RgbaImage result = await running.Completion.ConfigureAwait(true);
             running = null;
             PushVersion(result, $"Upscale {factor}×");
-            JobStatus.Text = "Done.";
+            JobStatus.Text = $"Done: {result.Width} × {result.Height}.";
+            JobProgress.Value = JobProgress.Maximum;
             await ExportAfterRunAsync().ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
             JobStatus.Text = "Cancelled.";
         }
-        catch (Exception failure) when (failure is InvalidOperationException or InsufficientMemoryException or System.IO.IOException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
+        catch (Exception failure) when (failure is InvalidOperationException or OutOfMemoryException or ArithmeticException or System.IO.IOException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
         {
             JobStatus.Text = failure.Message;
         }
         finally
         {
             running = null;
-            CancelButton.IsEnabled = false;
+            EndJob();
             ShowLastRun();
             RefreshOperations();
         }
+    }
+
+    /// <summary>
+    /// PB60: shows a run that just started in the pinned card above the operations and in the
+    /// status bar, so its progress and its end are seen without scrolling.
+    /// </summary>
+    private void BeginJob(string title, string status)
+    {
+        JobTitle.Text = title;
+        JobStatus.Text = status;
+        JobProgress.Maximum = 1;
+        JobProgress.Value = 0;
+        JobPanel.Visibility = Visibility.Visible;
+        CancelButton.Visibility = Visibility.Visible;
+        CancelButton.IsEnabled = true;
+        JobChip.Visibility = Visibility.Visible;
+        RefreshOperations();
+    }
+
+    /// <summary>The run ended: the card keeps its outcome, and Cancel and the status bar's chip go.</summary>
+    private void EndJob()
+    {
+        CancelButton.Visibility = Visibility.Collapsed;
+        JobChip.Visibility = Visibility.Collapsed;
     }
 
     private void OnCancelClick(object sender, RoutedEventArgs e)

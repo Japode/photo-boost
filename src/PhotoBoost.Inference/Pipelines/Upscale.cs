@@ -24,6 +24,20 @@ public static class Upscale
     /// </summary>
     public const int DefaultOverlap = 32;
 
+    /// <summary>
+    /// The largest result an upscale may make: 16384 x 16384, 2 GB as a 16-bit RGBA version, and
+    /// the history keeps every version. A 4x of an 8192 px photo would be 32768 px, past what an
+    /// array can index, and failed with an overflow after filling the memory.
+    /// </summary>
+    public const long MaxOutputPixels = 16384L * 16384;
+
+    /// <summary>Whether upscaling a photo by a factor stays within <see cref="MaxOutputPixels"/>.</summary>
+    /// <param name="width">The photo's width.</param>
+    /// <param name="height">The photo's height.</param>
+    /// <param name="factor">1, 2 or 4.</param>
+    /// <returns>True when the result fits.</returns>
+    public static bool Fits(int width, int height, int factor) => (long)width * factor * height * factor <= MaxOutputPixels;
+
     /// <summary>The model that upscales by a factor.</summary>
     /// <param name="factor">2 or 4.</param>
     /// <returns>Its folder name.</returns>

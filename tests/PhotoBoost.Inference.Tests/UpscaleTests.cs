@@ -29,6 +29,18 @@ public sealed class UpscaleTests : IDisposable
 
     public void Dispose() => Directory.Delete(root, recursive: true);
 
+    [Theory]
+    [InlineData(8192, 8192, 2, true)]
+    [InlineData(8192, 8192, 4, false)]
+    [InlineData(4100, 4100, 4, false)]
+    [InlineData(4096, 4096, 4, true)]
+    [InlineData(65536, 65536, 4, false)]
+    public void AnUpscalePastSixteenThousandPixelsASideIsRefused(int width, int height, int factor, bool fits)
+    {
+        // PB60: 8192 px at 4x is 32768 px, which overflowed the sample array and closed the app.
+        Assert.Equal(fits, Upscale.Fits(width, height, factor));
+    }
+
     [Fact]
     public void TiledUpscaleMatchesOneWholeImageRun()
     {

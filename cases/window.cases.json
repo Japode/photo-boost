@@ -27,6 +27,13 @@
       "shareable": false
     },
     {
+      // PB60: 4100 px a side, so 4x (16400 px) is past the 16384 px limit and 2x is within it.
+      // Not lent: its case changes the factor.
+      "name": "a window with a 4100 px photo open",
+      "arguments": ["--open", "tests/fixtures/images/large-4100.png", "--models", "tests/fixtures/images", "--provider", "cpu"],
+      "shareable": false
+    },
+    {
       // PB25: a photo with transparency, so choosing JPEG has something to lose.
       "name": "a window with a transparent photo open",
       "arguments": ["--open", "tests/fixtures/images/alpha-lossless.webp", "--models", "tests/fixtures/images", "--provider", "cpu"],
@@ -324,6 +331,46 @@
           "reads": "name",
           "expect": "High quality needs the FP32 models: download them in About.",
           "named": "and the note says where to get it"
+        }
+      ]
+    },
+
+    {
+      // PB60: a 4x of an 8192 px photo overflowed and closed the app; now it is refused up front.
+      "name": "an upscale too large to hold is refused with the size it would have",
+      "catches": "an Upscale button that starts a run past what memory and an array can hold, or a refusal that does not say what to choose instead",
+      "filed": "PB60",
+      "tags": ["operations"],
+      "fixture": "a window with a 4100 px photo open",
+      "steps": [
+        {
+          "locator": "Text#OperationNote",
+          "act": "read",
+          "reads": "name",
+          "expect": "4× would make this photo 16400 × 16400, past the 16384 × 16384 PhotoBoost can hold. Choose 2×, or a smaller photo.",
+          "named": "the note gives the size 4x would make and what to choose"
+        },
+        {
+          "locator": "Button#UpscaleButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and the button cannot start it"
+        },
+        {
+          "locator": "RadioButton#Scale2",
+          "act": "select",
+          "reads": "selected",
+          "expect": "selected",
+          "named": "2x is chosen"
+        },
+        {
+          // No models in this folder, so what is left to say is the missing model, not the size.
+          "locator": "Text#OperationNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^realesrgan-x2plus \\(fp16\\) is not in ",
+          "named": "2x fits, so the size note is gone"
         }
       ]
     },
