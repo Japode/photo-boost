@@ -1,0 +1,14 @@
+{
+  "repo": "alegauss/photo-boost-models",
+  "version": "1",
+  "files_commit": "5a0c32134dcf504a9063e39d428f0426b1ce815b",
+  "manifest_commit": "f1964dae136379fdfc4a4f021f6f07102a333f0f",
+  "manifest_url": "https://huggingface.co/alegauss/photo-boost-models/resolve/f1964dae136379fdfc4a4f021f6f07102a333f0f/manifest.json",
+  "models": [
+    "realesrgan-x4plus",
+    "realesrgan-x2plus",
+    "gfpgan-v1.4",
+    "scunet-color-real-psnr",
+    "rmbg-1.4"
+  ]
+}

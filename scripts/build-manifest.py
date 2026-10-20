@@ -39,11 +39,31 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build(models: Path, stage: Path, base_url: str, version: str, copy: bool = True) -> dict:
+def build(
+    models: Path,
+    stage: Path,
+    base_url: str,
+    version: str,
+    copy: bool = True,
+    only: list[str] | None = None,
+    variants_wanted: set[str] | None = None,
+    external: dict[tuple[str, str], str] | None = None,
+) -> dict:
+    """The manifest over every model, or `only` those, with every variant or `variants_wanted`.
+
+    PB12: `external` maps (model, variant) to a URL hosted elsewhere, such as RMBG-1.4's at BRIA's
+    own repository: the file is listed at that URL and checked here, but not staged.
+    """
     folders = sorted(p.parent for p in models.glob("*/meta.json"))
+    if only is not None:
+        missing = [name for name in only if not (models / name / "meta.json").is_file()]
+        if missing:
+            raise ManifestError(f"{', '.join(missing)}: no meta.json under {models}; run scripts/export-and-quantize.py first")
+        folders = [models / name for name in only]
     if not folders:
         raise ManifestError(f"no meta.json under {models}; run scripts/export-and-quantize.py first")
     base = base_url.rstrip("/")
+    external = external or {}
     stage.mkdir(parents=True, exist_ok=True)
     entries = []
     for folder in folders:
@@ -52,15 +72,20 @@ def build(models: Path, stage: Path, base_url: str, version: str, copy: bool = T
         name = meta["name"]
         variants = {}
         for variant, described in meta["variants"].items():
+            if variants_wanted is not None and variant not in variants_wanted:
+                continue
             source = folder / described["file"]
             if not source.is_file():
                 raise ManifestError(f"{name}: {source} is listed in meta.json but missing")
             if source.stat().st_size != described["bytes"] or sha256_of(source) != described["sha256"]:
                 raise ManifestError(f"{name}: {source} differs from meta.json; re-run export-and-quantize.py")
             asset = f"{name}-{variant}.onnx"
-            variants[variant] = {"url": f"{base}/{asset}", "bytes": described["bytes"], "sha256": described["sha256"]}
-            if copy:
+            url = external.get((name, variant), f"{base}/{asset}")
+            variants[variant] = {"url": url, "bytes": described["bytes"], "sha256": described["sha256"]}
+            if copy and (name, variant) not in external:
                 shutil.copyfile(source, stage / asset)
+        if not variants:
+            raise ManifestError(f"{name}: none of {sorted(variants_wanted or [])} is in its meta.json")
         meta_asset = f"{name}-meta.json"
         if copy:
             shutil.copyfile(meta_path, stage / meta_asset)

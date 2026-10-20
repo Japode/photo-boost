@@ -4,33 +4,13 @@
 
 ## Block B — Model management
 
-### §PB12 FP32 models on Hugging Face
-
-Built: scripts/build-manifest.py reads every .cache/models/<name>/meta.json, checks each
-listed file against its size and SHA-256, writes manifest.json (schema 1: version,
-base_url, and per model the meta.json and each variant's URL, size and SHA-256, plus the
-license) and stages flat assets named <name>-<variant>.onnx and <name>-meta.json in
-.cache/publish.
-
-Decided by the owner on 2026-10-20: the FP16 set ships inside the installer (PB51), and
-only FP32 is hosted, as an optional download, on Hugging Face rather than GitHub. All
-models may be redistributed with their license stated. A public model repository under
-the owner's account carries Real-ESRGAN x2plus and x4plus, GFPGAN v1.4 and SCUNet FP32
-with a model card naming each license (GFPGAN's non-commercial parts). RMBG-1.4 is not
-re-hosted: our fp32.onnx is BRIA's own export, so the manifest points at briaai/RMBG-1.4
-at the pinned commit. Every URL is a resolve/<commit>/ URL, so a later upload cannot
-change a file the app already verifies by SHA-256.
-
-Left for the owner: create the Hugging Face account or organization and run `hf auth
-login` with a write token on this machine; the upload, the model card and the manifest
-then follow.
-
 ### §PB13 Optional FP32 download
 
 Rescoped by the owner's decision of 2026-10-20: the installer carries the FP16 set
 (PB51), so nothing has to be downloaded for the app to work, and this is the button that
-fetches the optional FP32 set from PB12's manifest (Hugging Face, with RMBG-1.4 from
-BRIA's own repository), about 690 MB.
+fetches the optional FP32 set from PB12's manifest, about 690 MB: pin the manifest_url
+in scripts/published-models.json (alegauss/photo-boost-models at a resolve/<commit> URL,
+with RMBG-1.4 from BRIA's own repository).
 
 A "Download high-quality models" action, in the About panel or beside the quality choice
 (PB29), fetches into %LOCALAPPDATA%\PhotoBoost\models\<name>\ (MainWindow.Options

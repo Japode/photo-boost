@@ -4,8 +4,7 @@
 
 ## Block B — Model management
 
-- ⏳ **PB12** (deps: PB11 ✅, owner creates the Hugging Face account and logs in) **The optional FP32 models have no public location the app can download them from** — The optional FP32 set needs a public host the app can fetch from; the owner chose Hugging Face and has to create the account. → §PB12
-- 📋 **PB13** (deps: PB12 ⏳, PB37 ✅, PB51 ✅) **The app has no button to download the optional FP32 models with progress and hash verification** — On a PC without a GPU FP32 runs about twice as fast as the bundled FP16, and a corrupt file must be caught before ONNX Runtime loads it. → §PB13
+- 📋 **PB13** (deps: PB12 ✅, PB37 ✅, PB51 ✅) **The app has no button to download the optional FP32 models with progress and hash verification** — On a PC without a GPU FP32 runs about twice as fast as the bundled FP16, and a corrupt file must be caught before ONNX Runtime loads it. → §PB13
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
@@ -18,12 +17,6 @@
 ## Block F — Delivery: README, benchmarks and installers
 
 ## Block G — Phase 2: denoising
-
-## Done when — PB12
-
-- **The manifest and model files are published at a stable URL** build-manifest.py ran
-  with the real --base-url, every staged file is reachable there, and a download checks
-  against the manifest's SHA-256.
 
 ## Non-goals
 

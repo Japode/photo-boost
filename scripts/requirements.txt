@@ -14,3 +14,5 @@ jsonschema==4.26.0
 # PB48: ViTMatte's architecture, built from its config.json and weights.
 transformers==5.20.2
 safetensors==0.8.0
+# PB12: scripts/publish-models.py uploads the FP32 set to Hugging Face.
+huggingface-hub==2.2.0
