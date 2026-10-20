@@ -34,9 +34,16 @@ public partial class MainWindow
     /// <summary>Whether every installed model has its FP32 variant on disk.</summary>
     private bool HighQualityInstalled()
     {
+        if (library is not null)
+        {
+            return Complete(library.Installed());
+        }
+
         using ModelLibrary reading = new(Options.ModelFolders, new ProviderSelection(ExecutionProvider.Cpu, null, null));
-        IReadOnlyList<InstalledModel> installed = reading.Installed();
-        return installed.Count > 0 && installed.Where(m => m.Meta.Variants.ContainsKey(ModelDownloads.Variant)).All(m => m.Variants.Contains(ModelDownloads.Variant));
+        return Complete(reading.Installed());
+
+        static bool Complete(IReadOnlyList<InstalledModel> installed) =>
+            installed.Count > 0 && installed.Where(m => m.Meta.Variants.ContainsKey(ModelDownloads.Variant)).All(m => m.Variants.Contains(ModelDownloads.Variant));
     }
 
     private async void OnDownloadModelsClick(object sender, RoutedEventArgs e)

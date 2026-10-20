@@ -35,7 +35,7 @@ if exist ".cache\models" set "OWN_MODELS=.cache\models"
 if not "%~1"=="" goto :direct
 
 set "PROVIDER=auto"
-set "QUALITY=compact"
+set "QUALITY=standard"
 set "EXPORT=off"
 
 :menu
@@ -136,7 +136,7 @@ if /i "!PROVIDER!"=="auto" (set "PROVIDER=dml") else if /i "!PROVIDER!"=="dml" (
 goto :menu
 
 :quality
-if /i "!QUALITY!"=="compact" (set "QUALITY=high") else (set "QUALITY=compact")
+if /i "!QUALITY!"=="standard" (set "QUALITY=high") else (set "QUALITY=standard")
 goto :menu
 
 :export

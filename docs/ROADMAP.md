@@ -8,8 +8,6 @@
 
 ## Block D — Editor: comparison, history and quality modes
 
-- 📋 **PB29** (deps: PB13 ✅, PB16 ✅) **No UI choice between the bundled FP16 models and the downloaded FP32 High quality set** — High quality, and on a CPU speed too, comes from FP32, so the reader needs a way to pick it once it is downloaded. → §PB29
-
 ## Block E — Face restoration and background removal
 
 ## Block F — Delivery: README, benchmarks and installers

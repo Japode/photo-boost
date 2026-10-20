@@ -303,6 +303,21 @@
           "reads": "enabled",
           "expect": "not enabled",
           "named": "and the upscale button cannot start a run"
+        },
+        {
+          // PB29: no FP32 set on disk, so High quality is not offered yet.
+          "locator": "RadioButton#QualityHigh",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "High quality cannot be chosen"
+        },
+        {
+          "locator": "Text#QualityNote",
+          "act": "read",
+          "reads": "name",
+          "expect": "High quality needs the FP32 models: download them in About.",
+          "named": "and the note says where to get it"
         }
       ]
     },

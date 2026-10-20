@@ -6,10 +6,10 @@ namespace PhotoBoost.App;
 /// <summary>The quality mode a run starts in (PB29 names them; PB39 lets a flag pick one).</summary>
 public enum QualityMode
 {
-    /// <summary>The FP16 models the installer carries (PB51); PB29 renames it Standard.</summary>
-    Compact,
+    /// <summary>The FP16 models the installer carries (PB51): the default.</summary>
+    Standard,
 
-    /// <summary>FP16 or FP32: the faithful result.</summary>
+    /// <summary>The FP32 models PB13 downloads: the faithful result, and on the CPU the faster one.</summary>
     High,
 }
 
@@ -117,13 +117,14 @@ public static class CommandLine
         {
             quality = qualityValue.ToUpperInvariant() switch
             {
-                "COMPACT" => QualityMode.Compact,
+                // compact is the name PB39 gave Standard before INT8 left (PB29), kept so a script still runs.
+                "STANDARD" or "COMPACT" => QualityMode.Standard,
                 "HIGH" => QualityMode.High,
                 _ => null,
             };
             if (quality is null)
             {
-                return Refuse($"--quality {qualityValue} is not one of compact, high.");
+                return Refuse($"--quality {qualityValue} is not one of standard, high.");
             }
         }
 

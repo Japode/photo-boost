@@ -5,7 +5,7 @@ case can reach a state without a file dialog or drag and drop, and they work for
 
 ```
 PhotoBoost.exe [--open <image>] [--models <folder>] [--provider auto|winml|dml|cpu]
-               [--export <file>] [--quality compact|high]
+               [--export <file>] [--quality standard|high]
 ```
 
 Each flag takes its value after a space or an equals sign (`--provider cpu` or `--provider=cpu`)
@@ -18,8 +18,7 @@ PhotoBoost says which one in a message box and exits with code 2.
 | `--models <folder>` | Reads and downloads models in this folder alone, instead of the `models` folder the installer put beside the app followed by `%LOCALAPPDATA%\PhotoBoost\models`. |
 | `--provider auto\|winml\|dml\|cpu` | `auto` (the default) runs on DirectML on the GPU with the most video memory and falls back to the CPU, and where TensorRT-RTX runs on that GPU the upscalers use it once their engines are built in the background; `winml` first tries a provider Windows ML installed for this PC (TensorRT-RTX on NVIDIA, OpenVINO on Intel), then does what `auto` does, and fetches a provider not installed yet in the background for the next start; `dml` asks for DirectML; `cpu` never tries a GPU. The status bar shows what was chosen. |
 | `--export <file>` | When the run finishes, writes the result here (PNG, JPG or WebP by extension) and stays open. |
-| `--quality compact\|high` | Starts on the FP16 models the installer carries (compact) or the FP32 ones (high) instead of the saved choice. |
+| `--quality standard\|high` | Starts with Quality on Standard, the FP16 models the installer carries, or on High quality, the FP32 ones About downloads. `compact`, its earlier name, still means standard. |
 
-`--provider` takes effect today. `--open`, `--models`, `--export` and `--quality` are parsed and
-validated now, and take effect as the open screen, the model download, the export and the
-quality choice arrive.
+Every flag takes effect. `--quality high` keeps High quality chosen even before the FP32 models are
+downloaded, and each operation then names the model it is missing.

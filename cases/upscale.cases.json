@@ -152,6 +152,44 @@
     },
 
     {
+      "name": "with the FP32 set on disk High quality can be chosen and the upscale stays available",
+      "catches": "a quality choice that stays disabled once the FP32 models are there, or one that loses the upscale's models",
+      "filed": "PB29",
+      "tags": ["operations", "quality"],
+      "fixture": "a window on the tiny models, exporting into its own folder",
+      "steps": [
+        {
+          "locator": "RadioButton#QualityHigh",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "enabled",
+          "named": "High quality is offered"
+        },
+        {
+          "locator": "RadioButton#QualityHigh",
+          "act": "select",
+          "reads": "selected",
+          "expect": "selected",
+          "named": "High quality is chosen"
+        },
+        {
+          "locator": "Text#QualityNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^High quality uses the FP32 models",
+          "named": "the note says what it runs"
+        },
+        {
+          "locator": "Button#UpscaleButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "enabled",
+          "named": "and the 4x upscale still has its model, now FP32"
+        }
+      ]
+    },
+
+    {
       "name": "an upscaled result is compared and undone",
       "catches": "a break in Compare's divider or in undo and redo once a real result exists, which PB27 and PB28 checked by hand",
       "filed": "PB42",

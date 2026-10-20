@@ -20,6 +20,8 @@ public partial class MainWindow : Window
         Options = options;
         InitializeComponent();
         ThemeMode = Theme.Mode(Appearance.Default.Theme);
+        QualityHigh.IsChecked = options.Quality == QualityMode.High;
+        QualityStandard.IsChecked = options.Quality != QualityMode.High;
         Loaded += OnLoaded;
     }
 

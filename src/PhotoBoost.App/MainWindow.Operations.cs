@@ -22,8 +22,8 @@ public partial class MainWindow
     /// <summary>The version shown when it is an operation's result rather than the opened file.</summary>
     public RgbaImage? Result => history.Position > 0 ? Image : null;
 
-    /// <summary>The variant the quality mode names: FP16, the set the installer carries (PB51), or FP32 for High.</summary>
-    private string Variant => Options.Quality == QualityMode.High ? "fp32" : "fp16";
+    /// <summary>The variant the quality choice names (PB29): FP16, the set the installer carries (PB51), or FP32 for High.</summary>
+    private string Variant => QualityHigh.IsChecked == true ? "fp32" : "fp16";
 
     private int Factor => Scale2.IsChecked == true ? 2 : 4;
 
@@ -62,6 +62,7 @@ public partial class MainWindow
             return;
         }
 
+        RefreshQuality();
         string? missing = Missing((Upscale.ModelFor(Factor), Variant));
         OperationNote.Text = missing ?? string.Empty;
         OperationNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
@@ -69,6 +70,29 @@ public partial class MainWindow
         RefreshDenoise();
         RefreshFaces();
         RefreshBackground();
+    }
+
+    /// <summary>
+    /// PB29: High quality is offered once the FP32 set is on disk, and the note says how to get it
+    /// or what it buys. A --quality high start keeps it chosen, and each card then names what is missing.
+    /// </summary>
+    private void RefreshQuality()
+    {
+        bool installed = HighQualityInstalled();
+        QualityHigh.IsEnabled = installed || QualityHigh.IsChecked == true;
+        QualityNote.Text = !installed
+            ? "High quality needs the FP32 models: download them in About."
+            : Provider?.Provider == ExecutionProvider.Cpu
+                ? "High quality uses the FP32 models, which on this PC's CPU are also about twice as fast."
+                : "High quality uses the FP32 models; on the GPU both run at about the same speed.";
+    }
+
+    private void OnQualityChanged(object sender, RoutedEventArgs e)
+    {
+        if (QualityNote is not null)
+        {
+            RefreshOperations(); // Not while InitializeComponent is still building the card.
+        }
     }
 
     /// <summary>The note naming the first model not on disk, or null when all are.</summary>

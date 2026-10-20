@@ -47,6 +47,18 @@
                   VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
       <StackPanel>
         <TextBlock Text="Operations" Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
+        <!-- PB29: every operation runs the bundled FP16 set or the downloaded FP32 one. -->
+        <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,0,0,12">
+          <StackPanel>
+            <TextBlock Text="Quality" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <RadioButton x:Name="QualityStandard" AutomationProperties.AutomationId="QualityStandard" GroupName="Quality"
+                         Content="Standard" IsChecked="True" Margin="0,0,0,4" Checked="OnQualityChanged" />
+            <RadioButton x:Name="QualityHigh" AutomationProperties.AutomationId="QualityHigh" GroupName="Quality"
+                         Content="High quality" Checked="OnQualityChanged" />
+            <TextBlock x:Name="QualityNote" AutomationProperties.AutomationId="QualityNote"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
         <Border Style="{StaticResource GroupCard}" Padding="16">
           <StackPanel>
             <TextBlock Text="Upscale" FontSize="15" FontWeight="SemiBold" />

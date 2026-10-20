@@ -47,13 +47,20 @@ public sealed class CommandLineTests
         Assert.Equal(expected, CommandLine.Parse(["--provider", value]).Options!.Provider);
 
     [Theory]
+    [InlineData("standard", QualityMode.Standard)]
+    [InlineData("compact", QualityMode.Standard)] // PB29: the earlier name still runs a script
+    [InlineData("high", QualityMode.High)]
+    public void TheQualityFlagNamesStandardOrHigh(string value, QualityMode expected) =>
+        Assert.Equal(expected, CommandLine.Parse(["--quality", value]).Options!.Quality);
+
+    [Theory]
     [InlineData(new[] { "--zoom", "2" }, "Unknown option --zoom")]
     [InlineData(new[] { "photo.jpg" }, "use --open \"photo.jpg\"")]
     [InlineData(new[] { "--open" }, "--open needs a value")]
     [InlineData(new[] { "--open", "--models", "x" }, "--open needs a value")]
     [InlineData(new[] { "--export=" }, "--export needs a value")]
     [InlineData(new[] { "--provider", "cuda" }, "not one of auto, winml, dml, cpu")]
-    [InlineData(new[] { "--quality", "fast" }, "not one of compact, high")]
+    [InlineData(new[] { "--quality", "fast" }, "not one of standard, high")]
     [InlineData(new[] { "--open", "a.jpg", "--open", "b.jpg" }, "--open is given twice")]
     public void AnythingElseIsRefusedWithAMessage(string[] args, string message)
     {
