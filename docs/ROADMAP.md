@@ -8,6 +8,7 @@
 
 - ⏳ **PB12** (deps: PB11 ✅, owner creates the Hugging Face account and logs in) **The optional FP32 models have no public location the app can download them from** — The optional FP32 set needs a public host the app can fetch from; the owner chose Hugging Face and has to create the account. → §PB12
 - 📋 **PB13** (deps: PB12 ⏳, PB37 ✅, PB51 ✅) **The app has no button to download the optional FP32 models with progress and hash verification** — On a PC without a GPU FP32 runs about twice as fast as the bundled FP16, and a corrupt file must be caught before ONNX Runtime loads it. → §PB13
+- 📋 **PB53** (deps: PB43 ✅) **The installer accepts Windows 10 1809, where Windows ML and so every operation cannot run** — Since PB43 the app needs Windows 10 19H1 (build 18362), and an install that fails at the first inference is worse than a refused one. → §PB53
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
@@ -21,8 +22,7 @@
 
 ## Block F — Delivery: README, benchmarks and installers
 
-- 📋 **PB33** (deps: PB26 ✅, PB51 ✅) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
-- 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing the FP16 and FP32 sets' size, inference time and quality on GPU and CPU** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
+- 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33 ✅) **No table comparing the FP16 and FP32 sets' size, inference time and quality on GPU and CPU** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
 
 ## Block G — Phase 2: denoising
 

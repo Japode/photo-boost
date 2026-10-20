@@ -50,6 +50,21 @@ a file that fails its hash is deleted, never loaded. When the app runs on the CP
 suggests the download, because FP16 there takes about twice FP32's time (PB51's
 measurements). Later launches only re-check presence and hashes.
 
+### §PB53 Installer minimum Windows version
+
+Found while writing the README (PB33). build\installer.iss sets MinVersion=10.0.17763
+(Windows 10 1809), written when the app ran on Microsoft.ML.OnnxRuntime.DirectML. Since
+PB43 the app runs on Microsoft.Windows.AI.MachineLearning, whose own README names
+Windows 10 19H1 (build 18362) as the minimum: its WinRT types activate reg-free, which
+1809 lacks. So 1809 installs and then fails at the first ONNX Runtime call, for DirectML
+and CPU too.
+
+What to build: MinVersion=10.0.18362 in installer.iss, with the comment naming Windows
+ML as the reason. Check whether app.manifest's supportedOS entries or a maxversiontested
+line need the same floor, and add an architecture test that holds installer.iss's
+MinVersion at or above the Windows ML package's minimum, so a package upgrade that
+raises it is caught.
+
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ### §PB52 TensorRT-RTX engine reuse
@@ -98,13 +113,6 @@ Standard and High. PB34's table compares the two sets.
 ## Block E — Face restoration and background removal
 
 ## Block F — Delivery: README, benchmarks and installers
-
-### §PB33 README
-
-Sections: what PhotoBoost is, dotnet build and run (SDK version, Windows 10/11 x64), how
-to run download_models.py and export-and-quantize.py (Python version, requirements.txt,
-CUDA optional), where models live, hardware requirements (DX12 GPU for DirectML, RAM,
-VRAM per tile size), how to run tests and winwright cases, and each model's license.
 
 ### §PB34 FP16 vs FP32 benchmark
 
