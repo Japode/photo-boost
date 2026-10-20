@@ -48,6 +48,7 @@ public partial class MainWindow
             ? ["No models yet. Download them to use the operations."]
             : installed.Select(Describe).ToList();
         AboutNotices.Text = Notices();
+        RefreshDownloads();
     }
 
     private static string Describe(InstalledModel model) =>

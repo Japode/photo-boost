@@ -122,6 +122,21 @@
           "named": "the first model, its variants and its license"
         },
         {
+          // PB13: both tiny models carry fp32, so there is nothing to download.
+          "locator": "Text#DownloadNote",
+          "act": "read",
+          "reads": "name",
+          "expect": "The high-quality (FP32) models are installed.",
+          "named": "the high-quality models read as installed"
+        },
+        {
+          "locator": "Button#DownloadModelsButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and the download is not offered"
+        },
+        {
           "locator": "Button#AboutClose",
           "act": "invoke",
           "named": "About is closed"

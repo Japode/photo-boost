@@ -25,6 +25,7 @@
 - ✅ **PB51** **The installer carries no models, so a fresh install cannot run any operation** — The installer carries the FP16 set, which the app reads before its downloads folder; every operation ran from it offline (design recorded in `build/stage-models.ps1`).
 - ✅ **PB53** **The installer accepts Windows 10 1809, where Windows ML and so every operation cannot run** — The installer refuses Windows older than 10 1903, Windows ML's minimum, and a test holds that floor to the package version it was read for.
 - ✅ **PB54** **Face restore on DirectML pastes a flat brown square over each face with the default FP16 GFPGAN** — On a GPU face restore runs GFPGAN's FP32, which the installer now carries, so faces come out right (design recorded in `src/PhotoBoost.Inference/Pipelines/FaceRestore.cs`).
+- ✅ **PB13** **The app has no button to download the optional FP32 models with progress and hash verification** — About offers the FP32 set from the pinned manifest, streamed through .part files, SHA-256 checked, skipping files already here or bundled.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 

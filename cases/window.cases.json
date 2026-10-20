@@ -179,6 +179,42 @@
     },
 
     {
+      // PB13: only the offer is read; the download itself needs the network, which a case does not
+      // reach, and ModelDownloadsTests drives it against a stand-in server.
+      "name": "with no models About offers the high-quality download",
+      "catches": "an About panel that hides the optional FP32 download, or offers it disabled",
+      "filed": "PB13",
+      "tags": ["about", "download"],
+      "fixture": "a window with a photo open and no models",
+      "steps": [
+        {
+          "locator": "Button#AboutButton",
+          "act": "invoke",
+          "named": "About is opened"
+        },
+        {
+          "locator": "Text#DownloadNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^The high-quality \\(FP32\\) models are an optional download of up to 690 MB",
+          "named": "it says what the download is and how large"
+        },
+        {
+          "locator": "Button#DownloadModelsButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "enabled",
+          "named": "and offers it"
+        },
+        {
+          "locator": "Button#AboutClose",
+          "act": "invoke",
+          "named": "About is closed"
+        }
+      ]
+    },
+
+    {
       // PB57: choose file types the name and reads it back before confirming (winwright WW561).
       "name": "Save as writes the photo where the Save dialog is told",
       "catches": "a Save as whose dialog closes and writes nothing, or writes under another name",

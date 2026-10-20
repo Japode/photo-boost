@@ -4,13 +4,11 @@
 
 ## Block B — Model management
 
-- 📋 **PB13** (deps: PB12 ✅, PB37 ✅, PB51 ✅) **The app has no button to download the optional FP32 models with progress and hash verification** — On a PC without a GPU FP32 runs about twice as fast as the bundled FP16, and a corrupt file must be caught before ONNX Runtime loads it. → §PB13
-
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ## Block D — Editor: comparison, history and quality modes
 
-- 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between the bundled FP16 models and the downloaded FP32 High quality set** — High quality, and on a CPU speed too, comes from FP32, so the reader needs a way to pick it once it is downloaded. → §PB29
+- 📋 **PB29** (deps: PB13 ✅, PB16 ✅) **No UI choice between the bundled FP16 models and the downloaded FP32 High quality set** — High quality, and on a CPU speed too, comes from FP32, so the reader needs a way to pick it once it is downloaded. → §PB29
 
 ## Block E — Face restoration and background removal
 

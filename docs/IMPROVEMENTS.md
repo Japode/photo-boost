@@ -4,22 +4,6 @@
 
 ## Block B — Model management
 
-### §PB13 Optional FP32 download
-
-Rescoped by the owner's decision of 2026-10-20: the installer carries the FP16 set
-(PB51), so nothing has to be downloaded for the app to work, and this is the button that
-fetches the optional FP32 set from PB12's manifest, about 690 MB: pin the manifest_url
-in scripts/published-models.json (alegauss/photo-boost-models at a resolve/<commit> URL,
-with RMBG-1.4 from BRIA's own repository).
-
-A "Download high-quality models" action, in the About panel or beside the quality choice
-(PB29), fetches into %LOCALAPPDATA%\PhotoBoost\models\<name>\ (MainWindow.Options
-.ModelsFolder, PB39). HttpClient streams each file to a .part, reports progress,
-verifies SHA-256 against the manifest, then renames; cancel and retry are per file, and
-a file that fails its hash is deleted, never loaded. When the app runs on the CPU it
-suggests the download, because FP16 there takes about twice FP32's time (PB51's
-measurements). Later launches only re-check presence and hashes.
-
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ## Block D — Editor: comparison, history and quality modes

@@ -251,6 +251,21 @@
             <TextBlock Text="GFPGAN v1.4 and RMBG-1.4 are licensed for non-commercial use only; check each license before using results commercially."
                        Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,6,0,16" />
 
+            <!-- PB13: the optional FP32 set, from the manifest PB12 published. -->
+            <TextBlock Text="High-quality models" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+            <TextBlock x:Name="DownloadNote" AutomationProperties.AutomationId="DownloadNote"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,0,0,6" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+              <Button x:Name="DownloadModelsButton" AutomationProperties.AutomationId="DownloadModelsButton"
+                      Content="Download high-quality models" Padding="12,4" Click="OnDownloadModelsClick" />
+              <Button x:Name="CancelDownloadButton" AutomationProperties.AutomationId="CancelDownloadButton"
+                      Content="Cancel" Padding="12,4" Margin="8,0,0,0" Visibility="Collapsed" Click="OnCancelDownloadClick" />
+            </StackPanel>
+            <ProgressBar x:Name="DownloadProgressBar" AutomationProperties.AutomationId="DownloadProgressBar"
+                         Height="6" Maximum="1" Visibility="Collapsed" Margin="0,0,0,6" />
+            <TextBlock x:Name="DownloadStatus" AutomationProperties.AutomationId="DownloadStatus"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,0,0,16" />
+
             <TextBlock Text="Third-party software" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
             <TextBlock x:Name="AboutNotices" AutomationProperties.AutomationId="AboutNotices"
                        Style="{StaticResource StatCaption}" TextWrapping="Wrap" />
