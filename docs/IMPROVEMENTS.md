@@ -12,16 +12,6 @@ when the desk cannot be observed. Add DefaultItemExcludes if the app project sit
 tests. Every element a case touches gets a unique automation id. Install the winwright
 Claude plugin at project scope. Friction goes to winwright's roadmap (WW).
 
-### §PB39 Command-line flags
-
-Flags in the quickshell style, documented in docs/COMMAND-LINE.md: --open <path>,
---models <dir>, --provider auto|dml|cpu (parsed by ProviderDetector.TryParse from PB14
-and handed to ProviderDetector.Detect in MainWindow; CUDA is not shipped), --export
-<path> (write the current result and stay open), --quality compact|high (PB29 renamed
-fast). Parsed in one place, unit tested, and ignored values rejected with a clear
-message. These stand in for WW550 (drop from Explorer) and WW551 (Open/Save dialogs);
-once those ship, add cases that drive the real drop and dialogs.
-
 ### §PB40 GPU image display spike
 
 Compare D3DImage fed by a shared D3D11 texture against a child HWND with a DXGI flip
@@ -52,11 +42,12 @@ version and URL.
 
 ### §PB13 First-run model download
 
-Models live under %LOCALAPPDATA%\PhotoBoost\models\<name>\ unless --models overrides it.
-HttpClient streams each file to a .part, reports progress, verifies SHA256, then
-renames. The screen shows per-model bars, total size, retry and cancel, in the Fluent
-card style. Later launches only re-check presence and hashes. INT8 is the default
-download; FP16 for GPU and FP32 are optional extras.
+Models live under %LOCALAPPDATA%\PhotoBoost\models\<name>\ unless --models overrides it
+(MainWindow.Options.ModelsFolder, PB39, already resolves both). HttpClient streams each
+file to a .part, reports progress, verifies SHA256, then renames. The screen shows
+per-model bars, total size, retry and cancel, in the Fluent card style. Later launches
+only re-check presence and hashes. INT8 is the default download; FP16 for GPU and FP32
+are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
@@ -65,7 +56,8 @@ download; FP16 for GPU and FP32 are optional extras.
 A drop zone accepting files dragged from Explorer plus the common open dialog, for PNG,
 JPG, WebP, TIFF and whatever WIC decodes (HEIC, AVIF when installed). --open <path>
 reaches the same state without either, which is how winwright cases get there: it has no
-verb for a drop from Explorer.
+verb for a drop from Explorer. The parsed value is MainWindow.Options.Open (PB39); a
+path that does not exist or does not decode shows the same error the drop zone would.
 
 ### §PB24 Operations panel
 

@@ -6,6 +6,12 @@
       "name": "the window a default installation opens",
       "arguments": [],
       "shareable": true
+    },
+    {
+      // PB39: --provider cpu, which a case uses to be the same on every desk.
+      "name": "a window forced onto the CPU",
+      "arguments": ["--provider", "cpu"],
+      "shareable": true
     }
   ],
 
@@ -42,6 +48,23 @@
           "reads": "name",
           "matches": "^(DirectML · |CPU)",
           "named": "the provider chip names DirectML or CPU"
+        }
+      ]
+    },
+
+    {
+      "name": "--provider cpu runs inference on the CPU whatever GPU the desk has",
+      "catches": "a --provider flag that is parsed and then ignored, leaving detection to pick the GPU",
+      "filed": "PB39",
+      "tags": ["smoke", "provider", "command-line"],
+      "fixture": "a window forced onto the CPU",
+      "steps": [
+        {
+          "locator": "Text#ProviderStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "CPU",
+          "named": "the provider chip says CPU and nothing else"
         }
       ]
     }
