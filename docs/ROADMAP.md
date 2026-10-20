@@ -2,7 +2,8 @@
 
 ## Block A — Project foundation
 
-- ⏳ **PB38** (deps: PB1 ✅, PB2 ✅, winwright WW554) **No winwright Cases project, winwright.json or first case that opens the main window** — The winwright Claude plugin is not installed: its marketplace name collides with roadkeep's (WW554). → §PB38
+- ⏳ **PB38** (deps: PB1 ✅, PB2 ✅) **No winwright Cases project, winwright.json or first case that opens the main window** — WW554 shipped in winwright 1.1.4: the marketplace is now winwright, so the plugin installs beside roadkeep's. → §PB38
+- 📋 **PB57** (deps: PB38 ⏳) **The UI cases still work around five winwright gaps that 1.1.4 closed, and the drop zone and Save dialog have no case** — Winwright 1.1.4 shipped WW550, WW551, WW555, WW556 and WW521, so the stand-ins can become real cases. → §PB57
 
 ## Block B — Model management
 
@@ -11,6 +12,8 @@
 - 📋 **PB54** (deps: PB51 ✅) **Face restore on DirectML pastes a flat brown square over each face with the default FP16 GFPGAN** — Since PB51 FP16 is the set the installer carries, so every GPU user gets broken faces; FP32 and FP16 on the CPU are right. → §PB54
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
+
+- 📋 **PB56** (deps: —) **A tiled operation throws on a GPU whose DXGI driver answers no video memory budget, as VMware's does** — MemoryBudget.Free lets QueryVideoMemoryInfo's 0x8876086A through, so upscale and denoise fail where the recommended tile would run. → §PB56
 
 ## Block D — Editor: comparison, history and quality modes
 
