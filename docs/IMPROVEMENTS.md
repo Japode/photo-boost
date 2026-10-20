@@ -86,12 +86,14 @@ BRIA's mask is unsure. Epsilon 1e-3 and 1e-4 measured the same. The cause is the
 the giraffes' white ears against a white sky have almost no luminance difference, so the
 filter has no edge to follow and averages instead.
 
-Options to measure against the same two counts and by eye on a hair-heavy photo: the
-colour guided filter (a 3 x 3 covariance per window, so a hue edge counts where
-luminance is flat); running RMBG on overlapping 1024 px tiles of a large photo so the
-mask is made nearer full size; or a matting model (ViTMatte, MIT) on a trimap from the
-mask's unsure band, with its weights verified and exported like the others. Keep Refine
-edges and the unrefined path, so the Compare view can show each against the photo.
+Measured 2026-10-20: the colour guided filter (fitted at up to 2048 px) gave 17677 band
+and 4839 faint pixels, no better and 0.4 s slower, so it was dropped. At 1405 px the
+mask is barely scaled, so the band is mostly RMBG's own softness. Tiling helps only far
+larger photos; a matting model is a further download, which the owner decides on. Left:
+running RMBG on overlapping 1024 px tiles of a large photo so the mask is made nearer
+full size; or a matting model (ViTMatte, MIT) on a trimap from the mask's unsure band,
+with its weights verified and exported like the others. Keep Refine edges and the
+unrefined path, so the Compare view can show each against the photo.
 
 ## Block F — Delivery: README, benchmarks and installers
 

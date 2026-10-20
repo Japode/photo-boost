@@ -19,7 +19,7 @@
 
 ## Block E — Face restoration and background removal
 
-- 💭 **PB48** (deps: PB47 ✅) **Background removal's edge stays soft where subject and background have the same brightness** — The grey guided filter cut the specks but widened the edge band by a third, so hair and pale fur still blur into a pale background. → §PB48
+- ⏳ **PB48** (deps: PB47 ✅, owner decides on a matting model download) **Background removal's edge stays soft where subject and background have the same brightness** — The grey guided filter cut the specks but widened the edge band by a third, so hair and pale fur still blur into a pale background. → §PB48
 
 ## Block F — Delivery: README, benchmarks and installers
 
@@ -39,6 +39,12 @@
 - **The winwright Claude plugin is enabled at project scope beside roadkeep's**
   .claude/settings.json lists the winwright plugin and its marketplace next to
   roadkeep@alegauss, and both resolve in a fresh session.
+
+## Done when — PB48
+
+- **The refined edge band is narrower than RMBG-1.4's own on example_input.jpg** Count
+  alpha 10% to 90% pixels against the unrefined result (13481 on 2026-10-20) with faint
+  pixels kept under 5000, and check a hair-heavy photo by eye in the Compare view.
 
 ## Non-goals
 
