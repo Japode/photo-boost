@@ -95,6 +95,8 @@ public sealed record DownloadFailure(string What, string Todo)
         {
             HttpRequestException { HttpRequestError: HttpRequestError.NameResolutionError or HttpRequestError.ConnectionError } =>
                 new("This PC seems to be offline.", "Connect to the internet and try again." + keeping),
+            HttpRequestException { StatusCode: { } missing } when (int)missing is >= 400 and < 500 =>
+                new($"The download server no longer has this file (error {(int)missing}).", "Update PhotoBoost, which knows the current download locations, then try again." + keeping),
             HttpRequestException { StatusCode: { } status } =>
                 new($"The download server answered with error {(int)status}.", "This is usually temporary: try again in a few minutes." + keeping),
             HttpRequestException =>

@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "name": "rmbg-1.4",
+  "task": "background-removal",
+  "scale": 1,
+  "input": {
+    "name": "input",
+    "layout": "NCHW",
+    "colour_order": "RGB",
+    "channels": 3,
+    "value_range": [
+      -0.5,
+      0.5
+    ],
+    "size": 32,
+    "multiple": 1,
+    "batch": "dynamic"
+  },
+  "output": {
+    "name": "output",
+    "channels": 1,
+    "value_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "tile": {
+    "recommended": null,
+    "largest_activation_bytes_per_pixel": 16.0
+  },
+  "variants": {
+    "fp32": {
+      "file": "fp32.onnx",
+      "bytes": 786647,
+      "sha256": "16245036eeedb4752c5960628f8d32ac8920580c60c29ca431c434b68de8ae39"
+    }
+  },
+  "upstream": {
+    "url": "https://huggingface.co/briaai/RMBG-1.4",
+    "license": "test fixture, no weights",
+    "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/"
+  }
+}

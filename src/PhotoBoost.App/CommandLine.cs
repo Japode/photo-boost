@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using PhotoBoost.Inference;
 
 namespace PhotoBoost.App;
@@ -19,12 +19,14 @@ public enum QualityMode
 /// <param name="Provider">Where inference runs; Auto unless forced.</param>
 /// <param name="Export">Where to write the result when the run ends, staying open.</param>
 /// <param name="Quality">The quality mode to start in, or null for the saved one.</param>
+/// <param name="Manifest">A manifest file to download models from instead of the pinned one (PB59).</param>
 public sealed record AppOptions(
     string? Open = null,
     string? Models = null,
     ProviderPreference Provider = ProviderPreference.Auto,
     string? Export = null,
-    QualityMode? Quality = null)
+    QualityMode? Quality = null,
+    string? Manifest = null)
 {
     /// <summary>%LOCALAPPDATA%\PhotoBoost\models, where downloaded models go unless --models says otherwise.</summary>
     public static string DefaultModels =>
@@ -57,7 +59,7 @@ public sealed record ParsedCommandLine(AppOptions? Options, string? Error)
 /// </summary>
 public static class CommandLine
 {
-    private static readonly string[] Flags = ["--open", "--models", "--provider", "--export", "--quality"];
+    private static readonly string[] Flags = ["--open", "--models", "--provider", "--export", "--quality", "--manifest"];
 
     /// <summary>Parses the arguments after the executable's name.</summary>
     /// <param name="args">The arguments.</param>
@@ -128,13 +130,19 @@ public static class CommandLine
             }
         }
 
+        if (given.TryGetValue("--manifest", out string? manifest) && !File.Exists(manifest))
+        {
+            return Refuse($"--manifest {manifest} is not a file.");
+        }
+
         return new ParsedCommandLine(
             new AppOptions(
                 Open: given.GetValueOrDefault("--open"),
                 Models: given.GetValueOrDefault("--models"),
                 Provider: provider,
                 Export: given.GetValueOrDefault("--export"),
-                Quality: quality),
+                Quality: quality,
+                Manifest: manifest),
             null);
     }
 

@@ -4,8 +4,6 @@
 
 ## Block B — Model management
 
-- 📋 **PB59** (deps: PB58 ✅) **No UI case drives a first-use download to the end: progress, pause, a failure and the auto-run are unobserved** — The case stops at Not now because a case reaches no network; a local stand-in server for the manifest's files would let one download, verify and run. → §PB59
-
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ## Block D — Editor: comparison, history and quality modes

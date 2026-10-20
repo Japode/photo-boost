@@ -35,9 +35,13 @@ public sealed record ModelManifest(int Schema, string Version, IReadOnlyList<Man
 
     /// <summary>Reads a manifest and refuses one this build cannot trust.</summary>
     /// <param name="json">manifest.json's text.</param>
+    /// <param name="loopback">
+    /// PB59: also accept plain http on this machine's own loopback, for a manifest a person passed
+    /// with --manifest, such as the UI cases' fixture server's. The pinned manifest never does.
+    /// </param>
     /// <returns>The manifest.</returns>
     /// <exception cref="InvalidDataException">It is not schema 1, or a URL is not https.</exception>
-    public static ModelManifest Parse(string json)
+    public static ModelManifest Parse(string json, bool loopback = false)
     {
         ModelManifest manifest;
         try
@@ -54,13 +58,17 @@ public sealed record ModelManifest(int Schema, string Version, IReadOnlyList<Man
             throw new InvalidDataException($"The manifest is schema {manifest.Schema}; this build reads 1.");
         }
 
-        if (manifest.Models.SelectMany(m => m.Variants.Values.Append(m.Meta)).FirstOrDefault(f => !f.Url.StartsWith("https://", StringComparison.Ordinal)) is { } plain)
+        if (manifest.Models.SelectMany(m => m.Variants.Values.Append(m.Meta)).FirstOrDefault(f => !Trusted(f.Url, loopback)) is { } plain)
         {
             throw new InvalidDataException($"The manifest lists {plain.Url}, which is not https.");
         }
 
         return manifest;
     }
+
+    private static bool Trusted(string url, bool loopback) =>
+        url.StartsWith("https://", StringComparison.Ordinal)
+        || (loopback && Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed) && parsed.Scheme == Uri.UriSchemeHttp && parsed.IsLoopback);
 
     /// <summary>A model by name, or null.</summary>
     /// <param name="name">Its folder name.</param>
@@ -234,7 +242,7 @@ public static class ModelDownloads
                     await FetchAsync(http, expected, part, label, before, total, speed, progress, cancellation).ConfigureAwait(false);
                     break;
                 }
-                catch (Exception failure) when (failure is HttpRequestException or IOException && !cancellation.IsCancellationRequested && attempt < Attempts)
+                catch (Exception failure) when (Transient(failure) && !cancellation.IsCancellationRequested && attempt < Attempts)
                 {
                     progress?.Report(new DownloadProgress(label, before + PartialBytes(path), total, DownloadStage.Retrying));
                     await Task.Delay(pause, cancellation).ConfigureAwait(false);
@@ -311,6 +319,15 @@ public static class ModelDownloads
             throw new IOException($"The connection went silent for {StallTimeout.TotalSeconds:0} seconds.", silent);
         }
     }
+
+    // A dropped or silent connection and a server error can pass; a 4xx is the file not being
+    // there, which no retry changes (PB59), so it is reported at once.
+    private static bool Transient(Exception failure) => failure switch
+    {
+        HttpRequestException { StatusCode: { } status } => (int)status >= 500,
+        HttpRequestException or IOException => true,
+        _ => false,
+    };
 
     private static IEnumerable<ManifestModel> Selected(ModelManifest manifest, IReadOnlyCollection<string>? models) =>
         models is null ? manifest.Models : manifest.Models.Where(m => models.Contains(m.Name));

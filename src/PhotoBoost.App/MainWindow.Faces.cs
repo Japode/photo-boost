@@ -23,7 +23,7 @@ public partial class MainWindow
             : [(FaceDetection.Model, "fp32"), (FaceRestore.Model, restorer), (Upscale.ModelFor(Factor), Variant)];
 
         // PB58: GFPGAN itself is downloaded on first use, so only the others can be "missing".
-        bool fetch = FirstUse.Needed(FirstUse.Faces, library!, ModelDownloads.Embedded, Variant).Count > 0;
+        bool fetch = FirstUse.Needed(FirstUse.Faces, library!, Manifest, Variant).Count > 0;
         string? missing = TooLarge(FaceUpscaleFactor) ?? Missing([.. needed.Where(one => !fetch || one.Item1 != FaceRestore.Model)]);
         FaceNote.Text = missing ?? string.Empty;
         FaceNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;

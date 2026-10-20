@@ -796,6 +796,87 @@ def write_fixtures(out: Path) -> list[str]:
     return written
 
 
+DOWNLOAD_PORT = 47623
+DOWNLOAD_SIDE = 32
+DOWNLOAD_PADDING = 196_608
+
+
+def tiny_matter() -> onnx.ModelProto:
+    """PB59: RMBG-1.4's interface on a 32 px square, its mask the mean of the three channels.
+
+    A 1x1 convolution with weights of a third, so it runs on every provider, plus an initializer
+    nothing reads that brings the file to about 770 KB: a download the fixture server's 160 KB/s
+    stretches to a few seconds, long enough for a case to watch it and pause it.
+    """
+    from onnx import TensorProto, helper
+
+    weight = helper.make_tensor("weight", TensorProto.FLOAT, [1, 3, 1, 1], [1.0 / 3] * 3)
+    padding = helper.make_tensor("padding", TensorProto.FLOAT, [DOWNLOAD_PADDING],
+                                 (np.arange(DOWNLOAD_PADDING, dtype=np.float32) % 251).tolist())
+    node = helper.make_node("Conv", ["input", "weight"], ["output"])
+    side = DOWNLOAD_SIDE
+    graph = helper.make_graph(
+        [node],
+        "tiny-mean-matter",
+        [helper.make_tensor_value_info("input", TensorProto.FLOAT, ["batch", 3, side, side])],
+        [helper.make_tensor_value_info("output", TensorProto.FLOAT, ["batch", 1, side, side])],
+        [weight, padding],
+    )
+    model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", OPSET)], producer_name="photoboost-fixture")
+    model.ir_version = 8
+    onnx.checker.check_model(model, full_check=True)
+    return model
+
+
+def write_download_fixtures(out: Path) -> list[str]:
+    """PB59: what the UI cases' fixture server serves for a first-use download, flat, as hosted.
+
+    The stand-in RMBG-1.4 and its meta.json, and two manifests in build-manifest.py's schema: one
+    whose files the server sends, and one whose files it answers 404 for, so a case sees a failure.
+    """
+    out.mkdir(parents=True, exist_ok=True)
+    name = "rmbg-1.4"
+    onnx_path = out / f"{name}-fp32.onnx"
+    onnx_path.write_bytes(tiny_matter().SerializeToString())
+    side = DOWNLOAD_SIDE
+    meta = {
+        "schema": META_SCHEMA_VERSION,
+        "name": name,
+        "task": "background-removal",
+        "scale": 1,
+        "input": {"name": "input", "layout": "NCHW", "colour_order": "RGB", "channels": 3, "value_range": [-0.5, 0.5],
+                  "size": side, "multiple": 1, "batch": "dynamic"},
+        "output": {"name": "output", "channels": 1, "value_range": [0.0, 1.0]},
+        "tile": {"recommended": None, "largest_activation_bytes_per_pixel": 16.0},
+        "variants": {"fp32": {"file": "fp32.onnx", "bytes": onnx_path.stat().st_size, "sha256": sha256_of(onnx_path)}},
+        "upstream": {"url": "https://huggingface.co/briaai/RMBG-1.4", "license": "test fixture, no weights",
+                     "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/"},
+    }
+    meta_path = out / f"{name}-meta.json"
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8", newline="\n")
+
+    written = [onnx_path.name, meta_path.name]
+    for manifest_name, folder in (("manifest.json", "files"), ("manifest-missing.json", "missing")):
+        base = f"http://127.0.0.1:{DOWNLOAD_PORT}/{folder}"
+        manifest = {
+            "schema": 1,
+            "version": "fixture",
+            "base_url": base,
+            "models": [{
+                "name": name,
+                "task": "background-removal",
+                "meta": {"url": f"{base}/{meta_path.name}", "bytes": meta_path.stat().st_size, "sha256": sha256_of(meta_path)},
+                "variants": {"fp32": {"url": f"{base}/{onnx_path.name}", "bytes": onnx_path.stat().st_size,
+                                      "sha256": sha256_of(onnx_path)}},
+                "license": "test fixture, no weights",
+                "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/",
+            }],
+        }
+        (out / manifest_name).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
+        written.append(manifest_name)
+    return written
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Export the upstream weights to ONNX.")
     parser.add_argument("--weights", type=Path, default=WEIGHTS, help="where download_models.py put the files")
@@ -805,11 +886,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-int8", action="store_true", help="skip the INT8 variant")
     parser.add_argument("--validate-only", action="store_true", help="only re-check the variants already in --out")
     parser.add_argument("--fixtures", type=Path, metavar="DIR", help="write the tiny stand-in models UI cases run (PB42) and stop")
+    parser.add_argument("--download-fixtures", type=Path, metavar="DIR",
+                        help="write what the UI cases' fixture server serves for a first-use download (PB59) and stop")
     args = parser.parse_args(argv)
 
     if args.fixtures is not None:
         for name in write_fixtures(args.fixtures):
             print(f"fixture {name} -> {args.fixtures / name}")
+        return 0
+
+    if args.download_fixtures is not None:
+        for name in write_download_fixtures(args.download_fixtures):
+            print(f"download fixture {name} -> {args.download_fixtures / name}")
         return 0
 
     known = {e.name for e in EXPORTS} | {DETECTOR}

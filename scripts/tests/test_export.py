@@ -180,6 +180,25 @@ class ExportTests(unittest.TestCase):
             for file in ("fp16.onnx", "fp32.onnx", "meta.json"):
                 self.assertEqual((committed / name / file).read_bytes(), (self.folder / name / file).read_bytes(), f"{name}/{file}")
 
+    @unittest.skipIf(jsonschema is None, "jsonschema not installed")
+    def test_download_fixtures_are_a_mean_matter_the_committed_manifests_describe(self):
+        # PB59: what the cases' fixture server serves, and the committed copies must be what the script writes.
+        import onnxruntime as ort
+
+        schema = json.loads((SCRIPTS / "meta.schema.json").read_text(encoding="utf-8"))
+        committed = SCRIPTS.parent / "cases" / "fixtures" / "download"
+        written = self.ex.write_download_fixtures(self.folder)
+        jsonschema.validate(json.loads((self.folder / "rmbg-1.4-meta.json").read_text(encoding="utf-8")), schema)
+        image = np.random.default_rng(7).random((1, 3, 32, 32)).astype(np.float32)
+        session = ort.InferenceSession(str(self.folder / "rmbg-1.4-fp32.onnx"), providers=["CPUExecutionProvider"])
+        np.testing.assert_allclose(image.mean(axis=1, keepdims=True), session.run(None, {"input": image})[0], rtol=1e-5)
+        manifest = json.loads((self.folder / "manifest.json").read_text(encoding="utf-8"))
+        onnx_entry = manifest["models"][0]["variants"]["fp32"]
+        self.assertEqual(hashlib.sha256((self.folder / "rmbg-1.4-fp32.onnx").read_bytes()).hexdigest(), onnx_entry["sha256"])
+        self.assertTrue(onnx_entry["url"].startswith("http://127.0.0.1:"))
+        for file in written:
+            self.assertEqual((committed / file).read_bytes(), (self.folder / file).read_bytes(), file)
+
     def test_yunet_heads_decode_as_opencv_does(self):
         # PB30: the same anchor PhotoBoost.Inference's FaceDetectionTests decodes, so both sides agree.
         heads = {}

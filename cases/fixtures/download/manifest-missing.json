@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "version": "fixture",
+  "base_url": "http://127.0.0.1:47623/missing",
+  "models": [
+    {
+      "name": "rmbg-1.4",
+      "task": "background-removal",
+      "meta": {
+        "url": "http://127.0.0.1:47623/missing/rmbg-1.4-meta.json",
+        "bytes": 868,
+        "sha256": "084b409fb2e72e192d8e2f4e19ac070c807c5d4c763b0be8fa90c1859015b78c"
+      },
+      "variants": {
+        "fp32": {
+          "url": "http://127.0.0.1:47623/missing/rmbg-1.4-fp32.onnx",
+          "bytes": 786647,
+          "sha256": "16245036eeedb4752c5960628f8d32ac8920580c60c29ca431c434b68de8ae39"
+        }
+      },
+      "license": "test fixture, no weights",
+      "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/"
+    }
+  ]
+}

@@ -1,0 +1,204 @@
+{
+  // PB59: a first-use download watched from the offer to the run, against the fixture server
+  // CasesRun starts on 127.0.0.1:47623 (tests/PhotoBoost.Cases/FixtureServer.cs). It sends a
+  // 770 KB stand-in RMBG-1.4 at 40 KB/s, about 20 s, long enough to read its progress and pause it,
+  // and a resumed one at full speed, so the rest and the run fit in one step's wait. --manifest names the stand-in's manifest; the photo's own
+  // models folder is staged empty, so Remove background has something to download.
+
+  "fixtures": [
+    {
+      "name": "a window with a photo open, downloading from the fixture server",
+      "files": ["tests/fixtures/images/rotated-exif6.jpg"],
+      "arguments": ["--open", "{files}/rotated-exif6.jpg", "--models", "{files}/models",
+                    "--manifest", "cases/fixtures/download/manifest.json", "--provider", "cpu"],
+      "reaches": ["127.0.0.1:47623"],
+      "shareable": false
+    },
+    {
+      "name": "a window with a photo open, whose download the fixture server does not have",
+      "files": ["tests/fixtures/images/rotated-exif6.jpg"],
+      "arguments": ["--open", "{files}/rotated-exif6.jpg", "--models", "{files}/models",
+                    "--manifest", "cases/fixtures/download/manifest-missing.json", "--provider", "cpu"],
+      "reaches": ["127.0.0.1:47623"],
+      "shareable": false
+    }
+  ],
+
+  "cases": [
+    {
+      "name": "a first-use download shows its progress, pauses, resumes and then runs the operation by itself",
+      "catches": "a download whose progress is not shown, a pause that loses it, or an operation that has to be pressed again once its model is in",
+      "filed": "PB59",
+      "tags": ["operations", "background", "download"],
+      "fixture": "a window with a photo open, downloading from the fixture server",
+      "steps": [
+        {
+          "locator": "Text#BackgroundFirstUseBadge",
+          "act": "read",
+          "reads": "name",
+          "expect": "One-time download · 1 MB",
+          "named": "the card offers the stand-in's download"
+        },
+        {
+          "locator": "Button#RemoveBackgroundButton",
+          "act": "invoke",
+          "named": "Download and remove background is pressed"
+        },
+        {
+          "locator": "Button#ConsentAccept",
+          "act": "invoke",
+          "named": "the offer is accepted"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseBadge",
+          "act": "read",
+          "reads": "name",
+          "matches": "^Downloading · \\d+%$",
+          "named": "the card says it is downloading, and how far"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseDetail",
+          "act": "read",
+          "reads": "name",
+          "matches": "^0 of 1 MB · ",
+          "named": "with the megabytes done of the total"
+        },
+        {
+          "locator": "Text#DownloadChip",
+          "act": "read",
+          "reads": "name",
+          "matches": "^Remove background: 0 of 1 MB · ",
+          "named": "the status bar says the same"
+        },
+        {
+          "locator": "Button#RemoveBackgroundButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "the button waits for the download"
+        },
+        {
+          "locator": "Button#BackgroundFirstUseAction",
+          "act": "read",
+          "reads": "name",
+          "expect": "Pause",
+          "named": "it offers a pause"
+        },
+        {
+          "locator": "Button#BackgroundFirstUseAction",
+          "act": "invoke",
+          "named": "Pause is pressed"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseBadge",
+          "act": "read",
+          "reads": "name",
+          "matches": "^Paused · \\d+%$",
+          "named": "the card says it is paused, and how far it got"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseDetail",
+          "act": "read",
+          "reads": "name",
+          "expect": "Resume picks up where it stopped; nothing already downloaded is fetched again.",
+          "named": "and that resuming keeps what was downloaded"
+        },
+        {
+          "locator": "Text#DownloadChip",
+          "act": "read",
+          "absent": true,
+          "named": "the status bar no longer shows a download"
+        },
+        {
+          "locator": "Button#BackgroundFirstUseAction",
+          "act": "read",
+          "reads": "name",
+          "expect": "Resume download",
+          "named": "it offers to resume"
+        },
+        {
+          "locator": "Button#BackgroundFirstUseAction",
+          "act": "invoke",
+          "named": "Resume download is pressed"
+        },
+        {
+          // The rest arrives, is verified, and the operation the offer was accepted for starts.
+          "locator": "Text#JobTitle",
+          "act": "read",
+          "reads": "name",
+          "expect": "Remove background",
+          "named": "the operation starts by itself once its model is verified"
+        },
+        {
+          "locator": "Text#JobStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "Done.",
+          "named": "and finishes"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseDetail",
+          "act": "read",
+          "reads": "name",
+          "expect": "Ready: Remove background now works offline.",
+          "named": "the card says it now works offline"
+        },
+        {
+          "locator": "Button#RemoveBackgroundButton",
+          "act": "read",
+          "reads": "name",
+          "expect": "Remove background",
+          "named": "and the button runs it from now on"
+        }
+      ]
+    },
+
+    {
+      "name": "a download the server cannot serve says what happened and offers Try again",
+      "catches": "a failed download shown as an exception, as nothing, or with no way to try again",
+      "filed": "PB59",
+      "tags": ["operations", "background", "download"],
+      "fixture": "a window with a photo open, whose download the fixture server does not have",
+      "steps": [
+        {
+          "locator": "Button#RemoveBackgroundButton",
+          "act": "invoke",
+          "named": "Download and remove background is pressed"
+        },
+        {
+          "locator": "Button#ConsentAccept",
+          "act": "invoke",
+          "named": "the offer is accepted"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseBadge",
+          "act": "read",
+          "reads": "name",
+          "expect": "Download stopped",
+          "named": "the card says the download stopped"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseDetail",
+          "act": "read",
+          "reads": "name",
+          "expect": "The download server no longer has this file (error 404). Update PhotoBoost, which knows the current download locations, then try again.",
+          "named": "what happened and what to do"
+        },
+        {
+          "locator": "Button#BackgroundFirstUseAction",
+          "act": "read",
+          "reads": "name",
+          "expect": "Try again",
+          "named": "with Try again"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "and the photo untouched"
+        }
+      ]
+    }
+  ]
+}

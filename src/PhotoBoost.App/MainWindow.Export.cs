@@ -28,7 +28,7 @@ public partial class MainWindow
         }
 
         QualityRow.Visibility = SelectedFormat == ImageFormat.Png ? Visibility.Collapsed : Visibility.Visible;
-        bool loses = Exportable is { } image && ImageEncoder.LosesTransparency(image, SelectedFormat);
+        bool loses = Exportable is { } image && LosesTransparency(image, SelectedFormat);
         TransparencyRow.Visibility = loses ? Visibility.Visible : Visibility.Collapsed;
         MetadataNote.Visibility = KeepMetadata.IsChecked == true && !ImageEncoder.CarriesMetadata(SelectedFormat)
             ? Visibility.Visible
@@ -37,6 +37,20 @@ public partial class MainWindow
     }
 
     private void OnExportOptionChanged(object sender, RoutedEventArgs e) => RefreshExport();
+
+    private (RgbaImage Image, ImageFormat Format, bool Loses)? transparency;
+
+    // Every refresh asks, and a refresh comes four times a second while a model downloads (PB58),
+    // so an 8192 px photo's 67 million alphas are read once per version and format, not each time.
+    private bool LosesTransparency(RgbaImage image, ImageFormat format)
+    {
+        if (transparency is not { } known || !ReferenceEquals(known.Image, image) || known.Format != format)
+        {
+            transparency = (image, format, ImageEncoder.LosesTransparency(image, format));
+        }
+
+        return transparency.Value.Loses;
+    }
 
     private EncodeOptions OptionsFor(ImageFormat format) => new(
         format,

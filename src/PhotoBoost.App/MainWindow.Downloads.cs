@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Net.Http;
 using System.Windows;
 using PhotoBoost.Inference;
@@ -29,10 +29,20 @@ public partial class MainWindow
 
     private CancellationTokenSource? downloading;
 
+    private ModelManifest? manifest;
+
+    /// <summary>
+    /// The manifest downloads come from: the pinned one this build embeds, or PB59's --manifest
+    /// file, whose plain http may only reach this machine's loopback.
+    /// </summary>
+    private ModelManifest Manifest => manifest ??= Options.Manifest is { } file
+        ? ModelManifest.Parse(File.ReadAllText(file), loopback: true)
+        : ModelDownloads.Embedded;
+
     /// <summary>Says what is downloaded and what is left, and lists the downloads.</summary>
     private void RefreshDownloads()
     {
-        long left = ModelDownloads.PendingBytes(ModelDownloads.Embedded, Options.ModelsFolder, Elsewhere);
+        long left = ModelDownloads.PendingBytes(Manifest, Options.ModelsFolder, Elsewhere);
         string cpu = Provider?.Provider == ExecutionProvider.Cpu
             ? " On this PC's CPU the high-quality ones are also about twice as fast."
             : string.Empty;
@@ -104,7 +114,7 @@ public partial class MainWindow
                 DownloadProgressBar.Value = p.Total == 0 ? 0 : (double)p.Done / p.Total;
                 DownloadStatus.Text = DownloadText.Line(p);
             });
-            DownloadResult result = await ModelDownloads.DownloadAsync(Http, ModelDownloads.Embedded, Options.ModelsFolder, progress, downloading.Token, Elsewhere).ConfigureAwait(true);
+            DownloadResult result = await ModelDownloads.DownloadAsync(Http, Manifest, Options.ModelsFolder, progress, downloading.Token, Elsewhere).ConfigureAwait(true);
             DownloadStatus.Text = result.Fetched == 0
                 ? "Nothing to download: every model was already here."
                 : $"Downloaded and verified {result.Fetched} file(s). Every operation now works offline.";
@@ -115,7 +125,7 @@ public partial class MainWindow
         }
         catch (Exception failure) when (failure is HttpRequestException or InvalidDataException or IOException or UnauthorizedAccessException)
         {
-            long kept = ModelDownloads.TotalBytes(ModelDownloads.Embedded) - ModelDownloads.PendingBytes(ModelDownloads.Embedded, Options.ModelsFolder, Elsewhere);
+            long kept = ModelDownloads.TotalBytes(Manifest) - ModelDownloads.PendingBytes(Manifest, Options.ModelsFolder, Elsewhere);
             DownloadFailure explained = DownloadFailure.Explain(failure, kept);
             DownloadStatus.Text = $"{explained.What} {explained.Todo}";
         }

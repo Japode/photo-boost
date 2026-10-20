@@ -150,6 +150,35 @@ public sealed class ModelDownloadsTests : IDisposable
     }
 
     [Fact]
+    public async Task AFileTheServerDoesNotHaveIsReportedAtOnceRatherThanRetried()
+    {
+        // PB59: a 404 is the file not being there; retrying it would only make the person wait.
+        ModelManifest manifest = Manifest(("tiny-x4", "weights"u8.ToArray()));
+        served.Remove("https://host/tiny-x4-fp32.onnx");
+        List<DownloadStage> stages = [];
+        using HttpClient http = new(new Served(served));
+
+        HttpRequestException missing = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            ModelDownloads.DownloadAsync(http, manifest, Path.Combine(root, "models"), new Recorded(stages), TestContext.Current.CancellationToken, retryDelay: TimeSpan.FromMinutes(1)));
+
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        Assert.DoesNotContain(DownloadStage.Retrying, stages);
+        Assert.StartsWith("The download server no longer has this file (error 404).", DownloadFailure.Explain(missing, 0).What, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PlainHttpIsTrustedOnlyOnLoopbackAndOnlyWhenAskedFor()
+    {
+        // PB59: --manifest may name the UI cases' fixture server; the pinned manifest stays https.
+        const string Local = """{"schema": 1, "version": "f", "models": [{"name": "m", "meta": {"url": "http://127.0.0.1:47623/m.json", "bytes": 1, "sha256": "00"}, "variants": {}, "license": "l"}]}""";
+        const string Remote = """{"schema": 1, "version": "f", "models": [{"name": "m", "meta": {"url": "http://example.com/m.json", "bytes": 1, "sha256": "00"}, "variants": {}, "license": "l"}]}""";
+
+        Assert.Equal("f", ModelManifest.Parse(Local, loopback: true).Version);
+        Assert.Throws<InvalidDataException>(() => ModelManifest.Parse(Local));
+        Assert.Throws<InvalidDataException>(() => ModelManifest.Parse(Remote, loopback: true));
+    }
+
+    [Fact]
     public void TimeLeftFollowsTheSpeed()
     {
         Assert.Null(new DownloadProgress("f", 0, 100).Remaining);

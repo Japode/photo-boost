@@ -7,6 +7,16 @@ namespace PhotoBoost.App.Tests;
 public sealed class CommandLineTests
 {
     [Fact]
+    public void ManifestNamesAFileThatMustExist()
+    {
+        // PB59: the UI cases' download fixture, read in place of the pinned manifest.
+        string manifest = Path.Combine(Repository.Root, "cases", "fixtures", "download", "manifest.json");
+
+        Assert.Equal(manifest, CommandLine.Parse(["--manifest", manifest]).Options!.Manifest);
+        Assert.Equal("--manifest nowhere.json is not a file.", CommandLine.Parse(["--manifest", "nowhere.json"]).Error);
+    }
+
+    [Fact]
     public void NoArgumentsIsAPlainStart()
     {
         ParsedCommandLine parsed = CommandLine.Parse([]);

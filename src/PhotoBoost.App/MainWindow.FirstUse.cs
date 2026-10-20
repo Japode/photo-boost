@@ -68,7 +68,7 @@ public partial class MainWindow
     /// <returns>True when the operation needs its download first.</returns>
     private bool RefreshFirstUse(FirstUseCard card, string variant, bool blocked)
     {
-        card.Needed = FirstUse.Needed(card.Operation, library!, ModelDownloads.Embedded, variant);
+        card.Needed = FirstUse.Needed(card.Operation, library!, Manifest, variant);
         bool fetching = card.Needed.Count > 0;
         card.Box.Visibility = !blocked && (fetching || card.Ready is not null) ? Visibility.Visible : Visibility.Collapsed;
         card.Bar.Visibility = Visibility.Collapsed;
@@ -90,8 +90,8 @@ public partial class MainWindow
 
         card.Ready = null;
         string[] names = Names(card);
-        long missing = ModelDownloads.PendingBytes(ModelDownloads.Embedded, Options.ModelsFolder, Elsewhere, names);
-        long total = ModelDownloads.TotalBytes(ModelDownloads.Embedded, names);
+        long missing = ModelDownloads.PendingBytes(Manifest, Options.ModelsFolder, Elsewhere, names);
+        long total = ModelDownloads.TotalBytes(Manifest, names);
         switch (card.Stage)
         {
             case FirstUseStage.Waiting:
@@ -108,7 +108,7 @@ public partial class MainWindow
                 ShowAction(card, "Pause");
                 break;
             case FirstUseStage.Paused:
-                card.Badge.Text = $"Paused · {DownloadText.Size(total - missing)} of {DownloadText.Size(total)}";
+                card.Badge.Text = $"Paused · {DownloadText.Percent(new DownloadProgress(string.Empty, total - missing, total))}%";
                 card.Detail.Text = "Resume picks up where it stopped; nothing already downloaded is fetched again.";
                 card.Bar.Value = total == 0 ? 0 : 100 * (total - missing) / total;
                 card.Bar.Visibility = Visibility.Visible;
@@ -142,8 +142,8 @@ public partial class MainWindow
     {
         consenting = card;
         string[] names = Names(card);
-        long total = ModelDownloads.TotalBytes(ModelDownloads.Embedded, names);
-        long missing = ModelDownloads.PendingBytes(ModelDownloads.Embedded, Options.ModelsFolder, Elsewhere, names);
+        long total = ModelDownloads.TotalBytes(Manifest, names);
+        long missing = ModelDownloads.PendingBytes(Manifest, Options.ModelsFolder, Elsewhere, names);
         string verb = card.Operation.Verb;
 
         ConsentTitle.Text = $"{card.Operation.Title} needs a one-time download";
@@ -266,7 +266,7 @@ public partial class MainWindow
                 DownloadChipText.Text = $"{card.Operation.Title}: {DownloadText.Line(p)}";
                 DownloadChip.Visibility = Visibility.Visible;
             });
-            await ModelDownloads.DownloadAsync(Http, ModelDownloads.Embedded, Options.ModelsFolder, progress, token, Elsewhere, names).ConfigureAwait(true);
+            await ModelDownloads.DownloadAsync(Http, Manifest, Options.ModelsFolder, progress, token, Elsewhere, names).ConfigureAwait(true);
             card.Stage = FirstUseStage.Offered;
             card.Ready = $"Ready: {card.Operation.Title} now works offline.";
             if (card.RunWhenReady)
@@ -284,7 +284,7 @@ public partial class MainWindow
         }
         catch (Exception failure) when (failure is HttpRequestException or InvalidDataException or IOException or UnauthorizedAccessException)
         {
-            long kept = ModelDownloads.TotalBytes(ModelDownloads.Embedded, names) - ModelDownloads.PendingBytes(ModelDownloads.Embedded, Options.ModelsFolder, Elsewhere, names);
+            long kept = ModelDownloads.TotalBytes(Manifest, names) - ModelDownloads.PendingBytes(Manifest, Options.ModelsFolder, Elsewhere, names);
             card.Failure = DownloadFailure.Explain(failure, kept);
             card.Stage = FirstUseStage.Failed;
         }
