@@ -122,19 +122,19 @@
           "named": "the first model, its variants and its license"
         },
         {
-          // PB13: both tiny models carry fp32, so there is nothing to download.
+          // PB58: the tiny upscalers are here, but GFPGAN, RMBG and ViTMatte download on first use.
           "locator": "Text#DownloadNote",
           "act": "read",
           "reads": "name",
-          "expect": "The high-quality (FP32) models are installed.",
-          "named": "the high-quality models read as installed"
+          "matches": "^Restore faces and Remove background download their models the first time you use them\\. To work offline from the start, download everything now: ",
+          "named": "About says which operations download on first use"
         },
         {
           "locator": "Button#DownloadModelsButton",
           "act": "read",
           "reads": "enabled",
-          "expect": "not enabled",
-          "named": "and the download is not offered"
+          "expect": "enabled",
+          "named": "and offers everything at once"
         },
         {
           "locator": "Button#AboutClose",

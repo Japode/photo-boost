@@ -45,6 +45,7 @@ public partial class MainWindow
         };
         Scale2.Checked += (_, _) => RefreshOperations();
         Scale4.Checked += (_, _) => RefreshOperations();
+        StartFirstUse();
         RefreshOperations();
     }
 
@@ -70,6 +71,7 @@ public partial class MainWindow
         RefreshDenoise();
         RefreshFaces();
         RefreshBackground();
+        RunPending();
     }
 
     /// <summary>

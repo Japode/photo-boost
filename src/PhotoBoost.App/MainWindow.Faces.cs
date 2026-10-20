@@ -21,10 +21,15 @@ public partial class MainWindow
         (string, string)[] needed = FaceUpscaleFactor == 1
             ? [(FaceDetection.Model, "fp32"), (FaceRestore.Model, restorer)]
             : [(FaceDetection.Model, "fp32"), (FaceRestore.Model, restorer), (Upscale.ModelFor(Factor), Variant)];
-        string? missing = Missing(needed);
+
+        // PB58: GFPGAN itself is downloaded on first use, so only the others can be "missing".
+        bool fetch = FirstUse.Needed(FirstUse.Faces, library!, ModelDownloads.Embedded, Variant).Count > 0;
+        string? missing = Missing([.. needed.Where(one => !fetch || one.Item1 != FaceRestore.Model)]);
         FaceNote.Text = missing ?? string.Empty;
         FaceNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
-        RestoreFacesButton.IsEnabled = Image is not null && missing is null && !Busy;
+        fetch = RefreshFirstUse(faceFirstUse!, Variant, blocked: missing is not null) && missing is null;
+        RestoreFacesButton.Content = fetch ? $"Download and {FirstUse.Faces.Verb}" : FirstUse.Faces.Title;
+        RestoreFacesButton.IsEnabled = Image is not null && missing is null && (fetch ? faceFirstUse!.Downloading is null && faceFirstUse.Stage == FirstUseStage.Offered : !Busy);
     }
 
     private void OnFaceOptionChanged(object sender, RoutedEventArgs e) => RefreshOperations();
@@ -33,6 +38,12 @@ public partial class MainWindow
     {
         if (Image is not { } source || service is null || library is null)
         {
+            return;
+        }
+
+        if (faceFirstUse is { Needed.Count: > 0 })
+        {
+            ShowConsent(faceFirstUse);
             return;
         }
 

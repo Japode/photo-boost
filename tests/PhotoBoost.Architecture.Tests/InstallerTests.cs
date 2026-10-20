@@ -36,6 +36,22 @@ public sealed partial class InstallerTests
             $"Microsoft.Windows.AI.MachineLearning is {version}; read its README's minimum Windows, then update WindowsMLVersion and, if it rose, MinVersion in installer.iss.");
     }
 
+    [Fact]
+    public void TheInstallerLeavesOutTheModelsFirstUseDownloads()
+    {
+        // PB58: GFPGAN, RMBG-1.4 and ViTMatte are fetched when their operation is first used.
+        string script = File.ReadAllText(Path.Combine(Repository.Root, "build", "stage-models.ps1"));
+        string[] staged = [.. Quoted().Matches(Required().Match(script).Groups[1].Value).Select(m => m.Groups[1].Value)];
+
+        Assert.Equal(["realesrgan-x4plus", "realesrgan-x2plus", "yunet-2023mar", "scunet-color-real-psnr"], staged);
+    }
+
     [GeneratedRegex(@"^MinVersion=([0-9.]+)\s*$", RegexOptions.Multiline)]
     private static partial Regex MinVersion();
+
+    [GeneratedRegex(@"^\$required = @\((.*?)\)", RegexOptions.Multiline | RegexOptions.Singleline)]
+    private static partial Regex Required();
+
+    [GeneratedRegex("'([^']+)'")]
+    private static partial Regex Quoted();
 }

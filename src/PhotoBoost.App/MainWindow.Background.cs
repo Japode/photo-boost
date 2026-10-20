@@ -14,16 +14,26 @@ public partial class MainWindow
     /// <summary>Enables Remove background only with an image, its model, and nothing running.</summary>
     private void RefreshBackground()
     {
-        string? missing = Missing((RemoveBackground.Model, RemoveBackground.VariantFor(library!, Variant)));
+        // PB58: RMBG-1.4 is downloaded on first use; with nothing else needed, nothing is "missing".
+        bool fetch = RefreshFirstUse(backgroundFirstUse!, Variant, blocked: false);
+        string? missing = fetch ? null : Missing((RemoveBackground.Model, RemoveBackground.VariantFor(library!, Variant)));
         BackgroundNote.Text = missing ?? string.Empty;
         BackgroundNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
-        RemoveBackgroundButton.IsEnabled = Image is not null && missing is null && !Busy;
+        RemoveBackgroundButton.Content = fetch ? $"Download and {FirstUse.Background.Verb}" : FirstUse.Background.Title;
+        RemoveBackgroundButton.IsEnabled = Image is not null && missing is null
+            && (fetch ? backgroundFirstUse!.Downloading is null && backgroundFirstUse.Stage == FirstUseStage.Offered : !Busy);
     }
 
     private async void OnRemoveBackgroundClick(object sender, RoutedEventArgs e)
     {
         if (Image is not { } source || service is null || library is null)
         {
+            return;
+        }
+
+        if (backgroundFirstUse is { Needed.Count: > 0 })
+        {
+            ShowConsent(backgroundFirstUse);
             return;
         }
 

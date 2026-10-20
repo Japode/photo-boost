@@ -49,6 +49,11 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#MyPublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; \
     Excludes: "*.pdb,DirectML.Debug.dll,*.lib,*.xml"
 
+[UninstallDelete]
+; PB58: an upgrade from 0.1.0 keeps the GFPGAN, RMBG and ViTMatte it bundled, which this
+; installer no longer lists, so uninstalling removes the whole bundled folder rather than leaving them.
+Type: filesandordirs; Name: "{app}\models"
+
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"

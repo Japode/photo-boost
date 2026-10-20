@@ -20,16 +20,15 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $Models) { $Models = Join-Path $PSScriptRoot '..\.cache\models' }
 
-# Every model a pipeline names (RemoveBackground, Matting, Upscale, FaceRestore, FaceDetection, Denoise).
+# PB58, the owner's choice of 2026-10-20: upscaling, denoising and the face detector. GFPGAN
+# (325 MB), RMBG-1.4 (168 MB) and ViTMatte (99 MB) were 84% of v0.1.0's models, for two operations
+# most photos never use, so their first use downloads them (FirstUse in PhotoBoost.Inference).
 $required = @(
-    'realesrgan-x4plus', 'realesrgan-x2plus', 'gfpgan-v1.4', 'yunet-2023mar',
-    'rmbg-1.4', 'vitmatte-small-composition-1k', 'scunet-color-real-psnr'
+    'realesrgan-x4plus', 'realesrgan-x2plus', 'yunet-2023mar', 'scunet-color-real-psnr'
 )
 
-# PB54: models staged as FP32 although they have an FP16. GFPGAN's fp16.onnx comes out of DirectML
-# as a flat square over each face (12.7 dB against FP32), and FaceRestore.VariantFor runs FP32 on
-# a GPU; +162 MB.
-$fp32Only = @('gfpgan-v1.4')
+# Models staged as FP32 although they have an FP16. GFPGAN was one (PB54) until PB58 left it out.
+$fp32Only = @()
 
 if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
 New-Item -ItemType Directory -Force $Out | Out-Null

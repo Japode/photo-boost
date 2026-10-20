@@ -21,6 +21,12 @@
       "shareable": true
     },
     {
+      // PB58: not lent, since its case opens the download offer and answers it.
+      "name": "a window with a photo open and no models, to answer a download offer",
+      "arguments": ["--open", "tests/fixtures/images/rotated-exif6.jpg", "--models", "tests/fixtures/images", "--provider", "cpu"],
+      "shareable": false
+    },
+    {
       // PB25: a photo with transparency, so choosing JPEG has something to lose.
       "name": "a window with a transparent photo open",
       "arguments": ["--open", "tests/fixtures/images/alpha-lossless.webp", "--models", "tests/fixtures/images", "--provider", "cpu"],
@@ -179,10 +185,10 @@
     },
 
     {
-      // PB13: only the offer is read; the download itself needs the network, which a case does not
-      // reach, and ModelDownloadsTests drives it against a stand-in server.
-      "name": "with no models About offers the high-quality download",
-      "catches": "an About panel that hides the optional FP32 download, or offers it disabled",
+      // PB13, PB58: only the offer is read; the download itself needs the network, which a case
+      // does not reach, and ModelDownloadsTests drives it against a stand-in server.
+      "name": "with no models About offers to download everything",
+      "catches": "an About panel that hides the downloads, or offers them disabled",
       "filed": "PB13",
       "tags": ["about", "download"],
       "fixture": "a window with a photo open and no models",
@@ -196,8 +202,8 @@
           "locator": "Text#DownloadNote",
           "act": "read",
           "reads": "name",
-          "matches": "^The high-quality \\(FP32\\) models are an optional download of up to 690 MB",
-          "named": "it says what the download is and how large"
+          "matches": "^Restore faces and Remove background download their models the first time you use them\\. To work offline from the start, download everything now: \\d+ MB, the high-quality \\(FP32\\) models included\\.",
+          "named": "it says what downloads on first use, and what everything takes"
         },
         {
           "locator": "Button#DownloadModelsButton",
@@ -390,25 +396,41 @@
     {
       // PB32: RMBG-1.4 is real-model only; a run was driven by hand (example_input.jpg, both
       // giraffes cut out, exported as a 933 x 1405 RGBA PNG on DirectML).
-      "name": "with no models the Remove background card says so and shows RMBG-1.4's terms",
-      "catches": "a Remove background button that starts a run doomed to fail, or BRIA's non-commercial terms dropped from the card",
-      "filed": "PB32",
-      "tags": ["operations", "background"],
+      // PB58: its models are not in the installer, so the card offers the one-time download.
+      "name": "with no models the Remove background card offers its one-time download and shows RMBG-1.4's terms",
+      "catches": "a card that hides what its first use will download, or BRIA's non-commercial terms dropped from the card",
+      "filed": "PB58",
+      "tags": ["operations", "background", "download"],
       "fixture": "a window with a photo open and no models",
       "steps": [
         {
-          "locator": "Text#BackgroundNote",
+          // RMBG-1.4 (168 MB) and ViTMatte (99 MB), as the embedded manifest lists them.
+          "locator": "Text#BackgroundFirstUseBadge",
           "act": "read",
           "reads": "name",
-          "matches": "^rmbg-1\\.4 \\(fp16\\) is not in .*Download the models first\\.$",
-          "named": "the note names RMBG-1.4 and its variant"
+          "expect": "One-time download · 267 MB",
+          "named": "the card names the download and its size"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseDetail",
+          "act": "read",
+          "reads": "name",
+          "expect": "From huggingface.co/briaai/RMBG-1.4 and huggingface.co/alegauss/photo-boost-models. Your photo is never uploaded, and after this Remove background works offline.",
+          "named": "where it comes from, and that the photo stays here"
+        },
+        {
+          "locator": "Button#RemoveBackgroundButton",
+          "act": "read",
+          "reads": "name",
+          "expect": "Download and remove background",
+          "named": "the button says it downloads first"
         },
         {
           "locator": "Button#RemoveBackgroundButton",
           "act": "read",
           "reads": "enabled",
-          "expect": "not enabled",
-          "named": "and the button cannot start a run"
+          "expect": "enabled",
+          "named": "and it can be pressed"
         },
         {
           "locator": "Text#BackgroundLicence",
@@ -416,6 +438,90 @@
           "reads": "name",
           "matches": "^RMBG-1\\.4 is licensed by BRIA for non-commercial use",
           "named": "the card states BRIA's terms"
+        }
+      ]
+    },
+
+    {
+      // PB58: the offer is answered "Not now"; the download itself needs the network, which a
+      // case does not reach, and ModelDownloadsTests drives it against a stand-in server.
+      "name": "the download offer says what, how large, from where and under which license before anything is fetched",
+      "catches": "a first-use download that starts without asking, or an offer that hides its size, its source, the license or that the photo stays here",
+      "filed": "PB58",
+      "tags": ["operations", "background", "download"],
+      "fixture": "a window with a photo open and no models, to answer a download offer",
+      "steps": [
+        {
+          "locator": "Button#RemoveBackgroundButton",
+          "act": "invoke",
+          "named": "Download and remove background is pressed"
+        },
+        {
+          "locator": "Text#ConsentTitle",
+          "act": "read",
+          "reads": "name",
+          "expect": "Remove background needs a one-time download",
+          "named": "the offer opens in place of the photo"
+        },
+        {
+          "locator": "List#ConsentFiles > ListItem[order=top]",
+          "act": "read",
+          "reads": "name",
+          "expect": "RMBG-1.4 by BRIA, which finds the subject · 168 MB · from huggingface.co/briaai/RMBG-1.4",
+          "named": "each model, its size and its source"
+        },
+        {
+          "locator": "Text#ConsentTotal",
+          "act": "read",
+          "reads": "name",
+          "matches": "^Total: 267 MB\\.",
+          "named": "the total"
+        },
+        {
+          "locator": "Text#ConsentFacts",
+          "act": "read",
+          "reads": "name",
+          "matches": "Your photo stays on this PC and is never uploaded\\.",
+          "named": "that only the models are downloaded"
+        },
+        {
+          "locator": "Text#ConsentLicense",
+          "act": "read",
+          "reads": "name",
+          "matches": "bria-rmbg-1\\.4 \\(non-commercial\\)",
+          "named": "the license"
+        },
+        {
+          "locator": "Button#ConsentAccept",
+          "act": "read",
+          "reads": "name",
+          "expect": "Download and remove background",
+          "named": "agreeing names what happens next"
+        },
+        {
+          "locator": "Button#ConsentDecline",
+          "act": "invoke",
+          "named": "Not now is pressed"
+        },
+        {
+          "locator": "Text#ConsentTitle",
+          "act": "read",
+          "absent": true,
+          "named": "the offer closes"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "the photo is back"
+        },
+        {
+          "locator": "Text#BackgroundFirstUseBadge",
+          "act": "read",
+          "reads": "name",
+          "expect": "One-time download · 267 MB",
+          "named": "and nothing was downloaded"
         }
       ]
     },

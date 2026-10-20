@@ -18,6 +18,8 @@ public partial class MainWindow
         if (opening)
         {
             FillAbout();
+            ConsentPanel.Visibility = Visibility.Collapsed; // About replaces an unanswered offer; the card still has it.
+            consenting = null;
         }
 
         AboutPanel.Visibility = opening ? Visibility.Visible : Visibility.Collapsed;

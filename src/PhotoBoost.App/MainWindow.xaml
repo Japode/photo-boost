@@ -35,6 +35,12 @@
           <TextBlock x:Name="LastRun" AutomationProperties.AutomationId="LastRun" />
         </Border>
       </StatusBarItem>
+      <!-- PB58: a model download in progress, wherever the card that started it has scrolled to. -->
+      <StatusBarItem>
+        <Border x:Name="DownloadChip" Style="{StaticResource StatusChip}" Visibility="Collapsed">
+          <TextBlock x:Name="DownloadChipText" AutomationProperties.AutomationId="DownloadChip" />
+        </Border>
+      </StatusBarItem>
       <!-- PB46: the version, each model's license and the third-party notices. -->
       <StatusBarItem HorizontalAlignment="Right">
         <Button x:Name="AboutButton" AutomationProperties.AutomationId="AboutButton" Content="About" Padding="10,2" Click="OnAboutClick" />
@@ -102,6 +108,19 @@
             </DockPanel>
             <CheckBox x:Name="FaceUpscale" AutomationProperties.AutomationId="FaceUpscale" Margin="0,0,0,12"
                       Content="Upscale first, by the factor above" Checked="OnFaceOptionChanged" Unchecked="OnFaceOptionChanged" />
+            <!-- PB58: GFPGAN is not in the installer; its first use downloads it, and this says what,
+                 how large and from where, then how far the download is. -->
+            <StackPanel x:Name="FaceFirstUse" Margin="0,0,0,12" Visibility="Collapsed">
+              <Border x:Name="FaceFirstUseChip" Style="{StaticResource StatusChip}" HorizontalAlignment="Left">
+                <TextBlock x:Name="FaceFirstUseBadge" AutomationProperties.AutomationId="FaceFirstUseBadge" />
+              </Border>
+              <TextBlock x:Name="FaceFirstUseDetail" AutomationProperties.AutomationId="FaceFirstUseDetail"
+                         Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+              <ProgressBar x:Name="FaceFirstUseProgress" AutomationProperties.AutomationId="FaceFirstUseProgress"
+                           Height="6" Maximum="100" Margin="0,8,0,0" Visibility="Collapsed" />
+              <Button x:Name="FaceFirstUseAction" AutomationProperties.AutomationId="FaceFirstUseAction"
+                      HorizontalAlignment="Left" Padding="12,4" Margin="0,8,0,0" Visibility="Collapsed" Click="OnFirstUseActionClick" />
+            </StackPanel>
             <Button x:Name="RestoreFacesButton" AutomationProperties.AutomationId="RestoreFacesButton" Content="Restore faces"
                     HorizontalAlignment="Stretch" Padding="12,6" Click="OnRestoreFacesClick" IsEnabled="False" />
             <TextBlock x:Name="FaceNote" AutomationProperties.AutomationId="FaceNote" Visibility="Collapsed"
@@ -121,6 +140,18 @@
             <!-- PB47: the mask refined against the full-size photo; off gives BRIA's own result to compare. -->
             <CheckBox x:Name="RefineEdges" AutomationProperties.AutomationId="RefineEdges" IsChecked="True" Margin="0,0,0,12"
                       Content="Refine edges against the photo" />
+            <!-- PB58: RMBG-1.4 and ViTMatte are fetched on first use, as on the Restore faces card. -->
+            <StackPanel x:Name="BackgroundFirstUse" Margin="0,0,0,12" Visibility="Collapsed">
+              <Border x:Name="BackgroundFirstUseChip" Style="{StaticResource StatusChip}" HorizontalAlignment="Left">
+                <TextBlock x:Name="BackgroundFirstUseBadge" AutomationProperties.AutomationId="BackgroundFirstUseBadge" />
+              </Border>
+              <TextBlock x:Name="BackgroundFirstUseDetail" AutomationProperties.AutomationId="BackgroundFirstUseDetail"
+                         Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+              <ProgressBar x:Name="BackgroundFirstUseProgress" AutomationProperties.AutomationId="BackgroundFirstUseProgress"
+                           Height="6" Maximum="100" Margin="0,8,0,0" Visibility="Collapsed" />
+              <Button x:Name="BackgroundFirstUseAction" AutomationProperties.AutomationId="BackgroundFirstUseAction"
+                      HorizontalAlignment="Left" Padding="12,4" Margin="0,8,0,0" Visibility="Collapsed" Click="OnFirstUseActionClick" />
+            </StackPanel>
             <Button x:Name="RemoveBackgroundButton" AutomationProperties.AutomationId="RemoveBackgroundButton" Content="Remove background"
                     HorizontalAlignment="Stretch" Padding="12,6" Click="OnRemoveBackgroundClick" IsEnabled="False" />
             <TextBlock x:Name="BackgroundNote" AutomationProperties.AutomationId="BackgroundNote" Visibility="Collapsed"
@@ -263,13 +294,26 @@
             <TextBlock Text="GFPGAN v1.4 and RMBG-1.4 are licensed for non-commercial use only; check each license before using results commercially."
                        Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,6,0,16" />
 
-            <!-- PB13: the optional FP32 set, from the manifest PB12 published. -->
-            <TextBlock Text="High-quality models" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+            <!-- PB13, PB58: what was downloaded and the disk it takes, each removable, and every
+                 model at once for working offline, the optional FP32 set included. -->
+            <TextBlock Text="Downloads" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
             <TextBlock x:Name="DownloadNote" AutomationProperties.AutomationId="DownloadNote"
                        Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,0,0,6" />
+            <ItemsControl x:Name="DownloadedModels" AutomationProperties.AutomationId="DownloadedModels" Margin="0,0,0,6">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <DockPanel Margin="0,2">
+                    <Button DockPanel.Dock="Right" Content="Remove" Padding="10,2" Tag="{Binding Name}"
+                            AutomationProperties.AutomationId="{Binding RemoveId}" AutomationProperties.Name="{Binding RemoveName}"
+                            Click="OnRemoveModelClick" />
+                    <TextBlock Text="{Binding Label}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                  </DockPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
               <Button x:Name="DownloadModelsButton" AutomationProperties.AutomationId="DownloadModelsButton"
-                      Content="Download high-quality models" Padding="12,4" Click="OnDownloadModelsClick" />
+                      Content="Download everything" Padding="12,4" Click="OnDownloadModelsClick" />
               <Button x:Name="CancelDownloadButton" AutomationProperties.AutomationId="CancelDownloadButton"
                       Content="Cancel" Padding="12,4" Margin="8,0,0,0" Visibility="Collapsed" Click="OnCancelDownloadClick" />
             </StackPanel>
@@ -281,6 +325,42 @@
             <TextBlock Text="Third-party software" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
             <TextBlock x:Name="AboutNotices" AutomationProperties.AutomationId="AboutNotices"
                        Style="{StaticResource StatCaption}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </ScrollViewer>
+
+      <!-- PB58: before a first-use download, everything a person needs to say yes: what is
+           downloaded and how large, from where, where it goes, that the photo stays here, and the
+           license. It takes the stage's place, as About does, for the image surface's sake. -->
+      <ScrollViewer x:Name="ConsentPanel" AutomationProperties.AutomationId="ConsentPanel" Visibility="Collapsed"
+                    VerticalScrollBarVisibility="Auto">
+        <Border Style="{StaticResource GroupCard}" Padding="24" MaxWidth="620" HorizontalAlignment="Center" VerticalAlignment="Top">
+          <StackPanel>
+            <TextBlock x:Name="ConsentTitle" AutomationProperties.AutomationId="ConsentTitle" Style="{StaticResource StatValue}" TextWrapping="Wrap" />
+            <TextBlock x:Name="ConsentLead" AutomationProperties.AutomationId="ConsentLead" TextWrapping="Wrap" Margin="0,8,0,16" />
+
+            <TextBlock Text="What is downloaded" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+            <ListBox x:Name="ConsentFiles" AutomationProperties.AutomationId="ConsentFiles" AutomationProperties.Name="What is downloaded"
+                     IsHitTestVisible="False" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock x:Name="ConsentTotal" AutomationProperties.AutomationId="ConsentTotal" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,16" />
+
+            <TextBlock Text="Good to know" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+            <TextBlock x:Name="ConsentFacts" AutomationProperties.AutomationId="ConsentFacts" Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,0,0,16" />
+
+            <TextBlock Text="License" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+            <TextBlock x:Name="ConsentLicense" AutomationProperties.AutomationId="ConsentLicense" Style="{StaticResource StatCaption}" TextWrapping="Wrap" />
+
+            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+              <Button x:Name="ConsentAccept" AutomationProperties.AutomationId="ConsentAccept" Padding="16,6" IsDefault="True" Click="OnConsentAccept" />
+              <Button x:Name="ConsentDecline" AutomationProperties.AutomationId="ConsentDecline" Content="Not now" Padding="16,6" Margin="8,0,0,0"
+                      IsCancel="True" Click="OnConsentDecline" />
+            </StackPanel>
           </StackPanel>
         </Border>
       </ScrollViewer>

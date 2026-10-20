@@ -24,20 +24,29 @@ WebP.
   the CPU), from 128 to 1024 px. For Real-ESRGAN x4, the heaviest model, that works out to about
   1.1 GB for 128 px tiles, 3.1 GB for 256 px and 6.2 GB for 384 px. With less memory the tile is
   simply smaller, and running out of memory mid-run retries with smaller tiles, then on the CPU.
-- **Disk space:** about 610 MB for the models the installer carries.
+- **Disk space:** about 100 MB for the models the installer carries, plus 325 MB once face
+  restoration has been used and 267 MB once background removal has.
 
 ## Install
 
 Download `PhotoBoost-Setup-<version>.exe` from the
 [releases](https://github.com/Japode/photo-boost/releases). It installs for the current user,
-without administrator rights, and carries the models, so the app works offline from its first
-launch.
+without administrator rights, and carries the models for upscaling and denoising, so those work
+offline from the first launch.
+
+**Restore faces** and **Remove background** download their models the first time you use them:
+GFPGAN v1.4 (325 MB), and RMBG-1.4 with ViTMatte (267 MB). Before anything is fetched, the card
+says how large the download is, and its button opens a panel listing each file, its source, where
+it is saved and its license. The download runs while the rest of the app keeps working. It can be
+paused and resumed, and a dropped connection is retried. Each file is checked against its SHA-256
+before the app uses it, and once the models are verified the operation runs by itself. Only the
+models are downloaded: photos never leave the PC. The About panel lists what was downloaded, can
+remove it, and can download everything at once for offline use.
 
 The **Quality** card at the top of the operations panel chooses between **Standard**, the FP16
-models the installer carries, and **High quality**, the FP32 models. High quality is an optional
-download of up to 690 MB from the About panel. Each file is checked against its SHA-256 before the
-app uses it. On a GPU the two run at about the same speed, and on the CPU FP32 is also about twice
-as fast.
+models the installer carries, and **High quality**, the FP32 models, which About downloads with
+everything else. On a GPU the two run at about the same speed, and on the CPU FP32 is also about
+twice as fast.
 
 ## Run from source
 
@@ -98,9 +107,11 @@ python -m venv .venv
    export that differs past the tolerance, or an INT8 below its PSNR floor, fails the script
    instead of writing a wrong model. ViTMatte has no FP16, and YuNet has FP32 only.
 
-The FP32 set the app downloads is published with `scripts\publish-models.py` to
+The models the app downloads (the FP32 set, and GFPGAN, RMBG-1.4 and ViTMatte on first use) are
+published with `scripts\publish-models.py` to
 [alegauss/photo-boost-models](https://huggingface.co/alegauss/photo-boost-models), with a manifest
-pinned to a commit. RMBG-1.4 is not re-hosted; its entry points at BRIA's own repository.
+pinned to a commit. The app embeds that manifest, so it knows every size and hash without the
+network. RMBG-1.4 is not re-hosted; its entry points at BRIA's own repository.
 
 ## Build the installer
 
@@ -109,7 +120,8 @@ build\build-installer.cmd
 ```
 
 It publishes Release (win-x64, self-contained), collects the packages' licenses, copies the
-bundled model set from `.cache\models` and compiles the installer with Inno Setup 6. A missing
+bundled models from `.cache\models` (upscaling, denoising and the face detector) and compiles the
+installer with Inno Setup 6. A missing
 model stops the build. `build\update-release.cmd <version>` sets the version, runs the tests and
 calls `build-installer.cmd`.
 
@@ -187,9 +199,8 @@ What the table shows:
 - **FP16 is half the size and, except in one case, the same image:** 59.7 to 84.8 dB against
   FP32, SSIM 0.9999 or higher.
 - **The exception is GFPGAN in FP16 on DirectML, which comes out wrong** (12.7 dB): each face
-  becomes a flat square. The same file is right on the CPU. So the installer carries GFPGAN in
-  FP32, and on a GPU the app restores faces with it even in Standard. That row was measured before
-  the switch; measured again, it shows the FP32 the app uses.
+  becomes a flat square. The same file is right on the CPU. So GFPGAN is only ever downloaded in
+  FP32, and the app restores faces with it even in Standard.
 - **On the CPU FP32 is faster** for upscaling and face restoration (2.8× for the 4× upscale),
   which is what the FP32 download is for. On DirectML the two variants take about the same time,
   except for denoising, and FP16 uses less video memory.

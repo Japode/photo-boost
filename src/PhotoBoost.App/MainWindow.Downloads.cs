@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Windows;
@@ -6,11 +5,23 @@ using PhotoBoost.Inference;
 
 namespace PhotoBoost.App;
 
+/// <summary>A downloaded model as About lists it (PB58), with what it takes on disk.</summary>
+/// <param name="Name">Its folder name.</param>
+/// <param name="Label">What the row says.</param>
+public sealed record DownloadedModel(string Name, string Label)
+{
+    /// <summary>The Remove button's automation id.</summary>
+    public string RemoveId => $"Remove-{Name}";
+
+    /// <summary>The Remove button's accessible name.</summary>
+    public string RemoveName => $"Remove {Name}";
+}
+
 /// <summary>
-/// The High-quality models block of the About panel (PB13): fetches the optional FP32 set from
-/// the manifest PB12 published into the folder downloads go to, with progress, a cancel, and
-/// every file checked against its SHA-256 before anything loads it. The installer's FP16 set
-/// keeps working whether or not this ever runs.
+/// The Downloads block of the About panel (PB13, PB58): every model downloaded so far with the
+/// disk it takes, each removable, and every model the manifest lists at once, the optional FP32
+/// set included, for working offline. Each file is checked against its SHA-256 before anything
+/// loads it, and the installer's models keep working whether or not this ever runs.
 /// </summary>
 public partial class MainWindow
 {
@@ -18,17 +29,41 @@ public partial class MainWindow
 
     private CancellationTokenSource? downloading;
 
-    /// <summary>Says whether the FP32 set is here, and on the CPU why it is worth having.</summary>
+    /// <summary>Says what is downloaded and what is left, and lists the downloads.</summary>
     private void RefreshDownloads()
     {
-        bool complete = HighQualityInstalled();
+        long left = ModelDownloads.PendingBytes(ModelDownloads.Embedded, Options.ModelsFolder, Elsewhere);
         string cpu = Provider?.Provider == ExecutionProvider.Cpu
-            ? " This PC runs on the CPU, where they are also about twice as fast as the standard ones."
+            ? " On this PC's CPU the high-quality ones are also about twice as fast."
             : string.Empty;
-        DownloadNote.Text = complete
-            ? "The high-quality (FP32) models are installed."
-            : $"The high-quality (FP32) models are an optional download of up to 690 MB; files already here are not fetched again.{cpu}";
-        DownloadModelsButton.IsEnabled = downloading is null && !complete;
+        DownloadNote.Text = left == 0
+            ? "Every model is on this PC, so every operation works offline."
+            : "Restore faces and Remove background download their models the first time you use them. "
+                + $"To work offline from the start, download everything now: {DownloadText.Size(left)}, the high-quality (FP32) models included.{cpu}";
+        DownloadModelsButton.IsEnabled = downloading is null && left > 0;
+
+        List<DownloadedModel> rows = [.. Downloaded()];
+        DownloadedModels.ItemsSource = rows;
+        DownloadedModels.IsEnabled = !Busy && downloading is null && !FirstUseDownloading;
+        DownloadedModels.Visibility = rows.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>The model folders in the download folder, partly downloaded ones included, so the disk they take is never hidden.</summary>
+    private IEnumerable<DownloadedModel> Downloaded()
+    {
+        if (!Directory.Exists(Options.ModelsFolder) || Options.ModelFolders.Count == 1)
+        {
+            // With --models alone there is no download folder of its own to tidy: it is the only one.
+            yield break;
+        }
+
+        foreach (DirectoryInfo folder in new DirectoryInfo(Options.ModelsFolder).EnumerateDirectories().OrderBy(d => d.Name, StringComparer.Ordinal))
+        {
+            FileInfo[] files = folder.GetFiles("*", SearchOption.AllDirectories);
+            long bytes = files.Sum(f => f.Length);
+            bool partial = files.Any(f => f.Name.EndsWith(".part", StringComparison.Ordinal));
+            yield return new(folder.Name, $"{folder.Name} · {DownloadText.Size(bytes)}{(partial ? ", partly downloaded" : string.Empty)}");
+        }
     }
 
     /// <summary>Whether every installed model has its FP32 variant on disk.</summary>
@@ -53,40 +88,76 @@ public partial class MainWindow
         CancelDownloadButton.Visibility = Visibility.Visible;
         DownloadProgressBar.Value = 0;
         DownloadProgressBar.Visibility = Visibility.Visible;
-        DownloadStatus.Text = "Connecting…";
+        bool entered = false;
         try
         {
-            ModelManifest manifest = ModelDownloads.Embedded;
+            if (!DownloadGate.Wait(0))
+            {
+                DownloadStatus.Text = "Waiting for the download a card started to finish…";
+                await DownloadGate.WaitAsync(downloading.Token).ConfigureAwait(true);
+            }
+
+            entered = true;
+            DownloadStatus.Text = "Connecting…";
             Progress<DownloadProgress> progress = new(p =>
             {
                 DownloadProgressBar.Value = p.Total == 0 ? 0 : (double)p.Done / p.Total;
-                DownloadStatus.Text = string.Create(CultureInfo.CurrentCulture, $"{p.File}: {p.Done / 1048576.0:0} of {p.Total / 1048576.0:0} MB");
+                DownloadStatus.Text = DownloadText.Line(p);
             });
-            IReadOnlyList<string> elsewhere = [.. Options.ModelFolders.Where(folder => folder != Options.ModelsFolder)];
-            DownloadResult result = await ModelDownloads.DownloadAsync(Http, manifest, Options.ModelsFolder, progress, downloading.Token, elsewhere).ConfigureAwait(true);
+            DownloadResult result = await ModelDownloads.DownloadAsync(Http, ModelDownloads.Embedded, Options.ModelsFolder, progress, downloading.Token, Elsewhere).ConfigureAwait(true);
             DownloadStatus.Text = result.Fetched == 0
-                ? "Nothing to download: every high-quality model was already here."
-                : $"Downloaded and verified {result.Fetched} file(s).";
+                ? "Nothing to download: every model was already here."
+                : $"Downloaded and verified {result.Fetched} file(s). Every operation now works offline.";
         }
         catch (OperationCanceledException)
         {
-            DownloadStatus.Text = "Cancelled. The files already verified stay; the next download goes on from there.";
+            DownloadStatus.Text = "Paused. What was downloaded is kept, and the next download goes on from there.";
         }
         catch (Exception failure) when (failure is HttpRequestException or InvalidDataException or IOException or UnauthorizedAccessException)
         {
-            DownloadStatus.Text = $"The download stopped: {failure.Message}";
+            long kept = ModelDownloads.TotalBytes(ModelDownloads.Embedded) - ModelDownloads.PendingBytes(ModelDownloads.Embedded, Options.ModelsFolder, Elsewhere);
+            DownloadFailure explained = DownloadFailure.Explain(failure, kept);
+            DownloadStatus.Text = $"{explained.What} {explained.Todo}";
         }
         finally
         {
+            if (entered)
+            {
+                DownloadGate.Release();
+            }
+
             downloading.Dispose();
             downloading = null;
             CancelDownloadButton.Visibility = Visibility.Collapsed;
             DownloadProgressBar.Visibility = Visibility.Collapsed;
-            RefreshDownloads();
             FillAbout();
             RefreshOperations();
         }
     }
 
     private void OnCancelDownloadClick(object sender, RoutedEventArgs e) => downloading?.Cancel();
+
+    /// <summary>Deletes one downloaded model's folder; its card offers the download again.</summary>
+    private void OnRemoveModelClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).Tag is not string name)
+        {
+            return;
+        }
+
+        string folder = Path.Combine(Options.ModelsFolder, name);
+        long bytes = Directory.Exists(folder) ? new DirectoryInfo(folder).GetFiles("*", SearchOption.AllDirectories).Sum(f => f.Length) : 0;
+        try
+        {
+            Directory.Delete(folder, recursive: true);
+            DownloadStatus.Text = $"Removed {name}, freeing {DownloadText.Size(bytes)}. The operation that uses it offers the download again.";
+        }
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+        {
+            DownloadStatus.Text = $"{name} could not be removed while it is in use: {failure.Message} Close PhotoBoost and delete {folder}.";
+        }
+
+        FillAbout();
+        RefreshOperations();
+    }
 }

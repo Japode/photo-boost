@@ -4,29 +4,17 @@
 
 ## Block B — Model management
 
-### §PB58 Lean installer, models on first use
+### §PB59 First-use download driven end to end
 
-Owner, 2026-10-20: a lean installer (upscale, denoise, YuNet, about 100 MB of models);
-face restore (GFPGAN FP32, 325 MB) and background removal (RMBG-1.4 FP32 from BRIA, 168
-MB, and ViTMatte FP32, 99 MB) fetch their models on first use. The download must never
-be why a user gives up on the app:
-
-1. Before: a missing model shows a "one-time download" badge (what, size, source, license),
-   and the button reads "Download and <operation>".
-2. Consent: the click opens an in-app panel: each file, the total, its source and folder, that
-   the photo never leaves the PC, and the license; "Download and continue" or "Not now".
-3. Never blocking: the download runs beside the app, every other operation keeps working, and
-   the asked-for operation starts by itself once its models are verified.
-4. Visible: MB, speed and time left in the card and the status bar, then "Verifying…", then
-   "Ready: <operation> now works offline".
-5. Resumable: a cancelled or interrupted download keeps its .part and resumes by HTTP Range;
-   transient failures retry; a file failing SHA-256 is deleted, never loaded.
-6. Errors that help: offline, unreachable or corrupt each say what to do, with Try again.
-7. Control: About lists downloaded models and their disk use, removes them, and downloads
-   everything ahead for offline use.
-
-Hosting: ViTMatte FP32 joins a manifest version 2, which the app embeds so sizes and
-hashes are known offline. stage-models.ps1 drops the three models.
+PB58's consent case reads the badge, the panel and "Not now", and ModelDownloadsTests
+drives resume, retry and verification against a stand-in handler, but nothing watches
+the window through a real download: the card's MB, speed and time left, the status-bar
+chip, Pause and Resume, a failure's Try again, and the operation starting by itself once
+its models are verified. A case cannot reach the network, and should not fetch 267 MB
+anyway. A small fixture server on localhost serving tiny files under a test manifest,
+with an app option to read that manifest, would let one case download, pause, resume and
+auto-run a stand-in model; the option has to stay https-only in release builds, or be a
+test-only path, so it never weakens the pinned manifest.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 

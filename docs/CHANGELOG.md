@@ -26,7 +26,7 @@
 - ✅ **PB53** **The installer accepts Windows 10 1809, where Windows ML and so every operation cannot run** — The installer refuses Windows older than 10 1903, Windows ML's minimum, and a test holds that floor to the package version it was read for.
 - ✅ **PB54** **Face restore on DirectML pastes a flat brown square over each face with the default FP16 GFPGAN** — On a GPU face restore runs GFPGAN's FP32, which the installer now carries, so faces come out right (design recorded in `src/PhotoBoost.Inference/Pipelines/FaceRestore.cs`).
 - ✅ **PB13** **The app has no button to download the optional FP32 models with progress and hash verification** — About offers the FP32 set from the pinned manifest, streamed through .part files, SHA-256 checked, skipping files already here or bundled.
-- ✅ **PB58 (download engine)** **The installer is 628 MB, 84% of it the models of two operations most photos never use** — Manifest v2 adds ViTMatte and is embedded in the app; downloads resume by Range, retry, report speed and time left, and RMBG runs the FP32 it fetches.
+- ✅ **PB58** **The installer is 628 MB, 84% of it the models of two operations most photos never use** — The installer carries 100 MB of models; faces and background offer a one-time download with a consent panel, pausable progress, helpful errors and auto-run.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 

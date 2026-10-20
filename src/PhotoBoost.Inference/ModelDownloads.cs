@@ -121,6 +121,9 @@ public static class ModelDownloads
     /// <summary>How many times a file is tried after a network failure before it is reported.</summary>
     public const int Attempts = 4;
 
+    /// <summary>How long the connection may stay silent before the attempt is given up and retried.</summary>
+    public static readonly TimeSpan StallTimeout = TimeSpan.FromSeconds(30);
+
     private static readonly Lazy<ModelManifest> EmbeddedManifest = new(() =>
     {
         using Stream stream = typeof(ModelDownloads).Assembly.GetManifestResourceStream("PhotoBoost.Inference.models-manifest.json")
@@ -163,6 +166,20 @@ public static class ModelDownloads
     public static long MissingBytes(ModelManifest manifest, string root, IReadOnlyList<string>? elsewhere = null, IReadOnlyCollection<string>? models = null) =>
         Files(manifest, root, models)
             .Where(file => !Present(file.Path, file.Label, file.Expected, elsewhere))
+            .Sum(file => file.Expected.Bytes - Math.Min(PartialBytes(file.Path), file.Expected.Bytes));
+
+    /// <summary>
+    /// <see cref="MissingBytes"/> by size alone, for what a card or the About panel shows: cheap
+    /// enough for every refresh, where hashing 325 MB is not. The download itself still hashes.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <param name="root">The folder downloads go to.</param>
+    /// <param name="elsewhere">Other models folders whose file of the same size counts.</param>
+    /// <param name="models">Only these models, or null for every one.</param>
+    /// <returns>The bytes still to fetch, as far as sizes tell.</returns>
+    public static long PendingBytes(ModelManifest manifest, string root, IReadOnlyList<string>? elsewhere = null, IReadOnlyCollection<string>? models = null) =>
+        Files(manifest, root, models)
+            .Where(file => !Sized(file.Path, file.Expected) && !(elsewhere ?? []).Any(other => Sized(Path.Combine(other, file.Label), file.Expected)))
             .Sum(file => file.Expected.Bytes - Math.Min(PartialBytes(file.Path), file.Expected.Bytes));
 
     /// <summary>Fetches every file the variant needs that is not on disk with the right bytes.</summary>
@@ -262,24 +279,36 @@ public static class ModelDownloads
             request.Headers.Range = new RangeHeaderValue(have, null);
         }
 
-        using HttpResponseMessage response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        bool resumed = have > 0 && response.StatusCode == HttpStatusCode.PartialContent;
-        if (!resumed)
+        // The client has no timeout, since a 325 MB file may take many minutes; what fails is a
+        // connection that goes silent, so each wait gets its own limit and a stall is retried.
+        using CancellationTokenSource stall = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        stall.CancelAfter(StallTimeout);
+        try
         {
-            have = 0;
-        }
+            using HttpResponseMessage response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, stall.Token).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            bool resumed = have > 0 && response.StatusCode == HttpStatusCode.PartialContent;
+            if (!resumed)
+            {
+                have = 0;
+            }
 
-        await using Stream source = await response.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
-        await using FileStream target = new(part, resumed ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16, useAsync: true);
-        byte[] buffer = new byte[1 << 20];
-        int read;
-        while ((read = await source.ReadAsync(buffer, cancellation).ConfigureAwait(false)) > 0)
+            await using Stream source = await response.Content.ReadAsStreamAsync(stall.Token).ConfigureAwait(false);
+            await using FileStream target = new(part, resumed ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16, useAsync: true);
+            byte[] buffer = new byte[1 << 20];
+            int read;
+            while ((read = await source.ReadAsync(buffer, stall.Token).ConfigureAwait(false)) > 0)
+            {
+                stall.CancelAfter(StallTimeout);
+                await target.WriteAsync(buffer.AsMemory(0, read), cancellation).ConfigureAwait(false);
+                have += read;
+                speed.Add(read);
+                progress?.Report(new DownloadProgress(label, before + have, total, DownloadStage.Downloading, speed.BytesPerSecond));
+            }
+        }
+        catch (OperationCanceledException silent) when (!cancellation.IsCancellationRequested)
         {
-            await target.WriteAsync(buffer.AsMemory(0, read), cancellation).ConfigureAwait(false);
-            have += read;
-            speed.Add(read);
-            progress?.Report(new DownloadProgress(label, before + have, total, DownloadStage.Downloading, speed.BytesPerSecond));
+            throw new IOException($"The connection went silent for {StallTimeout.TotalSeconds:0} seconds.", silent);
         }
     }
 
@@ -308,6 +337,12 @@ public static class ModelDownloads
 
     private static bool Present(string path, string label, ManifestFile expected, IReadOnlyList<string>? elsewhere) =>
         Valid(path, expected) || (elsewhere ?? []).Any(other => Valid(Path.Combine(other, label), expected));
+
+    private static bool Sized(string path, ManifestFile expected)
+    {
+        FileInfo file = new(path);
+        return file.Exists && file.Length == expected.Bytes;
+    }
 
     private static bool Valid(string path, ManifestFile expected)
     {

@@ -4,7 +4,7 @@
 
 ## Block B — Model management
 
-- ⏳ **PB58** (deps: PB13 ✅) **The installer is 628 MB, 84% of it the models of two operations most photos never use** — The consent panel and first-use flow in the cards, About's model list, and the installer without GFPGAN, RMBG and ViTMatte. → §PB58
+- 📋 **PB59** (deps: PB58 ✅) **No UI case drives a first-use download to the end: progress, pause, a failure and the auto-run are unobserved** — The case stops at Not now because a case reaches no network; a local stand-in server for the manifest's files would let one download, verify and run. → §PB59
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
@@ -15,20 +15,6 @@
 ## Block F — Delivery: README, benchmarks and installers
 
 ## Block G — Phase 2: denoising
-
-## Done when — PB58
-
-- **Downloads resume, retry and verify, from a manifest embedded in the app**
-  ModelDownloadsTests: a cancelled file keeps its .part and resumes by Range, a server
-  ignoring Range restarts it, network failures retry then surface, a hash mismatch
-  deletes the file, and the embedded manifest is the pinned v2 one.
-- **A missing model is offered through a consent panel, never blocking the app** A UI
-  case on the guest: the card badge names size and source, the panel lists files and
-  license, the download runs while other cards work, shows MB, speed and time left, then
-  the operation runs by itself.
-- **The installer no longer carries GFPGAN, RMBG or ViTMatte** stage-models.ps1 stages
-  only the upscalers, SCUNet and YuNet; InstallerTests checks the list, and the built
-  installer is about 100 MB of models.
 
 ## Non-goals
 
