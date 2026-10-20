@@ -20,7 +20,7 @@
 
 ## Block E — Face restoration and background removal
 
-- ⏳ **PB48** (deps: PB47 ✅) **Background removal's edge stays soft where subject and background have the same brightness** — The grey guided filter cut the specks but widened the edge band by a third, so hair and pale fur still blur into a pale background. → §PB48
+- ⏳ **PB48** (deps: PB47 ✅) **Background removal's edge stays soft where subject and background have the same brightness** — Background removal does not yet run ViTMatte on RMBG's unsure edge, so the band stays soft. → §PB48
 
 ## Block F — Delivery: README, benchmarks and installers
 

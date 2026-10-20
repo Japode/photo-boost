@@ -89,6 +89,28 @@
       "note": "PB36: SCUNet for real-world photo noise (the PSNR-trained one, not the GAN one, so it removes noise rather than inventing texture). The asset SCUNet's README links, fetched on 2026-10-20; the architecture is vendored from SCUNet commit 52e440a into scripts/archs/scunet.py. Chosen over NAFNet, whose weights are only on Google Drive."
     },
     {
+      "name": "vitmatte-small-composition-1k",
+      "file": "vitmatte-small-composition-1k/model.safetensors",
+      "url": "https://huggingface.co/hustvl/vitmatte-small-composition-1k/resolve/6a58ad7646403c1df626fbd746900aec7361ea1d/model.safetensors",
+      "size": 103294572,
+      "sha256": "bda9289db1bb6762d978b42d1c62ae3f34daf7497171a347a1d09657efd788cb",
+      "sha256_source": "upstream",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/hustvl/vitmatte-small-composition-1k/blob/6a58ad7646403c1df626fbd746900aec7361ea1d/README.md",
+      "note": "PB48: ViTMatte (ViT-S backbone, trained on Composition-1k), the matting model that sharpens RMBG-1.4's unsure edge from a trimap. The owner approved the extra download on 2026-10-20. Pinned to repository commit 6a58ad76; the code is MIT (github.com/hustvl/ViTMatte), the weights Apache-2.0. export-and-quantize.py builds it through transformers, so no architecture is vendored."
+    },
+    {
+      "name": "vitmatte-small-composition-1k-config",
+      "file": "vitmatte-small-composition-1k/config.json",
+      "url": "https://huggingface.co/hustvl/vitmatte-small-composition-1k/resolve/6a58ad7646403c1df626fbd746900aec7361ea1d/config.json",
+      "size": 837,
+      "sha256": "ae1006f5a83227048b563b2e60709d4203e432b2276949ebef41a8cfeeeaf45f",
+      "sha256_source": "computed",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/hustvl/vitmatte-small-composition-1k/blob/6a58ad7646403c1df626fbd746900aec7361ea1d/README.md",
+      "note": "The configuration transformers builds ViTMatte from, beside its weights."
+    },
+    {
       "name": "u2net",
       "optional": true,
       "file": "u2net.onnx",

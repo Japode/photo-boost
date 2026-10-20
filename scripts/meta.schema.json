@@ -9,7 +9,7 @@
   "properties": {
     "schema": { "const": 1 },
     "name": { "type": "string", "pattern": "^[a-z0-9.-]+$" },
-    "task": { "enum": ["upscale", "face-restore", "background-removal", "face-detection", "denoise"] },
+    "task": { "enum": ["upscale", "face-restore", "background-removal", "face-detection", "denoise", "matting"] },
     "scale": { "type": "integer", "minimum": 1 },
     "input": {
       "type": "object",
@@ -19,7 +19,7 @@
         "name": { "type": "string", "minLength": 1 },
         "layout": { "const": "NCHW" },
         "colour_order": { "enum": ["RGB", "BGR"] },
-        "channels": { "const": 3 },
+        "channels": { "description": "3 for an image; 4 for a matting model (PB48), whose fourth channel is the trimap: 0 background, 0.5 unknown, 1 foreground, outside value_range.", "enum": [3, 4] },
         "value_range": { "$ref": "#/$defs/range" },
         "size": { "description": "A fixed square side, or null when height and width are dynamic.", "type": ["integer", "null"], "minimum": 1 },
         "multiple": { "description": "Height and width must be a multiple of this.", "type": "integer", "minimum": 1 },

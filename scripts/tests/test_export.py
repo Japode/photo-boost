@@ -268,6 +268,43 @@ class ExportTests(unittest.TestCase):
         with self.assertRaises(self.ex.ExportError):
             self.ex.load_briarmbg(changed)
 
+    def test_the_trimap_marks_rmbgs_unsure_band_grown_by_the_radius_as_unknown(self):
+        # PB48: subject on the left, background on the right, one soft column between them.
+        mask = np.zeros((9, 20), dtype=np.float32)
+        mask[:, :9] = 1.0
+        mask[:, 9] = 0.5
+        trimap = self.ex.trimap_from_mask(mask, radius=2)
+        np.testing.assert_array_equal(np.full(9, 0.5), trimap[:, 7])
+        np.testing.assert_array_equal(np.full(9, 0.5), trimap[:, 11])
+        self.assertEqual((1.0, 0.0), (trimap[4, 6], trimap[4, 12]))
+
+    def test_a_matting_model_exports_with_its_trimap_channel_and_matches_torch(self):
+        # PB48: a tiny randomly initialised ViTMatte through the same path the real one takes.
+        try:
+            from transformers import VitDetConfig, VitMatteConfig, VitMatteForImageMatting
+        except ImportError:
+            self.skipTest("transformers not installed (scripts/requirements.txt)")
+        backbone = VitDetConfig(hidden_size=32, num_hidden_layers=2, num_attention_heads=2, mlp_ratio=2, image_size=64,
+                                patch_size=16, num_channels=4, window_block_indices=[0], window_size=2,
+                                residual_block_indices=[], use_relative_position_embeddings=True, out_features=["stage2"])
+        config = VitMatteConfig(backbone_config=backbone, hidden_size=32, convstream_hidden_sizes=[8, 16, 32],
+                                fusion_hidden_sizes=[32, 16, 8, 4])
+        torch.manual_seed(0)
+        model = self.ex.Alphas(VitMatteForImageMatting(config)).eval()
+        spec = self.ex.Export("tiny-matte", "unused", lambda folder: model, multiple=32, input_range=(-1.0, 1.0),
+                              task="matting", output_channels=1, channels=4, trace=256)
+        fp32 = self.folder / "fp32.onnx"
+        self.ex.export_fp32(model, spec, fp32)
+        inputs = onnx.load(str(fp32)).graph.input[0].type.tensor_type.shape.dim
+        self.assertEqual(4, inputs[1].dim_value)
+        # verify raises past the tolerance; both sizes differ from the traced square.
+        lines, _ = self.ex.verify(model, spec, fp32, None)
+        self.assertEqual(["192x384", "384x128"], [line.split(" ")[0] for line in lines])
+
+    def test_the_matting_model_is_exported_after_the_model_its_trimap_comes_from(self):
+        names = [spec.name for spec in self.ex.EXPORTS]
+        self.assertLess(names.index("rmbg-1.4"), names.index(self.ex.MATTER))
+
 
 if __name__ == "__main__":
     unittest.main()

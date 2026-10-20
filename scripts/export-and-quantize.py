@@ -12,6 +12,9 @@ writing a model that is quietly wrong. An FP16 variant that loses too much is dr
                                 batch x 3 x 1024 x 1024, pixels / 255 - 0.5; out the mask
     SCUNet real PSNR            the denoiser; dynamic batch, height and width, each a multiple
                                 of 64; RGB in [0, 1], out the same
+    ViTMatte small              the matting model (PB48); dynamic batch, height and width, each
+                                a multiple of 32; RGB in [-1, 1] then a trimap channel (0
+                                background, 0.5 unknown, 1 foreground); out alpha in [0, 1]
     YuNet 2023mar               OpenCV Zoo's face detector, adopted once it finds the test
                                 photo's face; 1 x 3 x 640 x 640 BGR 0-255; fp32 only
 
@@ -91,6 +94,10 @@ class Export:
     output_channels: int = 3
     source: str = ""
     tile: int | None = None
+    # PB48: 4 for a matting model, whose fourth input channel is the trimap.
+    channels: int = 3
+    # The square side to trace at, for a model whose traced graph is checked at larger sizes.
+    trace: int | None = None
 
 
 class ExportError(Exception):
@@ -182,11 +189,36 @@ def build_rmbg(folder: Path) -> nn.Module:
     return FirstOutput(net, lambda out: out[0][0])
 
 
+MATTER = "vitmatte-small-composition-1k"
+
+
+class Alphas(nn.Module):
+    """A transformers matting model called as the app calls it: one tensor in, the alpha out."""
+
+    def __init__(self, net: nn.Module) -> None:
+        super().__init__()
+        self.net = net
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(pixel_values=x).alphas
+
+
+def build_vitmatte(folder: Path) -> nn.Module:
+    # transformers carries the architecture, so nothing is vendored; only this export needs it.
+    model_folder = folder / MATTER
+    for needed in ("config.json", "model.safetensors"):
+        if not (model_folder / needed).is_file():
+            raise ExportError(f"{model_folder / needed} is missing; run scripts/download_models.py first")
+    from transformers import VitMatteForImageMatting
+
+    return Alphas(VitMatteForImageMatting.from_pretrained(model_folder, local_files_only=True))
+
+
 # PB10: the lowest INT8 PSNR against FP32, on each model's test image, that may ship. Set about
 # 2 dB under what the first export measured on 2026-10-19 (x4plus 33.1, x2plus 33.2, GFPGAN 31.2,
-# RMBG 29.2 dB; SCUNet 46.9 dB on 2026-10-20), so a quantization that got worse fails while
-# run-to-run noise does not.
-INT8_FLOOR = {"realesrgan-x4plus": 31.0, "realesrgan-x2plus": 31.0, "gfpgan-v1.4": 29.0, "rmbg-1.4": 27.0, "scunet-color-real-psnr": 45.0}
+# RMBG 29.2 dB; SCUNet 46.9 dB and ViTMatte 43.8 dB on 2026-10-20), so a quantization that got
+# worse fails while run-to-run noise does not.
+INT8_FLOOR = {"realesrgan-x4plus": 31.0, "realesrgan-x2plus": 31.0, "gfpgan-v1.4": 29.0, "rmbg-1.4": 27.0, "scunet-color-real-psnr": 45.0, MATTER: 41.0}
 
 # The recommended tile side for the upscalers: the middle of the 128 to 1024 range PB41 picks
 # from by free video memory, and what the app starts from before it knows the GPU.
@@ -254,6 +286,24 @@ EXPORTS = [
         source="scunet-color-real-psnr",
         tile=UPSCALE_TILE,
     ),
+    Export(
+        MATTER,
+        f"{MATTER}/model.safetensors",
+        build_vitmatte,
+        # What its image processor pads to; the backbone pads to its 14-token windows itself.
+        multiple=32,
+        input_range=(-1.0, 1.0),
+        # Validated on RMBG's own trimap of its test photo, so it is exported after rmbg-1.4.
+        test_image="example_input.jpg",
+        int8_min_psnr=INT8_FLOOR[MATTER],
+        task="matting",
+        scale=1,
+        output_channels=1,
+        source=MATTER,
+        channels=4,
+        # The crop side it was trained on; a 64 px trace would check windows mostly made of padding.
+        trace=512,
+    ),
 ]
 
 
@@ -262,6 +312,8 @@ def trace_side(spec: Export) -> int:
     where 32 x 64 px would be a 2048 px trace no CPU check needs."""
     if spec.size is not None:
         return spec.size
+    if spec.trace is not None:
+        return spec.trace
     return spec.multiple * (2 if spec.multiple >= 32 else 32)
 
 
@@ -274,7 +326,7 @@ def load(spec: Export, weights: Path) -> nn.Module:
 
 def export_fp32(model: nn.Module, spec: Export, target: Path) -> None:
     side = trace_side(spec)
-    sample = torch.rand(1, 3, side, side)
+    sample = torch.rand(1, spec.channels, side, side)
     axes = None
     if spec.size is None:
         axes = {"input": {0: "batch", 2: "height", 3: "width"}, "output": {0: "batch", 2: "out_height", 3: "out_width"}}
@@ -342,6 +394,42 @@ def prepare(spec: Export, image: Path) -> np.ndarray:
     return pixels * (high - low) + low
 
 
+# PB48: the trimap a matting model is validated on, from RMBG's mask of the same photo. Unknown is
+# where the stretched mask is unsure, between the floor and 1 minus it, grown by the radius so the
+# matting model sees both sides of the edge; the rest is RMBG's mask thresholded at a half.
+TRIMAP_FLOOR = 0.02
+TRIMAP_RADIUS = 8
+
+
+def _grow(mask: np.ndarray, radius: int) -> np.ndarray:
+    """A boolean mask dilated by a (2 radius + 1) square, one axis at a time."""
+    k = 2 * radius + 1
+    for axis in (0, 1):
+        padded = np.pad(mask, [(radius, radius) if a == axis else (0, 0) for a in (0, 1)])
+        mask = np.lib.stride_tricks.sliding_window_view(padded, k, axis=axis).any(axis=-1)
+    return mask
+
+
+def trimap_from_mask(mask: np.ndarray, floor: float = TRIMAP_FLOOR, radius: int = TRIMAP_RADIUS) -> np.ndarray:
+    """0 background, 0.5 unknown and 1 foreground, from a mask in [0, 1]."""
+    trimap = np.where(mask >= 0.5, 1.0, 0.0).astype(np.float32)
+    trimap[_grow((mask > floor) & (mask < 1 - floor), radius)] = 0.5
+    return trimap
+
+
+def with_trimap(spec: Export, x: np.ndarray, image: Path, rmbg: Path) -> np.ndarray:
+    """The prepared photo with its trimap as the fourth channel, made from rmbg-1.4's fp32.onnx."""
+    if not rmbg.is_file():
+        raise ExportError(f"{spec.name}: {rmbg} is missing; export rmbg-1.4 first")
+    picture = Image.open(image).convert("RGB")
+    side = next(e.size for e in EXPORTS if e.name == "rmbg-1.4")
+    small = np.asarray(picture.resize((side, side), Image.Resampling.BILINEAR), dtype=np.float32) / 255.0 - 0.5
+    mask = run(rmbg, small.transpose(2, 0, 1)[None].copy())[0, 0]
+    mask = np.asarray(Image.fromarray(mask).resize(picture.size, Image.Resampling.BILINEAR))[: x.shape[2], : x.shape[3]]
+    mask = (mask - mask.min()) / max(float(mask.max() - mask.min()), 1e-6)
+    return np.concatenate([x, trimap_from_mask(mask)[None, None]], axis=1).astype(np.float32)
+
+
 def _box(x: np.ndarray, k: int) -> np.ndarray:
     """Mean over every k x k window, by summed-area table ('valid' windows only)."""
     s = np.pad(x, ((1, 0), (1, 0))).cumsum(0).cumsum(1)
@@ -367,6 +455,8 @@ def validate(spec: Export, folder: Path, images: Path) -> list[str]:
     The numbers go to <folder>/meta.json under "validation", for the README table.
     """
     x = prepare(spec, images / spec.test_image)
+    if spec.channels == 4:
+        x = with_trimap(spec, x, images / spec.test_image, folder.parent / "rmbg-1.4" / "fp32.onnx")
     reference = run(folder / "fp32.onnx", x)
     results: dict[str, dict] = {}
     lines = []
@@ -415,7 +505,7 @@ def largest_activation_bytes_per_pixel(model: nn.Module, spec: Export) -> float:
     handles = [m.register_forward_hook(hook) for m in model.modules()]
     try:
         with torch.no_grad():
-            model(torch.zeros(1, 3, side, side))
+            model(torch.zeros(1, spec.channels, side, side))
     finally:
         for handle in handles:
             handle.remove()
@@ -454,7 +544,7 @@ def describe(spec: Export, model: nn.Module, folder: Path) -> str:
             "name": graph.input[0].name,
             "layout": "NCHW",
             "colour_order": "RGB",
-            "channels": 3,
+            "channels": spec.channels,
             "value_range": list(spec.input_range),
             "size": spec.size,
             "multiple": spec.multiple,
@@ -490,6 +580,9 @@ def sizes(spec: Export) -> list[tuple[int, int]]:
     """Two non-square sizes, neither the traced one, prove dynamic axes; a fixed model gets two inputs."""
     if spec.size is not None:
         return [(spec.size, spec.size)] * 2
+    if spec.trace is not None:
+        # Either side of the traced square, and wider than it, as a photo's band would be.
+        return [(spec.trace - 2 * spec.multiple, spec.trace + 4 * spec.multiple), (spec.trace + 4 * spec.multiple, spec.trace - 4 * spec.multiple)]
     if spec.multiple >= 32:
         return [(2 * spec.multiple, 3 * spec.multiple), (3 * spec.multiple, 2 * spec.multiple)]
     return [(24 * spec.multiple, 40 * spec.multiple), (48 * spec.multiple, 36 * spec.multiple)]
@@ -502,7 +595,10 @@ def verify(model: nn.Module, spec: Export, fp32: Path, fp16: Path | None) -> tup
     generator = torch.Generator().manual_seed(7)
     low, high = spec.input_range
     for h, w in sizes(spec):
-        x = torch.rand(1, 3, h, w, generator=generator) * (high - low) + low
+        x = torch.rand(1, spec.channels, h, w, generator=generator) * (high - low) + low
+        if spec.channels == 4:
+            # A trimap's three levels, not noise in the input range.
+            x[:, 3] = torch.randint(0, 3, (h, w), generator=generator).float() / 2
         with torch.no_grad():
             expected = model(x).numpy()
         got = run(fp32, x.numpy())
@@ -530,9 +626,19 @@ def export(spec: Export, weights: Path, out: Path, fp16: bool = True, int8: bool
         adopt_fp32(spec, weights, fp32_path)
     else:
         export_fp32(model, spec, fp32_path)
+    unconverted = None
     if fp16:
-        export_fp16(fp32_path, fp16_path)
+        try:
+            export_fp16(fp32_path, fp16_path)
+        except (onnx.checker.ValidationError, onnx.shape_inference.InferenceError) as error:
+            # PB48: ViTMatte's shape arithmetic casts to float, which the converter leaves feeding
+            # FP16 ops; such a graph does not type-check, so only fp32 and int8 are written.
+            fp16_path.unlink(missing_ok=True)
+            fp16 = False
+            unconverted = f"fp16 dropped: the converted graph does not type-check ({str(error).splitlines()[0][:120]})"
     lines, fp16_ok = verify(model, spec, fp32_path, fp16_path if fp16 else None)
+    if unconverted:
+        lines.append(unconverted)
     if fp16 and not fp16_ok:
         fp16_path.unlink()
         lines.append(f"fp16 dropped: below {FP16_MIN_PSNR} dB, so only fp32 is written")
