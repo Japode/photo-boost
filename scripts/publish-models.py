@@ -35,10 +35,13 @@ SOURCES = SCRIPTS / "model-sources.json"
 RECORD = SCRIPTS / "published-models.json"
 
 REPO_ID = "alegauss/photo-boost-models"
-VERSION = "1"
+VERSION = "2"
 VARIANT = "fp32"
-# Hosted here, FP32. YuNet and ViTMatte are FP32 in the installer already, so nothing downloads them.
-HOSTED = ["realesrgan-x4plus", "realesrgan-x2plus", "gfpgan-v1.4", "scunet-color-real-psnr"]
+# Hosted here, FP32. Version 2 adds ViTMatte (PB58): background removal fetches it on first
+# use. YuNet stays FP32 in the installer, so nothing downloads it.
+HOSTED = ["realesrgan-x4plus", "realesrgan-x2plus", "gfpgan-v1.4", "scunet-color-real-psnr", "vitmatte-small-composition-1k"]
+# PB58: the copy the app embeds, so it knows every file's size and hash without the network.
+EMBEDDED = REPO / "src" / "PhotoBoost.Inference" / "models-manifest.json"
 # Listed, with its file at the upstream's own pinned URL.
 EXTERNAL = {"rmbg-1.4": "rmbg-1.4-onnx"}
 
@@ -133,7 +136,7 @@ def upload(token: str, models: Path, stage_dir: Path) -> dict:
     # so it is left out here and rebuilt against this commit below.
     stage(models, stage_dir, resolve_base("pending"))
     (stage_dir / "manifest.json").unlink()
-    files = api.upload_folder(repo_id=REPO_ID, folder_path=str(stage_dir), commit_message="PhotoBoost FP32 models, manifest version 1")
+    files = api.upload_folder(repo_id=REPO_ID, folder_path=str(stage_dir), commit_message=f"PhotoBoost FP32 models, manifest version {VERSION}")
     files_commit = files.oid
 
     # Commit 2: manifest.json with every URL pinned to commit 1.
@@ -145,6 +148,7 @@ def upload(token: str, models: Path, stage_dir: Path) -> dict:
         commit_message=f"manifest.json pinned to {files_commit[:12]}",
     )
     manifest_commit = pinned.oid
+    shutil.copyfile(stage_dir / "manifest.json", EMBEDDED)
     return {
         "repo": REPO_ID,
         "version": VERSION,

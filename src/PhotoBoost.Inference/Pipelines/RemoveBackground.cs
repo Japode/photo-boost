@@ -44,8 +44,21 @@ public static class RemoveBackground
         Action<float[]>? matting = matteVariant is not null
             ? mask => Matting.Run(library, image, mask, matteVariant)
             : null;
-        using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, variant));
+        using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, VariantFor(library, variant)));
         return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine, matting);
+    }
+
+    /// <summary>
+    /// The RMBG variant a run loads (PB58): the one asked for, else FP32, which is what the first
+    /// use downloads from BRIA's repository now that the installer no longer carries the FP16.
+    /// </summary>
+    /// <param name="library">The models.</param>
+    /// <param name="variant">The variant the operation runs in.</param>
+    /// <returns>The variant to load.</returns>
+    public static string VariantFor(ModelLibrary library, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(library);
+        return !library.Has(Model, variant) && library.Has(Model, "fp32") ? "fp32" : variant;
     }
 
     /// <summary>

@@ -53,10 +53,10 @@ public partial class MainWindow
         CancelDownloadButton.Visibility = Visibility.Visible;
         DownloadProgressBar.Value = 0;
         DownloadProgressBar.Visibility = Visibility.Visible;
-        DownloadStatus.Text = "Reading the list of models…";
+        DownloadStatus.Text = "Connecting…";
         try
         {
-            ModelManifest manifest = await ModelDownloads.FetchManifestAsync(Http, downloading.Token).ConfigureAwait(true);
+            ModelManifest manifest = ModelDownloads.Embedded;
             Progress<DownloadProgress> progress = new(p =>
             {
                 DownloadProgressBar.Value = p.Total == 0 ? 0 : (double)p.Done / p.Total;

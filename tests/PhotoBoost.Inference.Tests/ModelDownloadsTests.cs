@@ -1,12 +1,14 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace PhotoBoost.Inference.Tests;
 
 /// <summary>
-/// PB13: the FP32 set is fetched from the manifest through .part files, checked by SHA-256 before
-/// it is renamed into place, and a file already here, or in the installer's folder, is not fetched.
+/// PB13, PB58: models are fetched from the manifest through .part files, checked by SHA-256 before
+/// they are renamed into place, a file already here or in the installer's folder is not fetched,
+/// an interrupted file resumes by HTTP Range, and a network failure is retried before it is named.
 /// </summary>
 public sealed class ModelDownloadsTests : IDisposable
 {
@@ -71,17 +73,87 @@ public sealed class ModelDownloadsTests : IDisposable
     }
 
     [Fact]
-    public async Task ACancelledDownloadLeavesNoPartialFile()
+    public async Task OnlyTheNamedModelsAreCountedAndFetched()
     {
-        ModelManifest manifest = Manifest(("tiny-x4", new byte[3 << 20]));
-        using CancellationTokenSource cancel = new();
+        ModelManifest manifest = Manifest(("tiny-x4", "weights"u8.ToArray()), ("tiny-face", "face"u8.ToArray()));
         using HttpClient http = new(new Served(served));
+        string models = Path.Combine(root, "models");
+        string[] face = ["tiny-face"];
+
+        Assert.Equal("face"u8.Length + served["https://host/tiny-face-meta.json"].Length, ModelDownloads.TotalBytes(manifest, face));
+        DownloadResult result = await ModelDownloads.DownloadAsync(http, manifest, models, null, TestContext.Current.CancellationToken, models: face);
+
+        Assert.Equal(new DownloadResult(2, 0), result);
+        Assert.True(ModelDownloads.Complete(manifest, models, models: face));
+        Assert.False(ModelDownloads.Complete(manifest, models));
+        Assert.False(Directory.Exists(Path.Combine(models, "tiny-x4")));
+    }
+
+    [Fact]
+    public async Task ACancelledDownloadKeepsItsPartAndTheNextOneResumesByRange()
+    {
+        byte[] weights = RandomNumberGenerator.GetBytes(3 << 20);
+        ModelManifest manifest = Manifest(("tiny-x4", weights));
+        Served server = new(served);
+        using HttpClient http = new(server);
+        string models = Path.Combine(root, "models");
+        using CancellationTokenSource cancel = new();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            ModelDownloads.DownloadAsync(http, manifest, Path.Combine(root, "models"), new SynchronousProgress(cancel), cancel.Token));
+            ModelDownloads.DownloadAsync(http, manifest, models, new SynchronousProgress(cancel), cancel.Token));
 
-        Assert.Empty(Directory.GetFiles(root, "*.part", SearchOption.AllDirectories));
-        Assert.False(File.Exists(Path.Combine(root, "models", "tiny-x4", "fp32.onnx")));
+        string part = Path.Combine(models, "tiny-x4", "fp32.onnx.part");
+        long kept = new FileInfo(part).Length;
+        Assert.InRange(kept, 1, weights.Length - 1);
+        Assert.False(File.Exists(Path.Combine(models, "tiny-x4", "fp32.onnx")));
+        Assert.Equal(weights.Length - kept + served["https://host/tiny-x4-meta.json"].Length, ModelDownloads.MissingBytes(manifest, models));
+
+        DownloadResult resumed = await ModelDownloads.DownloadAsync(http, manifest, models, null, TestContext.Current.CancellationToken);
+
+        Assert.Equal(new DownloadResult(2, 0), resumed);
+        Assert.Contains(kept, server.RangesAsked);
+        Assert.Equal(weights, await File.ReadAllBytesAsync(Path.Combine(models, "tiny-x4", "fp32.onnx"), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AServerThatIgnoresTheRangeStartsTheFileOver()
+    {
+        byte[] weights = "weights"u8.ToArray();
+        ModelManifest manifest = Manifest(("tiny-x4", weights));
+        string models = Path.Combine(root, "models");
+        Directory.CreateDirectory(Path.Combine(models, "tiny-x4"));
+        await File.WriteAllBytesAsync(Path.Combine(models, "tiny-x4", "fp32.onnx.part"), "wei"u8.ToArray(), TestContext.Current.CancellationToken);
+        using HttpClient http = new(new Served(served) { HonoursRange = false });
+
+        await ModelDownloads.DownloadAsync(http, manifest, models, null, TestContext.Current.CancellationToken);
+
+        Assert.Equal(weights, await File.ReadAllBytesAsync(Path.Combine(models, "tiny-x4", "fp32.onnx"), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ANetworkFailureIsRetriedAndReportedOnlyWhenItLasts()
+    {
+        ModelManifest manifest = Manifest(("tiny-x4", "weights"u8.ToArray()));
+        string models = Path.Combine(root, "models");
+        List<DownloadStage> stages = [];
+        using HttpClient flaky = new(new Served(served) { FailuresLeft = ModelDownloads.Attempts - 1 });
+
+        DownloadResult result = await ModelDownloads.DownloadAsync(flaky, manifest, models, new Recorded(stages), TestContext.Current.CancellationToken, retryDelay: TimeSpan.Zero);
+
+        Assert.Equal(new DownloadResult(2, 0), result);
+        Assert.Equal(ModelDownloads.Attempts - 1, stages.Count(s => s == DownloadStage.Retrying));
+        Assert.Contains(DownloadStage.Verifying, stages);
+
+        using HttpClient down = new(new Served(served) { FailuresLeft = int.MaxValue });
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            ModelDownloads.DownloadAsync(down, Manifest(("other", "x"u8.ToArray())), models, null, TestContext.Current.CancellationToken, retryDelay: TimeSpan.Zero));
+    }
+
+    [Fact]
+    public void TimeLeftFollowsTheSpeed()
+    {
+        Assert.Null(new DownloadProgress("f", 0, 100).Remaining);
+        Assert.Equal(TimeSpan.FromSeconds(5), new DownloadProgress("f", 50, 100, DownloadStage.Downloading, 10).Remaining);
     }
 
     [Fact]
@@ -99,6 +171,18 @@ public sealed class ModelDownloadsTests : IDisposable
         using JsonDocument record = JsonDocument.Parse(File.ReadAllText(Path.Combine(Repository.Root, "scripts", "published-models.json")));
         Assert.Equal(ModelDownloads.ManifestUrl, record.RootElement.GetProperty("manifest_url").GetString());
         Assert.Contains("/resolve/", ModelDownloads.ManifestUrl, StringComparison.Ordinal);
+        Assert.Equal(record.RootElement.GetProperty("version").GetString(), ModelDownloads.Embedded.Version);
+    }
+
+    [Fact]
+    public void TheEmbeddedManifestListsWhatFirstUseFetches()
+    {
+        // PB58: face restore and background removal fetch these, so their sizes are known offline.
+        foreach (string model in (string[])["gfpgan-v1.4", "rmbg-1.4", "vitmatte-small-composition-1k"])
+        {
+            ManifestModel listed = Assert.IsType<ManifestModel>(ModelDownloads.Embedded.Model(model));
+            Assert.True(listed.Variants[ModelDownloads.Variant].Bytes > 1 << 20);
+        }
     }
 
     private ModelManifest Manifest(params (string Name, byte[] Weights)[] models)
@@ -126,15 +210,51 @@ public sealed class ModelDownloadsTests : IDisposable
 
     private sealed class Served(Dictionary<string, byte[]> files) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(files.TryGetValue(request.RequestUri!.ToString(), out byte[]? bytes)
-                ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) }
-                : new HttpResponseMessage(HttpStatusCode.NotFound));
+        public bool HonoursRange { get; init; } = true;
+
+        public int FailuresLeft { get; set; }
+
+        public List<long> RangesAsked { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (FailuresLeft > 0)
+            {
+                FailuresLeft--;
+                throw new HttpRequestException("The network went away.");
+            }
+
+            if (!files.TryGetValue(request.RequestUri!.ToString(), out byte[]? bytes))
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+            }
+
+            if (request.Headers.Range?.Ranges.Single().From is long from && HonoursRange)
+            {
+                RangesAsked.Add(from);
+                ByteArrayContent rest = new(bytes[(int)from..]);
+                rest.Headers.ContentRange = new ContentRangeHeaderValue(from, bytes.Length - 1, bytes.Length);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.PartialContent) { Content = rest });
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) });
+        }
     }
 
     // Progress<T> posts to the thread pool; this reports inline, so the cancel lands mid-file.
     private sealed class SynchronousProgress(CancellationTokenSource cancel) : IProgress<DownloadProgress>
     {
-        public void Report(DownloadProgress value) => cancel.Cancel();
+        public void Report(DownloadProgress value)
+        {
+            if (value.Done > 0)
+            {
+                cancel.Cancel();
+            }
+        }
+    }
+
+    private sealed class Recorded(List<DownloadStage> stages) : IProgress<DownloadProgress>
+    {
+        public void Report(DownloadProgress value) => stages.Add(value.Stage);
     }
 }

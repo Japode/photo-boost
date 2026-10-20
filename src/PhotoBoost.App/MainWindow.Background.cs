@@ -14,7 +14,7 @@ public partial class MainWindow
     /// <summary>Enables Remove background only with an image, its model, and nothing running.</summary>
     private void RefreshBackground()
     {
-        string? missing = Missing((RemoveBackground.Model, Variant));
+        string? missing = Missing((RemoveBackground.Model, RemoveBackground.VariantFor(library!, Variant)));
         BackgroundNote.Text = missing ?? string.Empty;
         BackgroundNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
         RemoveBackgroundButton.IsEnabled = Image is not null && missing is null && !Busy;

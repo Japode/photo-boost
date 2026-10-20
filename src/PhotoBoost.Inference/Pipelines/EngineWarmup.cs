@@ -29,7 +29,7 @@ public static class EngineWarmup
             new(Upscale.ModelFor(2), variant),
             new(FaceDetection.Model, "fp32"),
             new(FaceRestore.Model, FaceRestore.VariantFor(library, variant)),
-            new(RemoveBackground.Model, variant),
+            new(RemoveBackground.Model, RemoveBackground.VariantFor(library, variant)),
             new(Denoise.Model, variant),
         ];
         if (RemoveBackground.MatteVariant(library, variant) is { } matte)

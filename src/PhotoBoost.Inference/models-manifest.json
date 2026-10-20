@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "version": "2",
+  "base_url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200",
+  "models": [
+    {
+      "name": "realesrgan-x4plus",
+      "task": "upscale",
+      "meta": {
+        "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/realesrgan-x4plus-meta.json",
+        "bytes": 1576,
+        "sha256": "853dea4806b087d2e7398ad844b1ede887a7c4f0f4a0984ac9b90f10a26d2628"
+      },
+      "variants": {
+        "fp32": {
+          "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/realesrgan-x4plus-fp32.onnx",
+          "bytes": 67051652,
+          "sha256": "8c32294ce23d8ebd1882268e8d8ce32e762806a38fb87b64a1c88c65fd19b797"
+        }
+      },
+      "license": "BSD-3-Clause",
+      "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE"
+    },
+    {
+      "name": "realesrgan-x2plus",
+      "task": "upscale",
+      "meta": {
+        "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/realesrgan-x2plus-meta.json",
+        "bytes": 1577,
+        "sha256": "96adc10f8da7c23a2e2ee83453a1bc357a4c7da9792eaa3ca9ed5f55607cbc14"
+      },
+      "variants": {
+        "fp32": {
+          "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/realesrgan-x2plus-fp32.onnx",
+          "bytes": 67076138,
+          "sha256": "a4f690c4c9e59a2aec20e9ce6a258acf7e1598f4c06ef48710e25757455bcfd4"
+        }
+      },
+      "license": "BSD-3-Clause",
+      "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE"
+    },
+    {
+      "name": "gfpgan-v1.4",
+      "task": "face-restore",
+      "meta": {
+        "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/gfpgan-v1.4-meta.json",
+        "bytes": 1588,
+        "sha256": "13bab6e4edd1be3b97b5f0d1b56c98f2cf0182caf5610fb37465316f2af8e108"
+      },
+      "variants": {
+        "fp32": {
+          "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/gfpgan-v1.4-fp32.onnx",
+          "bytes": 340351416,
+          "sha256": "e04f7159b79617a160c8b46280034ead17de2b6eae4b0325796f751d445f8b1b"
+        }
+      },
+      "license": "Apache-2.0 with third-party terms",
+      "license_url": "https://github.com/TencentARC/GFPGAN/blob/master/LICENSE"
+    },
+    {
+      "name": "scunet-color-real-psnr",
+      "task": "denoise",
+      "meta": {
+        "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/scunet-color-real-psnr-meta.json",
+        "bytes": 1603,
+        "sha256": "f2963aaf2b0750bbfd8ff86e331849ec1c6999bfa467d0466b1b4883eb4073c0"
+      },
+      "variants": {
+        "fp32": {
+          "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/scunet-color-real-psnr-fp32.onnx",
+          "bytes": 72829605,
+          "sha256": "d5aae1d447b267253b5bf57e22c740774aa727932e1d36304f174df9d9ba85e7"
+        }
+      },
+      "license": "Apache-2.0",
+      "license_url": "https://github.com/cszn/SCUNet/blob/52e440a80a655b01e0b41e9dd9bfe599bc11625e/LICENSE"
+    },
+    {
+      "name": "vitmatte-small-composition-1k",
+      "task": "matting",
+      "meta": {
+        "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/vitmatte-small-composition-1k-meta.json",
+        "bytes": 1470,
+        "sha256": "eb6440cf0dc12a0530bb6eb22fe15b0fe453e224c66054a7331937107b5ceaf6"
+      },
+      "variants": {
+        "fp32": {
+          "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/vitmatte-small-composition-1k-fp32.onnx",
+          "bytes": 103927729,
+          "sha256": "0b6ff4d8901ec6e1c946cc7704c779324584605a7998a99cf734f00406b43cf2"
+        }
+      },
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/hustvl/vitmatte-small-composition-1k/blob/6a58ad7646403c1df626fbd746900aec7361ea1d/README.md"
+    },
+    {
+      "name": "rmbg-1.4",
+      "task": "background-removal",
+      "meta": {
+        "url": "https://huggingface.co/alegauss/photo-boost-models/resolve/eac20c9e776aca1d51fc7bdd0448187f959f6200/rmbg-1.4-meta.json",
+        "bytes": 1620,
+        "sha256": "ed0408b9b6010f910f479147d0cc8355de811ae2d0137678cba26ab87793d286"
+      },
+      "variants": {
+        "fp32": {
+          "url": "https://huggingface.co/briaai/RMBG-1.4/resolve/2ceba5a5efaec153162aedea169f76caf9b46cf8/onnx/model.onnx",
+          "bytes": 176153355,
+          "sha256": "8cafcf770b06757c4eaced21b1a88e57fd2b66de01b8045f35f01535ba742e0f"
+        }
+      },
+      "license": "bria-rmbg-1.4 (non-commercial)",
+      "license_url": "https://bria.ai/bria-huggingface-model-license-agreement/"
+    }
+  ]
+}

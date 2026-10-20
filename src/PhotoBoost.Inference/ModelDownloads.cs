@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -58,13 +61,37 @@ public sealed record ModelManifest(int Schema, string Version, IReadOnlyList<Man
 
         return manifest;
     }
+
+    /// <summary>A model by name, or null.</summary>
+    /// <param name="name">Its folder name.</param>
+    /// <returns>The model.</returns>
+    public ManifestModel? Model(string name) => Models.FirstOrDefault(m => m.Name == name);
 }
 
-/// <summary>How far a download is, for the progress bar.</summary>
+/// <summary>What a download is doing.</summary>
+public enum DownloadStage
+{
+    /// <summary>Fetching bytes.</summary>
+    Downloading,
+
+    /// <summary>Checking a fetched file's SHA-256.</summary>
+    Verifying,
+
+    /// <summary>Waiting to try again after a network failure.</summary>
+    Retrying,
+}
+
+/// <summary>How far a download is, for the progress bar and its words.</summary>
 /// <param name="File">The file being fetched, e.g. gfpgan-v1.4/fp32.onnx.</param>
-/// <param name="Done">Bytes fetched across the whole download.</param>
+/// <param name="Done">Bytes on disk across the whole download, resumed bytes included.</param>
 /// <param name="Total">Bytes the whole download needs.</param>
-public readonly record struct DownloadProgress(string File, long Done, long Total);
+/// <param name="Stage">Fetching, verifying or waiting to retry.</param>
+/// <param name="BytesPerSecond">The recent speed, or 0 before there is one.</param>
+public readonly record struct DownloadProgress(string File, long Done, long Total, DownloadStage Stage = DownloadStage.Downloading, double BytesPerSecond = 0)
+{
+    /// <summary>The time left at the recent speed, or null before there is a speed.</summary>
+    public TimeSpan? Remaining => BytesPerSecond > 0 ? TimeSpan.FromSeconds((Total - Done) / BytesPerSecond) : null;
+}
 
 /// <summary>What a download did.</summary>
 /// <param name="Fetched">Files fetched and verified.</param>
@@ -72,12 +99,13 @@ public readonly record struct DownloadProgress(string File, long Done, long Tota
 public sealed record DownloadResult(int Fetched, int Present);
 
 /// <summary>
-/// The optional FP32 set (PB13), fetched from PB12's manifest at alegauss/photo-boost-models into
-/// the folder downloads go to. Each file is streamed to a .part file, checked against the
-/// manifest's size and SHA-256, and only then renamed into place, so ONNX Runtime never loads a
-/// file that arrived corrupt; one that fails is deleted and the download stops, naming it. A
-/// file already present with the right bytes is not fetched again, which is also how a download
-/// cancelled half way resumes on the next try.
+/// Models fetched from the manifest PB12 published (PB13, PB58): the optional FP32 set, and the
+/// models face restore and background removal fetch on first use. Each file is streamed to a
+/// .part file, checked against the manifest's size and SHA-256, and only then renamed into place,
+/// so ONNX Runtime never loads a file that arrived corrupt; one that fails is deleted and named.
+/// A file already present with the right bytes, here or in the installer's folder, is not fetched.
+/// A cancelled or interrupted file keeps its .part and resumes by HTTP Range on the next try, and
+/// a network failure is retried with a growing pause before it is reported.
 /// </summary>
 public static class ModelDownloads
 {
@@ -85,67 +113,90 @@ public static class ModelDownloads
     /// The manifest this build pins, scripts/published-models.json's manifest_url: a
     /// resolve/&lt;commit&gt;/ URL, so the files it lists cannot change under a released app.
     /// </summary>
-    public const string ManifestUrl = "https://huggingface.co/alegauss/photo-boost-models/resolve/f1964dae136379fdfc4a4f021f6f07102a333f0f/manifest.json";
+    public const string ManifestUrl = "https://huggingface.co/alegauss/photo-boost-models/resolve/f8a6fa2a88ae1a3a605d749d891a786e05bec839/manifest.json";
 
-    /// <summary>The variant the download fetches.</summary>
+    /// <summary>The variant every manifest file is.</summary>
     public const string Variant = "fp32";
 
-    /// <summary>Bytes the variant needs across the manifest.</summary>
+    /// <summary>How many times a file is tried after a network failure before it is reported.</summary>
+    public const int Attempts = 4;
+
+    private static readonly Lazy<ModelManifest> EmbeddedManifest = new(() =>
+    {
+        using Stream stream = typeof(ModelDownloads).Assembly.GetManifestResourceStream("PhotoBoost.Inference.models-manifest.json")
+            ?? throw new InvalidDataException("This build carries no models manifest.");
+        using StreamReader reader = new(stream);
+        return ModelManifest.Parse(reader.ReadToEnd());
+    });
+
+    /// <summary>
+    /// PB58: the pinned manifest as this build carries it, the very file published at
+    /// <see cref="ManifestUrl"/>, so every size and hash is known without the network.
+    /// </summary>
+    public static ModelManifest Embedded => EmbeddedManifest.Value;
+
+    /// <summary>Bytes the variant needs across the manifest, or across the named models.</summary>
     /// <param name="manifest">The manifest.</param>
+    /// <param name="models">Only these models, or null for every one.</param>
     /// <returns>The total, meta.json files included.</returns>
-    public static long TotalBytes(ModelManifest manifest)
+    public static long TotalBytes(ModelManifest manifest, IReadOnlyCollection<string>? models = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        return manifest.Models.Sum(m => m.Meta.Bytes + (m.Variants.TryGetValue(Variant, out ManifestFile? f) ? f.Bytes : 0));
+        return Selected(manifest, models).Sum(m => m.Meta.Bytes + (m.Variants.TryGetValue(Variant, out ManifestFile? f) ? f.Bytes : 0));
     }
 
     /// <summary>Whether every file the variant needs is on disk with the right bytes.</summary>
     /// <param name="manifest">The manifest.</param>
     /// <param name="root">The folder downloads go to.</param>
-    /// <returns>True when nothing is left to fetch.</returns>
     /// <param name="elsewhere">Other models folders whose identical file counts, such as the installer's.</param>
-    public static bool Complete(ModelManifest manifest, string root, IReadOnlyList<string>? elsewhere = null) =>
-        Files(manifest, root).All(file => Present(file.Path, file.Label, file.Expected, elsewhere));
+    /// <param name="models">Only these models, or null for every one.</param>
+    /// <returns>True when nothing is left to fetch.</returns>
+    public static bool Complete(ModelManifest manifest, string root, IReadOnlyList<string>? elsewhere = null, IReadOnlyCollection<string>? models = null) =>
+        Files(manifest, root, models).All(file => Present(file.Path, file.Label, file.Expected, elsewhere));
 
     /// <summary>Bytes still to fetch: what <see cref="DownloadAsync"/> would download now.</summary>
     /// <param name="manifest">The manifest.</param>
     /// <param name="root">The folder downloads go to.</param>
     /// <param name="elsewhere">Other models folders whose identical file counts.</param>
-    /// <returns>The bytes.</returns>
-    public static long MissingBytes(ModelManifest manifest, string root, IReadOnlyList<string>? elsewhere = null) =>
-        Files(manifest, root).Where(file => !Present(file.Path, file.Label, file.Expected, elsewhere)).Sum(file => file.Expected.Bytes);
-
-    /// <summary>Reads the pinned manifest.</summary>
-    /// <param name="http">The client.</param>
-    /// <param name="cancellation">Cancels the read.</param>
-    /// <returns>The manifest.</returns>
-    public static async Task<ModelManifest> FetchManifestAsync(HttpClient http, CancellationToken cancellation)
-    {
-        ArgumentNullException.ThrowIfNull(http);
-        string json = await http.GetStringAsync(new Uri(ManifestUrl), cancellation).ConfigureAwait(false);
-        return ModelManifest.Parse(json);
-    }
+    /// <param name="models">Only these models, or null for every one.</param>
+    /// <returns>The bytes, a partial file's resumed bytes not counted again.</returns>
+    public static long MissingBytes(ModelManifest manifest, string root, IReadOnlyList<string>? elsewhere = null, IReadOnlyCollection<string>? models = null) =>
+        Files(manifest, root, models)
+            .Where(file => !Present(file.Path, file.Label, file.Expected, elsewhere))
+            .Sum(file => file.Expected.Bytes - Math.Min(PartialBytes(file.Path), file.Expected.Bytes));
 
     /// <summary>Fetches every file the variant needs that is not on disk with the right bytes.</summary>
     /// <param name="http">The client.</param>
     /// <param name="manifest">The manifest.</param>
     /// <param name="root">The folder downloads go to, e.g. %LOCALAPPDATA%\PhotoBoost\models.</param>
-    /// <param name="progress">Told after each chunk.</param>
-    /// <param name="cancellation">Cancels between chunks; the .part file is deleted.</param>
+    /// <param name="progress">Told after each chunk, and when a file is verified or retried.</param>
+    /// <param name="cancellation">Cancels between chunks; the .part file stays, so a later download resumes it.</param>
     /// <param name="elsewhere">
     /// Other models folders: a file already there with the manifest's bytes is not fetched, so
-    /// GFPGAN's FP32, which the installer carries since PB54, is not downloaded a second time.
+    /// GFPGAN's FP32, which the installer carried from PB54 to PB58, is not downloaded a second time.
     /// </param>
+    /// <param name="models">Only these models, or null for every one.</param>
+    /// <param name="retryDelay">The first pause before a retry, doubled each time; one second unless set.</param>
     /// <returns>How many files were fetched and how many were already there.</returns>
     /// <exception cref="InvalidDataException">A file arrived with another size or SHA-256; it was deleted.</exception>
-    public static async Task<DownloadResult> DownloadAsync(HttpClient http, ModelManifest manifest, string root, IProgress<DownloadProgress>? progress, CancellationToken cancellation, IReadOnlyList<string>? elsewhere = null)
+    /// <exception cref="HttpRequestException">The server could not be reached after every attempt.</exception>
+    public static async Task<DownloadResult> DownloadAsync(
+        HttpClient http,
+        ModelManifest manifest,
+        string root,
+        IProgress<DownloadProgress>? progress,
+        CancellationToken cancellation,
+        IReadOnlyList<string>? elsewhere = null,
+        IReadOnlyCollection<string>? models = null,
+        TimeSpan? retryDelay = null)
     {
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(manifest);
-        long total = TotalBytes(manifest);
+        long total = TotalBytes(manifest, models);
         long done = 0;
         int fetched = 0, present = 0;
-        foreach ((string path, string label, ManifestFile expected) in Files(manifest, root))
+        Speed speed = new();
+        foreach ((string path, string label, ManifestFile expected) in Files(manifest, root, models))
         {
             if (Present(path, label, expected, elsewhere))
             {
@@ -158,45 +209,86 @@ public static class ModelDownloads
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             string part = path + ".part";
             long before = done;
-            try
+            TimeSpan pause = retryDelay ?? TimeSpan.FromSeconds(1);
+            for (int attempt = 1; ; attempt++)
             {
-                using HttpResponseMessage response = await http.GetAsync(new Uri(expected.Url), HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode();
-                await using Stream source = await response.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
-                await using (FileStream target = new(part, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16, useAsync: true))
+                try
                 {
-                    byte[] buffer = new byte[1 << 20];
-                    int read;
-                    while ((read = await source.ReadAsync(buffer, cancellation).ConfigureAwait(false)) > 0)
-                    {
-                        await target.WriteAsync(buffer.AsMemory(0, read), cancellation).ConfigureAwait(false);
-                        done += read;
-                        progress?.Report(new DownloadProgress(label, done, total));
-                    }
+                    await FetchAsync(http, expected, part, label, before, total, speed, progress, cancellation).ConfigureAwait(false);
+                    break;
                 }
-
-                if (!Valid(part, expected))
+                catch (Exception failure) when (failure is HttpRequestException or IOException && !cancellation.IsCancellationRequested && attempt < Attempts)
                 {
-                    throw new InvalidDataException($"{label} arrived different from the manifest (size or SHA-256), so it was deleted and nothing was loaded.");
+                    progress?.Report(new DownloadProgress(label, before + PartialBytes(path), total, DownloadStage.Retrying));
+                    await Task.Delay(pause, cancellation).ConfigureAwait(false);
+                    pause *= 2;
                 }
-
-                File.Move(part, path, overwrite: true);
-                fetched++;
-                done = before + expected.Bytes;
             }
-            catch
+
+            progress?.Report(new DownloadProgress(label, before + expected.Bytes, total, DownloadStage.Verifying, speed.BytesPerSecond));
+            if (!Valid(part, expected))
             {
                 File.Delete(part);
-                throw;
+                throw new InvalidDataException($"{label} arrived different from the manifest (size or SHA-256), so it was deleted and nothing was loaded.");
             }
+
+            File.Move(part, path, overwrite: true);
+            fetched++;
+            done = before + expected.Bytes;
         }
 
         return new DownloadResult(fetched, present);
     }
 
-    private static IEnumerable<(string Path, string Label, ManifestFile Expected)> Files(ModelManifest manifest, string root)
+    // One attempt at one file: resumes from the .part when the server honours a range, and
+    // starts over when it does not or when the .part is already as long as the file should be.
+    private static async Task FetchAsync(HttpClient http, ManifestFile expected, string part, string label, long before, long total, Speed speed, IProgress<DownloadProgress>? progress, CancellationToken cancellation)
     {
-        foreach (ManifestModel model in manifest.Models)
+        long have = File.Exists(part) ? new FileInfo(part).Length : 0;
+        if (have >= expected.Bytes)
+        {
+            if (have == expected.Bytes)
+            {
+                return; // Fetched last time and never verified; the caller verifies it now.
+            }
+
+            File.Delete(part);
+            have = 0;
+        }
+
+        using HttpRequestMessage request = new(HttpMethod.Get, new Uri(expected.Url));
+        if (have > 0)
+        {
+            request.Headers.Range = new RangeHeaderValue(have, null);
+        }
+
+        using HttpResponseMessage response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        bool resumed = have > 0 && response.StatusCode == HttpStatusCode.PartialContent;
+        if (!resumed)
+        {
+            have = 0;
+        }
+
+        await using Stream source = await response.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
+        await using FileStream target = new(part, resumed ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, 1 << 16, useAsync: true);
+        byte[] buffer = new byte[1 << 20];
+        int read;
+        while ((read = await source.ReadAsync(buffer, cancellation).ConfigureAwait(false)) > 0)
+        {
+            await target.WriteAsync(buffer.AsMemory(0, read), cancellation).ConfigureAwait(false);
+            have += read;
+            speed.Add(read);
+            progress?.Report(new DownloadProgress(label, before + have, total, DownloadStage.Downloading, speed.BytesPerSecond));
+        }
+    }
+
+    private static IEnumerable<ManifestModel> Selected(ModelManifest manifest, IReadOnlyCollection<string>? models) =>
+        models is null ? manifest.Models : manifest.Models.Where(m => models.Contains(m.Name));
+
+    private static IEnumerable<(string Path, string Label, ManifestFile Expected)> Files(ModelManifest manifest, string root, IReadOnlyCollection<string>? models)
+    {
+        foreach (ManifestModel model in Selected(manifest, models))
         {
             if (model.Variants.TryGetValue(Variant, out ManifestFile? onnx))
             {
@@ -206,6 +298,12 @@ public static class ModelDownloads
             // After the ONNX file, so a model folder never holds a meta.json without its variant.
             yield return (Path.Combine(root, model.Name, "meta.json"), $"{model.Name}/meta.json", model.Meta);
         }
+    }
+
+    private static long PartialBytes(string path)
+    {
+        FileInfo part = new(path + ".part");
+        return part.Exists ? part.Length : 0;
     }
 
     private static bool Present(string path, string label, ManifestFile expected, IReadOnlyList<string>? elsewhere) =>
@@ -221,5 +319,30 @@ public static class ModelDownloads
 
         using FileStream stream = file.OpenRead();
         return Convert.ToHexStringLower(SHA256.HashData(stream)) == expected.Sha256;
+    }
+
+    /// <summary>The recent speed: bytes over the last few seconds, so a stall shows and a burst does not mislead.</summary>
+    private sealed class Speed
+    {
+        private static readonly TimeSpan Window = TimeSpan.FromSeconds(4);
+        private readonly Stopwatch clock = Stopwatch.StartNew();
+        private readonly Queue<(TimeSpan At, long Bytes)> samples = new();
+        private long inWindow;
+
+        public double BytesPerSecond { get; private set; }
+
+        public void Add(long bytes)
+        {
+            TimeSpan now = clock.Elapsed;
+            samples.Enqueue((now, bytes));
+            inWindow += bytes;
+            while (samples.Count > 1 && now - samples.Peek().At > Window)
+            {
+                inWindow -= samples.Dequeue().Bytes;
+            }
+
+            double seconds = (now - samples.Peek().At).TotalSeconds;
+            BytesPerSecond = seconds > 0.5 ? inWindow / seconds : 0;
+        }
     }
 }

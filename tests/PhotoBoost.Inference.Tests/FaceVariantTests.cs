@@ -38,4 +38,24 @@ public sealed class FaceVariantTests : IDisposable
 
         Assert.Equal(expected, FaceRestore.VariantFor(library, asked));
     }
+
+    // PB58: the first use downloads RMBG's FP32, so a Standard-quality run loads it when no FP16 is here.
+    [Theory]
+    [InlineData(new[] { "fp32" }, "fp16", "fp32")]
+    [InlineData(new[] { "fp16", "fp32" }, "fp16", "fp16")]
+    [InlineData(new[] { "fp16" }, "fp32", "fp32")]
+    public void BackgroundRemovalRunsTheFp32ItDownloadedWhenTheAskedVariantIsAbsent(string[] onDisk, string asked, string expected)
+    {
+        string folder = Path.Combine(root, RemoveBackground.Model);
+        Directory.CreateDirectory(folder);
+        File.Copy(Path.Combine(Repository.Root, "scripts", "meta.example.json"), Path.Combine(folder, "meta.json"));
+        foreach (string variant in onDisk)
+        {
+            File.WriteAllBytes(Path.Combine(folder, variant + ".onnx"), [0]);
+        }
+
+        using ModelLibrary library = new([root], new ProviderSelection(ExecutionProvider.DirectML, new GpuAdapter(0, "GPU", 8L << 30), null));
+
+        Assert.Equal(expected, RemoveBackground.VariantFor(library, asked));
+    }
 }

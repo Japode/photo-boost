@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- PB58: the pinned manifest publish-models.py wrote, so sizes and hashes are known offline. -->
+    <EmbeddedResource Include="models-manifest.json" LogicalName="PhotoBoost.Inference.models-manifest.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The tests write ProbeModel to disk to load a real session without a downloaded model. -->
     <InternalsVisibleTo Include="PhotoBoost.Inference.Tests" />
   </ItemGroup>
