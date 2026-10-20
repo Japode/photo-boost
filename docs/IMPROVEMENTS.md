@@ -86,21 +86,6 @@ Left, and waiting on the owner:
 - An explicit optimization profile (nv_profile_min/opt/max_shapes, at the tile sizes PB41
   picks) may let the three build: SCUNet's error says the default kOPT shape breaks a reshape.
 
-### §PB56 Video memory budget refused
-
-Found running the suite on the VMware guest (2026-10-20). TileSizerTests'
-EveryGpuOnThisDeskReportsAFreeBudget threw SharpGenException 0x8876086A from
-IDXGIAdapter3.QueryVideoMemoryInfo in MemoryBudget.FreeVideoMemory: the guest's VMware
-SVGA adapter answers DXGI_ERROR_NOT_CURRENTLY_AVAILABLE (or a sibling) rather than a
-budget. The same call runs before every tiled operation (TiledModel), so on such a GPU
-an upscale or a denoise throws instead of starting.
-
-What to build: FreeVideoMemory catches SharpGenException (and a failed QueryInterface
-for IDXGIAdapter3) and answers 0, which TiledModel already reads as "unknown" and
-answers with meta.json's recommended tile. Keep the test, which then holds on the guest
-too; add one that feeds Free an adapter index DXGI does not have and expects 0, not a
-throw.
-
 ## Block D — Editor: comparison, history and quality modes
 
 ### §PB29 Quality mode selector

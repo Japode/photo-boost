@@ -73,10 +73,20 @@ public static class MemoryBudget
             }
 
             using (adapter)
-            using (IDXGIAdapter3 adapter3 = adapter.QueryInterface<IDXGIAdapter3>())
             {
-                QueryVideoMemoryInfo info = adapter3.QueryVideoMemoryInfo(0, MemorySegmentGroup.Local);
-                return Math.Max(0, (long)info.Budget - (long)info.CurrentUsage);
+                // PB56: VMware's SVGA adapter answers 0x8876086A instead of a budget, and a driver
+                // without IDXGIAdapter3 cannot be asked at all. Either is "unknown", which
+                // TiledModel answers with meta.json's recommended tile rather than a crash.
+                try
+                {
+                    using IDXGIAdapter3 adapter3 = adapter.QueryInterface<IDXGIAdapter3>();
+                    QueryVideoMemoryInfo info = adapter3.QueryVideoMemoryInfo(0, MemorySegmentGroup.Local);
+                    return Math.Max(0, (long)info.Budget - (long)info.CurrentUsage);
+                }
+                catch (SharpGen.Runtime.SharpGenException)
+                {
+                    return 0;
+                }
             }
         }
     }

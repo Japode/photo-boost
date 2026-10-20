@@ -47,6 +47,7 @@
 - ✅ **PB43** **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — --provider winml runs on Windows ML's TensorRT-RTX or OpenVINO and fetches missing ones; auto stays DirectML (design recorded in `src/PhotoBoost.Inference/WindowsMLProviders.cs`).
 - ✅ **PB52 (engine cache)** **TensorRT-RTX builds its engine for 10 to 17 s at every session creation, so auto cannot prefer it** — Windows ML sessions load a cached TensorRT-RTX engine: the first upscale in a new process takes 1.8 s instead of 8.1 s.
 - ✅ **PB55** **On --provider winml, 2x upscale, denoise and refined background removal fail, and engines build inside the first run** — Windows ML builds its engines in the background at startup, and models TensorRT-RTX cannot build run on DirectML instead of failing.
+- ✅ **PB56** **A tiled operation throws on a GPU whose DXGI driver answers no video memory budget, as VMware's does** — A GPU that refuses the video memory query reads as unknown, so tiled operations start from the recommended tile; all C# suites pass on the VMware guest.
 
 ## Block D — Editor: comparison, history and quality modes
 

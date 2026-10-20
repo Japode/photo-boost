@@ -11,8 +11,6 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB56** (deps: —) **A tiled operation throws on a GPU whose DXGI driver answers no video memory budget, as VMware's does** — MemoryBudget.Free lets QueryVideoMemoryInfo's 0x8876086A through, so upscale and denoise fail where the recommended tile would run. → §PB56
-
 ## Block D — Editor: comparison, history and quality modes
 
 - 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between the bundled FP16 models and the downloaded FP32 High quality set** — High quality, and on a CPU speed too, comes from FP32, so the reader needs a way to pick it once it is downloaded. → §PB29

@@ -47,11 +47,17 @@ public sealed class TileSizerTests
         Assert.True(MemoryBudget.Free(new ProviderSelection(ExecutionProvider.Cpu, null, null)) > 0);
 
     [Fact]
-    public void EveryGpuOnThisDeskReportsAFreeBudget()
+    public void EveryGpuOnThisDeskAnswersABudgetOrUnknownAndNeverThrows()
     {
+        // PB56: VMware's adapter refuses the query (0x8876086A); 0 is "unknown", and the run then
+        // starts from meta.json's recommended tile.
         foreach (GpuAdapter adapter in GpuAdapters.Enumerate())
         {
-            Assert.True(MemoryBudget.Free(new ProviderSelection(ExecutionProvider.DirectML, adapter, null)) > 0, adapter.Name);
+            Assert.True(MemoryBudget.Free(new ProviderSelection(ExecutionProvider.DirectML, adapter, null)) >= 0, adapter.Name);
         }
     }
+
+    [Fact]
+    public void AnAdapterDxgiDoesNotHaveIsUnknown() =>
+        Assert.Equal(0, MemoryBudget.Free(new ProviderSelection(ExecutionProvider.DirectML, new GpuAdapter(99, "absent", 1L << 30), null)));
 }
