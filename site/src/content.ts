@@ -339,13 +339,13 @@ const en: Words = {
     eyebrow: "Download",
     title: "PhotoBoost for Windows.",
     status: "Available",
-    body: "The installer carries the AI models, so PhotoBoost works offline from the first time you open it. A high-quality set, also faster on a PC without a graphics card, is an optional download from the app's About screen.",
+    body: "A 170 MB installer: upscaling and noise removal work offline from the first time you open it. Face restoration and background removal download their AI models the first time you use them, after telling you the size, the source and the license, and from then on they work offline too. Your photo is never uploaded. A high-quality set, also faster on a PC without a graphics card, is an optional download from the app's About screen.",
     cta: "Download the latest release",
     requirements: [
       "Windows 10 (1903 or later) or Windows 11, 64-bit",
       "A DirectX 12 graphics card to use the GPU; without one, it runs on the processor",
       "Per-user install, no administrator needed",
-      "The AI models come in the installer and stay on your PC",
+      "An internet connection the first time you restore faces or remove a background; the models then stay on your PC",
     ],
     licensesTitle: "About the models' licenses",
     licenses:
@@ -528,13 +528,13 @@ const pt: Words = {
     eyebrow: "Baixar",
     title: "PhotoBoost para Windows.",
     status: "Disponível",
-    body: "O instalador já traz os modelos de IA, então o PhotoBoost funciona offline desde a primeira vez que você abre. Um conjunto de alta qualidade, também mais rápido num PC sem placa de vídeo, é um download opcional na tela Sobre do app.",
+    body: "Um instalador de 170 MB: ampliar e remover ruído funcionam offline desde a primeira vez que você abre. Restaurar rostos e remover o fundo baixam seus modelos de IA na primeira vez que você usa, depois de mostrar o tamanho, a origem e a licença, e a partir daí também funcionam offline. Sua foto nunca é enviada. Um conjunto de alta qualidade, também mais rápido num PC sem placa de vídeo, é um download opcional na tela Sobre do app.",
     cta: "Baixar a versão mais recente",
     requirements: [
       "Windows 10 (1903 ou mais novo) ou Windows 11, 64 bits",
       "Placa de vídeo com DirectX 12 para usar a GPU; sem ela, roda no processador",
       "Instalação por usuário, sem precisar de administrador",
-      "Os modelos de IA vêm no instalador e ficam no seu PC",
+      "Conexão com a internet na primeira vez que você restaura rostos ou remove um fundo; depois os modelos ficam no seu PC",
     ],
     licensesTitle: "Sobre as licenças dos modelos",
     licenses:
