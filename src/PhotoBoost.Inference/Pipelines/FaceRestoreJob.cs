@@ -51,7 +51,7 @@ public static class FaceRestoreJob
                         DateTimeOffset.Now,
                         operation,
                         FaceRestore.Model,
-                        variant,
+                        FaceRestore.VariantFor(library, variant),
                         library.Provider.Name,
                         library.Provider.Adapter?.Name,
                         image.Width,

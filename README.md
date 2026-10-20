@@ -24,7 +24,7 @@ e o resultado pode ser comparado com o original, desfeito e exportado em PNG, JP
   cerca de 1,1 GB para blocos de 128 px, 3,1 GB para 256 px e 6,2 GB para 384 px. Com menos
   memória o bloco só fica menor, e uma falta de memória no meio da execução tenta de novo com
   blocos menores e depois na CPU.
-- **Espaço em disco:** cerca de 450 MB para os modelos que acompanham o instalador.
+- **Espaço em disco:** cerca de 610 MB para os modelos que acompanham o instalador.
 
 ## Instalar
 
@@ -168,9 +168,10 @@ O que a tabela mostra:
 
 - **O FP16 tem metade do tamanho e, fora um caso, a mesma imagem:** de 59,7 a 84,8 dB contra o
   FP32, SSIM de 0,9999 ou mais.
-- **A exceção é o GFPGAN em FP16 no DirectML, que hoje sai errado** (12,7 dB): os rostos viram
-  um quadrado liso. Na CPU o mesmo arquivo está certo. A correção está registrada no roadmap
-  como PB54; até lá, no DirectML, use a alta qualidade para restaurar rostos.
+- **A exceção é o GFPGAN em FP16 no DirectML, que sai errado** (12,7 dB): os rostos viram um
+  quadrado liso. Na CPU o mesmo arquivo está certo. Por isso o instalador traz o GFPGAN em FP32,
+  e numa GPU o aplicativo restaura rostos com ele mesmo no modo padrão. A linha da tabela foi
+  medida antes dessa troca; medida de novo, ela mostra o FP32 que o aplicativo usa.
 - **Na CPU o FP32 é mais rápido** na ampliação e na restauração de rostos (2,8× na ampliação 4×);
   é o que o download do conjunto FP32 resolve. No DirectML as duas variantes têm tempos
   próximos, fora a remoção de ruído, e o FP16 usa menos memória de vídeo.

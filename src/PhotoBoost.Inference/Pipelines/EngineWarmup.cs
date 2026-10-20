@@ -28,7 +28,7 @@ public static class EngineWarmup
             new(Upscale.ModelFor(4), variant),
             new(Upscale.ModelFor(2), variant),
             new(FaceDetection.Model, "fp32"),
-            new(FaceRestore.Model, variant),
+            new(FaceRestore.Model, FaceRestore.VariantFor(library, variant)),
             new(RemoveBackground.Model, variant),
             new(Denoise.Model, variant),
         ];

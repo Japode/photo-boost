@@ -47,9 +47,32 @@ public static class FaceRestore
             : Upscale.Run(library, image, upscale, variant, progress: (done, total) => progress?.Invoke(UpscaleJob.Stage, done, total));
         Face[] faces = [.. found.Select(face => Scaled(face, target.Width / (double)image.Width))];
 
-        using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, variant));
+        using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, VariantFor(library, variant)));
         Restore(target, faces, side, meta, crop => RunCrop(lease.Session, meta, crop, side), strength, (done, total) => progress?.Invoke(Stage, done, total));
         return new(target, faces.Length);
+    }
+
+    /// <summary>
+    /// The GFPGAN variant a run asked for in <paramref name="variant"/> actually runs in (PB54): FP32
+    /// on a GPU whenever it is on disk, and FP32 wherever the variant asked for is not. GFPGAN's
+    /// fp16.onnx on DirectML returns a nearly flat image (-0.46 to -0.16 on Adele_crop.png, 12.7 dB
+    /// against FP32 on Blake_Lively.jpg) at every graph optimization level, and keeping Pow,
+    /// ReduceSum, Sqrt, Div, Mul, Gemm, Tile, Resize or Conv in FP32 left it at 12.7 dB; the CPU
+    /// runs the same file at 75 dB. So the installer carries GFPGAN's FP32 (build\stage-models.ps1).
+    /// </summary>
+    /// <param name="library">The models and the provider they run on.</param>
+    /// <param name="variant">The variant the operation runs in.</param>
+    /// <returns>The variant to load.</returns>
+    public static string VariantFor(ModelLibrary library, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(library);
+        bool onGpu = library.Provider.Provider != ExecutionProvider.Cpu;
+        if (library.Has(Model, "fp32") && ((onGpu && variant == "fp16") || !library.Has(Model, variant)))
+        {
+            return "fp32";
+        }
+
+        return variant;
     }
 
     /// <summary>

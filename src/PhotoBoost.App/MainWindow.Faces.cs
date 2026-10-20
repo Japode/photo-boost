@@ -16,9 +16,11 @@ public partial class MainWindow
     /// <summary>Enables Restore faces only with an image, every model it needs, and nothing running.</summary>
     private void RefreshFaces()
     {
+        // PB54: GFPGAN may run in another variant than the panel's, so the note names that one.
+        string restorer = FaceRestore.VariantFor(library!, Variant);
         (string, string)[] needed = FaceUpscaleFactor == 1
-            ? [(FaceDetection.Model, "fp32"), (FaceRestore.Model, Variant)]
-            : [(FaceDetection.Model, "fp32"), (FaceRestore.Model, Variant), (Upscale.ModelFor(Factor), Variant)];
+            ? [(FaceDetection.Model, "fp32"), (FaceRestore.Model, restorer)]
+            : [(FaceDetection.Model, "fp32"), (FaceRestore.Model, restorer), (Upscale.ModelFor(Factor), Variant)];
         string? missing = Missing(needed);
         FaceNote.Text = missing ?? string.Empty;
         FaceNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;

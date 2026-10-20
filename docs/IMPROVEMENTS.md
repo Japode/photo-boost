@@ -60,26 +60,6 @@ a file that fails its hash is deleted, never loaded. When the app runs on the CP
 suggests the download, because FP16 there takes about twice FP32's time (PB51's
 measurements). Later launches only re-check presence and hashes.
 
-### §PB54 GFPGAN FP16 on DirectML
-
-Found by PB34's benchmark on 2026-10-20 (tools\PhotoBoost.Bench, RTX 4060). GFPGAN
-v1.4's fp16.onnx on DirectML pastes a flat brown square over each face of
-Blake_Lively.jpg: 12.7 dB PSNR and SSIM 0.62 against FP32 on the same provider. On the
-CPU the same file is right (76.8 dB), and so is FP32 on DirectML. Since PB51 FP16 is the
-default set the installer carries, so face restore is broken on every DirectML PC.
-
-Likely cause: an FP16 overflow in the StyleGAN2 decoder, whose modulated convolutions
-square, sum and take the inverse square root of the style-scaled weights (demodulation);
-the CPU provider computes those ops in FP32 internally and DirectML does not. The ORT
-log also says the decoder's constant_input Tile has no CPU kernel to fold.
-
-What to build: in export-and-quantize.py, convert GFPGAN to FP16 with the demodulation
-kept in FP32 (onnxconverter_common's node_block_list or op_block_list on the ReduceSum,
-Pow, Sqrt and Reciprocal nodes of each modulated conv), and add a DirectML check: PB10's
-validation runs on the CPU only, which is how this shipped. If no block list holds the
-quality at 40 dB on DirectML, bundle GFPGAN's fp32.onnx instead (+162 MB) as
-stage-models.ps1 does for ViTMatte. Re-run the benchmark and update the README's table.
-
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ### §PB52 TensorRT-RTX engine reuse

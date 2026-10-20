@@ -8,7 +8,7 @@
 # (PB10) and as fast on DirectML (SCUNet 132 against 126 ms per 256 px tile). INT8 was slower than
 # FP32 on the GPU and lost 29 to 33 dB, so it is not shipped. On the CPU FP16 takes about twice
 # FP32's time (Real-ESRGAN x4 2404 against 1141 ms at 128 px), which the FP32 download (PB13) answers.
-# Staged on 2026-10-20: 446 MB of models, a 475 MB installer.
+# Staged on 2026-10-20: 446 MB of models, a 475 MB installer; 608 MB of models once GFPGAN went FP32 (PB54).
 #
 #   powershell -NoProfile -File build\stage-models.ps1 -Out artifacts\publish\models
 
@@ -26,6 +26,11 @@ $required = @(
     'rmbg-1.4', 'vitmatte-small-composition-1k', 'scunet-color-real-psnr'
 )
 
+# PB54: models staged as FP32 although they have an FP16. GFPGAN's fp16.onnx comes out of DirectML
+# as a flat square over each face (12.7 dB against FP32), and FaceRestore.VariantFor runs FP32 on
+# a GPU; +162 MB.
+$fp32Only = @('gfpgan-v1.4')
+
 if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
 New-Item -ItemType Directory -Force $Out | Out-Null
 
@@ -37,7 +42,7 @@ foreach ($name in $required) {
         throw "$name has no meta.json in $Models; run scripts\download_models.py and scripts\export-and-quantize.py"
     }
     $meta = Get-Content -Raw -Encoding UTF8 $metaPath | ConvertFrom-Json
-    $variant = if ($meta.variants.PSObject.Properties.Name -contains 'fp16') { 'fp16' } else { 'fp32' }
+    $variant = if ($fp32Only -notcontains $name -and $meta.variants.PSObject.Properties.Name -contains 'fp16') { 'fp16' } else { 'fp32' }
     $described = $meta.variants.$variant
     $source = Join-Path $folder $described.file
     if (-not (Test-Path $source)) { throw "$name lists $($described.file) in meta.json but $source is missing" }
