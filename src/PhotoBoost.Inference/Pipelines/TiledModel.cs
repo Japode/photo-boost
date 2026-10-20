@@ -33,7 +33,7 @@ internal static class TiledModel
             tile = free > 0
                 ? TileSizer.Choose(free, meta.Tile.LargestActivationBytesPerPixel, overlap)
                 : meta.Tile.Recommended ?? Tiler.DefaultTile;
-            log?.Invoke($"Tile {tile} px from {free / 1048576.0:0} MB free on {library.Provider.Provider}.");
+            log?.Invoke($"Tile {tile} px from {free / 1048576.0:0} MB free on {library.Provider.Name}.");
         }
 
         TileOptions options = new(

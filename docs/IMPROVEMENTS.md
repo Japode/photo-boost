@@ -72,22 +72,30 @@ from the installed folder are the check.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB43 Windows ML providers
+### §PB52 TensorRT-RTX engine reuse
 
-The PB5 spike (spike/onnx-runtime/README.md) ran Microsoft.Windows.AI.MachineLearning
-2.1.74 unpackaged and self-contained, with no Windows App SDK: PREFER_GPU picked NVIDIA
-TensorRT-RTX at 2.4 ms against DirectML's 5.5 to 12 ms on the same model. The owner
-approved it on 2026-10-20 as optional, not a switch: DirectML stays the default and
-Windows ML is used where the PC supports it, with both behind PB14's provider choice.
+PB43 measured TensorRT-RTX on the RTX 4060 desk with Real-ESRGAN x4 on 0014.jpg: a tile
+in 112 ms against DirectML's 324 ms at FP16 (252 against 232 ms at FP32), but session
+creation builds the engine for 10 to 17 s, so the first upscale took 16 to 20 s against
+DirectML's 3 to 6 s. PB16 releases a session idle for 5 minutes, which pays the build
+again. That is why auto stays on DirectML and Windows ML is behind --provider winml
+(src/PhotoBoost.Inference/WindowsMLProviders.cs holds the numbers).
 
-Once approved: swap the DirectML package for Windows ML behind PB14's provider
-abstraction, target net10.0-windows10.0.19041.0, call EnsureAndRegisterCertifiedAsync
-and let SetEpSelectionPolicy(PREFER_GPU) choose, reporting the EP it picked. Three
-questions decide the details. The first run took 57 s while Windows Update fetched the
-providers, so it needs progress and must not block an offline start (DirectML and CPU
-stay available meanwhile). TensorRT-RTX differed from CPU by 2e-3, which PB10's quality
-threshold must accept. And TensorRT-RTX builds its engine at session creation (about 0.5
-s on the tiny model), so PB16's idle release costs that again.
+The runtime cache (nv_runtime_cache_path) was tried and is not the answer: it cut a new
+tile shape from 3.7 s to 0.8 s and left session creation at 10 to 17 s.
+
+What to build: ONNX Runtime's EP context model. Create the session once with
+ep.context_enable=1 and ep.context_file_path under %LOCALAPPDATA%\PhotoBoost\engines,
+keyed by model, variant, GPU (DXGI LUID or device id), driver version and ORT version,
+and load that _ctx.onnx afterwards instead of the plain model. A key that no longer
+matches is rebuilt, never trusted. Measure session creation from the context model; if
+it falls under DirectML's, auto tries TensorRT-RTX first (ProviderDetector), with
+DirectML still the fallback. The first build should happen in the background after the
+first launch, not inside a user's first upscale.
+
+Open question: whether the tiles' fixed side (PB41 picks 128 to 1024) lets an explicit
+optimization profile (nv_profile_min/opt/max_shapes) shorten the build; the EP warns
+that it assumed a fully dynamic profile.
 
 ## Block D — Editor: comparison, history and quality modes
 

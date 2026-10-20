@@ -35,7 +35,7 @@ set "BROKEN="
 rem The *.Tests folders and the winwright UI cases (PB38), which skip on a desk that cannot be
 rem observed; tests\fixtures holds data and is not a test application.
 for /d %%P in (tests\*.Tests tests\*.Cases) do (
-    set "APP=%%P\bin\%CONFIG%\net10.0-windows\%%~nxP.exe"
+    set "APP=%%P\bin\%CONFIG%\net10.0-windows10.0.19041.0\%%~nxP.exe"
     echo.
     echo === %%~nxP ===
     if exist "!APP!" (

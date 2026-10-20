@@ -90,6 +90,31 @@ public partial class MainWindow : Window
         Provider = selection;
         ProviderStatus.Text = selection.Label;
         StartOperations(selection);
+        if (Options.Provider == ProviderPreference.WindowsML)
+        {
+            await AcquireWindowsMLAsync(selection).ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// Fetches the Windows ML providers this PC could use and does not have yet (PB43), once the
+    /// window already works on what it has: the first fetch took 57 s through Windows Update in the
+    /// PB5 spike, and offline it simply fails. They are used from the next start.
+    /// </summary>
+    private async Task AcquireWindowsMLAsync(ProviderSelection selection)
+    {
+        IReadOnlyList<string> missing = await Task.Run(WindowsMLProviders.Missing).ConfigureAwait(true);
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        string names = string.Join(", ", missing.Select(WindowsMLDevice.ShortName));
+        ProviderStatus.Text = $"{selection.Label} · fetching {names}…";
+        string? failure = await Task.Run(WindowsMLProviders.AcquireAsync).ConfigureAwait(true);
+        ProviderStatus.Text = failure is null
+            ? $"{selection.Label} · {names} ready from the next start"
+            : $"{selection.Label} · {names} not fetched: {failure}";
     }
 
     private async void OnOpenClick(object sender, RoutedEventArgs e)

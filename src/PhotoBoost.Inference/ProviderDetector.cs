@@ -9,14 +9,17 @@ public enum ExecutionProvider
     /// <summary>ONNX Runtime's CPU provider, always available.</summary>
     Cpu,
 
-    /// <summary>DirectML on a DX12 GPU (Microsoft.ML.OnnxRuntime.DirectML, chosen by the PB5 spike).</summary>
+    /// <summary>DirectML on a DX12 GPU, which Windows ML's ONNX Runtime carries (PB5).</summary>
     DirectML,
+
+    /// <summary>A provider Windows ML installed for this PC's GPU, e.g. TensorRT-RTX or OpenVINO (PB43).</summary>
+    WindowsML,
 }
 
 /// <summary>What the user or a command-line flag asked for.</summary>
 public enum ProviderPreference
 {
-    /// <summary>The best that works: DirectML, then CPU.</summary>
+    /// <summary>DirectML, then CPU: the default, which needs nothing from Windows Update (PB43).</summary>
     Auto,
 
     /// <summary>DirectML, falling back to CPU only if it cannot run.</summary>
@@ -24,65 +27,97 @@ public enum ProviderPreference
 
     /// <summary>CPU, without trying a GPU.</summary>
     Cpu,
+
+    /// <summary>A Windows ML provider (PB43), else what Auto picks.</summary>
+    WindowsML,
 }
 
 /// <summary>The provider chosen, and why the others were not.</summary>
 /// <param name="Provider">The provider every session will use.</param>
-/// <param name="Adapter">The GPU, when the provider is DirectML.</param>
+/// <param name="Adapter">The GPU it runs on, when known.</param>
 /// <param name="Fallback">Why a GPU was asked for and not used, or null.</param>
-public sealed record ProviderSelection(ExecutionProvider Provider, GpuAdapter? Adapter, string? Fallback)
+/// <param name="Accelerator">The Windows ML provider's ONNX Runtime name, for <see cref="ExecutionProvider.WindowsML"/>.</param>
+public sealed record ProviderSelection(ExecutionProvider Provider, GpuAdapter? Adapter, string? Fallback, string? Accelerator = null)
 {
+    /// <summary>The provider as the log and the status bar name it: DirectML, Cpu, or e.g. TensorRT-RTX.</summary>
+    public string Name => Provider == ExecutionProvider.WindowsML && Accelerator is not null
+        ? WindowsMLDevice.ShortName(Accelerator)
+        : Provider.ToString();
+
     /// <summary>What the status bar shows, e.g. "DirectML · NVIDIA GeForce RTX 4060, 8 GB".</summary>
-    public string Label => Provider == ExecutionProvider.DirectML && Adapter is not null
-        ? $"DirectML · {Adapter.Label}"
-        : Fallback is null ? "CPU" : $"CPU (GPU unavailable: {Fallback})";
+    public string Label => Provider switch
+    {
+        ExecutionProvider.Cpu => Fallback is null ? "CPU" : $"CPU (GPU unavailable: {Fallback})",
+        _ when Adapter is not null => $"{Name} · {Adapter.Label}",
+        _ => Name,
+    };
 }
 
 /// <summary>Runs the probe model on one provider; true when it ran, with the failure otherwise.</summary>
 public interface IProviderProbe
 {
     /// <summary>Tries a provider.</summary>
-    /// <param name="provider">The provider.</param>
-    /// <param name="adapter">The GPU for DirectML, null for CPU.</param>
+    /// <param name="candidate">The provider, its GPU and, for Windows ML, its accelerator.</param>
     /// <param name="error">Why it failed, when it did.</param>
     /// <returns>Whether a session ran the probe model.</returns>
-    bool TryRun(ExecutionProvider provider, GpuAdapter? adapter, out string? error);
+    bool TryRun(ProviderSelection candidate, out string? error);
 }
 
 /// <summary>
 /// Picks the execution provider once at startup (PB14): DirectML on the GPU with the most video
-/// memory when a probe session runs there, else CPU. Never throws for a GPU that will not run;
-/// that is a fallback with its reason, shown to the user.
+/// memory when a probe session runs there, else CPU. Asked for Windows ML (PB43), a provider it has
+/// already installed for this PC comes first. Never throws for a GPU that will not run; that is a
+/// fallback with its reason, shown to the user.
 /// </summary>
 public static class ProviderDetector
 {
-    /// <summary>Detects with the real GPUs and the real probe.</summary>
+    /// <summary>Detects with the real GPUs, the Windows ML providers already present and the real probe.</summary>
     /// <param name="preference">What was asked for.</param>
     /// <returns>The selection.</returns>
     public static ProviderSelection Detect(ProviderPreference preference) =>
-        Detect(preference, GpuAdapters.Enumerate(), new OnnxRuntimeProbe());
+        Detect(
+            preference,
+            GpuAdapters.Enumerate(),
+            preference == ProviderPreference.WindowsML ? WindowsMLProviders.Devices() : [],
+            new OnnxRuntimeProbe());
 
-    /// <summary>Detects against the given GPUs and probe.</summary>
+    /// <summary>Detects against the given GPUs, Windows ML devices and probe.</summary>
     /// <param name="preference">What was asked for.</param>
     /// <param name="adapters">The GPUs to consider.</param>
+    /// <param name="accelerators">The Windows ML providers registered with ONNX Runtime, best first.</param>
     /// <param name="probe">How a provider is tried.</param>
     /// <returns>The selection.</returns>
-    public static ProviderSelection Detect(ProviderPreference preference, IReadOnlyList<GpuAdapter> adapters, IProviderProbe probe)
+    public static ProviderSelection Detect(
+        ProviderPreference preference, IReadOnlyList<GpuAdapter> adapters, IReadOnlyList<WindowsMLDevice> accelerators, IProviderProbe probe)
     {
         ArgumentNullException.ThrowIfNull(adapters);
+        ArgumentNullException.ThrowIfNull(accelerators);
         ArgumentNullException.ThrowIfNull(probe);
 
         string? fallback = null;
+        if (preference == ProviderPreference.WindowsML)
+        {
+            foreach (WindowsMLDevice device in accelerators)
+            {
+                ProviderSelection candidate = new(ExecutionProvider.WindowsML, device.AdapterIn(adapters), null, device.EpName);
+                if (probe.TryRun(candidate, out _))
+                {
+                    return candidate;
+                }
+            }
+        }
+
         if (preference != ProviderPreference.Cpu)
         {
             GpuAdapter? best = GpuAdapters.Best(adapters);
+            ProviderSelection directML = new(ExecutionProvider.DirectML, best, null);
             if (best is null)
             {
                 fallback = "no DirectX 12 GPU found";
             }
-            else if (probe.TryRun(ExecutionProvider.DirectML, best, out string? error))
+            else if (probe.TryRun(directML, out string? error))
             {
-                return new ProviderSelection(ExecutionProvider.DirectML, best, null);
+                return directML;
             }
             else
             {
@@ -90,12 +125,12 @@ public static class ProviderDetector
             }
         }
 
-        return probe.TryRun(ExecutionProvider.Cpu, null, out string? cpuError)
+        return probe.TryRun(new ProviderSelection(ExecutionProvider.Cpu, null, null), out string? cpuError)
             ? new ProviderSelection(ExecutionProvider.Cpu, null, fallback)
             : throw new InvalidOperationException($"ONNX Runtime cannot run on the CPU: {cpuError}");
     }
 
-    /// <summary>Reads a --provider value: auto, dml (or directml) or cpu.</summary>
+    /// <summary>Reads a --provider value: auto, dml (or directml), winml or cpu.</summary>
     /// <param name="value">The flag's value.</param>
     /// <param name="preference">The preference it names.</param>
     /// <returns>Whether the value was one of those.</returns>
@@ -105,6 +140,7 @@ public static class ProviderDetector
         {
             "AUTO" => ProviderPreference.Auto,
             "DML" or "DIRECTML" or "GPU" => ProviderPreference.DirectML,
+            "WINML" or "WINDOWSML" => ProviderPreference.WindowsML,
             "CPU" => ProviderPreference.Cpu,
             _ => (ProviderPreference)(-1),
         };
@@ -116,20 +152,25 @@ public static class ProviderDetector
 public static class SessionOptionsFactory
 {
     /// <summary>Options for the selected provider; the caller disposes them.</summary>
-    /// <param name="provider">The provider.</param>
-    /// <param name="adapter">The GPU for DirectML.</param>
+    /// <param name="selection">The provider, its GPU and its accelerator.</param>
     /// <returns>The options.</returns>
-    public static SessionOptions Create(ExecutionProvider provider, GpuAdapter? adapter)
+    public static SessionOptions Create(ProviderSelection selection)
     {
+        ArgumentNullException.ThrowIfNull(selection);
         SessionOptions options = new();
         try
         {
-            if (provider == ExecutionProvider.DirectML)
+            switch (selection.Provider)
             {
-                // DirectML runs neither with memory patterns nor with parallel execution.
-                options.EnableMemoryPattern = false;
-                options.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
-                options.AppendExecutionProvider_DML(adapter?.Index ?? 0);
+                case ExecutionProvider.DirectML:
+                    // DirectML runs neither with memory patterns nor with parallel execution.
+                    options.EnableMemoryPattern = false;
+                    options.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
+                    options.AppendExecutionProvider_DML(selection.Adapter?.Index ?? 0);
+                    break;
+                case ExecutionProvider.WindowsML:
+                    WindowsMLProviders.Append(options, selection);
+                    break;
             }
 
             return options;
@@ -148,13 +189,13 @@ public sealed class OnnxRuntimeProbe : IProviderProbe
     private static readonly byte[] Model = ProbeModel.Build();
 
     /// <inheritdoc/>
-    public bool TryRun(ExecutionProvider provider, GpuAdapter? adapter, out string? error)
+    public bool TryRun(ProviderSelection candidate, out string? error)
     {
         // The append is inside the try on purpose: the PB5 spike saw it throw 887A0004 on a GPU
         // that worked before and after, before any session existed.
         try
         {
-            using SessionOptions options = SessionOptionsFactory.Create(provider, adapter);
+            using SessionOptions options = SessionOptionsFactory.Create(candidate);
             using InferenceSession session = new(Model, options);
             DenseTensor<float> input = new([1, 3, 16, 16]);
             using IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results =
@@ -162,12 +203,7 @@ public sealed class OnnxRuntimeProbe : IProviderProbe
             error = null;
             return results.Count == 1;
         }
-        catch (OnnxRuntimeException failure)
-        {
-            error = failure.Message;
-            return false;
-        }
-        catch (DllNotFoundException failure)
+        catch (Exception failure) when (failure is OnnxRuntimeException or DllNotFoundException or InvalidOperationException)
         {
             error = failure.Message;
             return false;

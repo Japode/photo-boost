@@ -52,7 +52,7 @@ public static class UpscaleJob
                         operation,
                         stats.Model.Length > 0 ? stats.Model : Upscale.ModelFor(factor),
                         variant,
-                        library.Provider.Provider.ToString(),
+                        library.Provider.Name,
                         library.Provider.Adapter?.Name,
                         image.Width,
                         image.Height,

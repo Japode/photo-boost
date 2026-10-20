@@ -3,7 +3,8 @@
   <!-- The WPF shell, and the only assembly allowed to reference all three libraries. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- PhotoBoost.Inference's, which Windows ML sets (PB43). -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <RootNamespace>PhotoBoost.App</RootNamespace>
     <AssemblyName>PhotoBoost</AssemblyName>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

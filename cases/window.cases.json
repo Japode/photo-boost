@@ -42,6 +42,12 @@
       "name": "a window forced onto the CPU",
       "arguments": ["--provider", "cpu"],
       "shareable": true
+    },
+    {
+      // PB43: --provider winml, which asks for a provider Windows ML installed for this PC.
+      "name": "a window asked for Windows ML",
+      "arguments": ["--provider", "winml"],
+      "shareable": true
     }
   ],
 
@@ -95,6 +101,24 @@
           "reads": "name",
           "expect": "CPU",
           "named": "the provider chip says CPU and nothing else"
+        }
+      ]
+    },
+
+    {
+      // PB43: TensorRT-RTX on the RTX 4060 desk; a desk Windows ML has nothing for gets what auto picks.
+      "name": "--provider winml names the provider it ended up on",
+      "catches": "a Windows ML catalog that throws or hangs, leaving the chip on Detecting GPU",
+      "filed": "PB43",
+      "tags": ["smoke", "provider", "command-line"],
+      "fixture": "a window asked for Windows ML",
+      "steps": [
+        {
+          "locator": "Text#ProviderStatus",
+          "act": "read",
+          "reads": "name",
+          "matches": "^((TensorRT-RTX|OpenVINO|DirectML) · |CPU)",
+          "named": "the provider chip names a Windows ML provider, DirectML or CPU"
         }
       ]
     },

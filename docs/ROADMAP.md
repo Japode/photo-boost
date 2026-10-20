@@ -12,7 +12,7 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB43** (deps: PB14 ✅) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, and the owner approved Windows ML as an option beside it. → §PB43
+- 📋 **PB52** (deps: PB43 ✅) **TensorRT-RTX builds its engine for 10 to 17 s at every session creation, so auto cannot prefer it** — It ran FP16 tiles three times faster than DirectML on the RTX 4060, but its first upscale took 16 to 20 s against DirectML's 3 to 6 s. → §PB52
 
 ## Block D — Editor: comparison, history and quality modes
 

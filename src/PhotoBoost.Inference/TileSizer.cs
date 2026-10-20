@@ -55,7 +55,7 @@ public static class MemoryBudget
     public static long Free(ProviderSelection provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
-        return provider.Provider == ExecutionProvider.DirectML && provider.Adapter is { } adapter ? FreeVideoMemory(adapter.Index) : AvailableRam();
+        return provider.Provider != ExecutionProvider.Cpu && provider.Adapter is { } adapter ? FreeVideoMemory(adapter.Index) : AvailableRam();
     }
 
     private static long FreeVideoMemory(int index)

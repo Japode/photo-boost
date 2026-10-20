@@ -4,7 +4,7 @@
 
   // The Debug output under its RID: PhotoBoost.App sets win-x64 unconditionally and run-tests.cmd
   // builds Debug. CasesRun points a copy at another configuration when the suite is built in one.
-  "executable": "src/PhotoBoost.App/bin/Debug/net10.0-windows/win-x64/PhotoBoost.exe",
+  "executable": "src/PhotoBoost.App/bin/Debug/net10.0-windows10.0.19041.0/win-x64/PhotoBoost.exe",
 
   "sourceRoot": "src",
 

@@ -31,7 +31,8 @@ public sealed class CommandLineTests
     [InlineData("auto", ProviderPreference.Auto)]
     [InlineData("dml", ProviderPreference.DirectML)]
     [InlineData("cpu", ProviderPreference.Cpu)]
-    public void TheProviderFlagTakesItsThreeValues(string value, ProviderPreference expected) =>
+    [InlineData("winml", ProviderPreference.WindowsML)] // PB43
+    public void TheProviderFlagTakesItsFourValues(string value, ProviderPreference expected) =>
         Assert.Equal(expected, CommandLine.Parse(["--provider", value]).Options!.Provider);
 
     [Theory]
@@ -40,7 +41,7 @@ public sealed class CommandLineTests
     [InlineData(new[] { "--open" }, "--open needs a value")]
     [InlineData(new[] { "--open", "--models", "x" }, "--open needs a value")]
     [InlineData(new[] { "--export=" }, "--export needs a value")]
-    [InlineData(new[] { "--provider", "cuda" }, "not one of auto, dml, cpu")]
+    [InlineData(new[] { "--provider", "cuda" }, "not one of auto, winml, dml, cpu")]
     [InlineData(new[] { "--quality", "fast" }, "not one of compact, high")]
     [InlineData(new[] { "--open", "a.jpg", "--open", "b.jpg" }, "--open is given twice")]
     public void AnythingElseIsRefusedWithAMessage(string[] args, string message)

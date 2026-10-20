@@ -3,18 +3,23 @@ namespace PhotoBoost.Inference.Tests;
 /// <summary>
 /// PB14: the provider is DirectML on the GPU with the most video memory when the probe runs
 /// there, CPU otherwise, with the reason kept for the status bar. Never a crash for a GPU.
+/// PB43: a provider Windows ML installed for this PC comes before DirectML, on its vendor's GPU.
 /// </summary>
 public sealed class ProviderDetectorTests
 {
-    private static readonly GpuAdapter Integrated = new(1, "Intel UHD 770", 128L << 20);
-    private static readonly GpuAdapter Discrete = new(0, "NVIDIA RTX 4060", 8L << 30);
+    private const uint Nvidia = 0x10DE;
+    private const uint Intel = 0x8086;
+    private static readonly GpuAdapter Integrated = new(1, "Intel UHD 770", 128L << 20, Intel);
+    private static readonly GpuAdapter Discrete = new(0, "NVIDIA RTX 4060", 8L << 30, Nvidia);
+    private static readonly WindowsMLDevice TensorRT = new("NvTensorRTRTXExecutionProvider", Nvidia);
+    private static readonly WindowsMLDevice OpenVINO = new("OpenVINOExecutionProvider", Intel);
 
     [Fact]
     public void AutoPicksDirectMLOnTheAdapterWithTheMostVideoMemory()
     {
         FakeProbe probe = new(directMLWorks: true);
 
-        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto, [Integrated, Discrete], probe);
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto, [Integrated, Discrete], [], probe);
 
         Assert.Equal(ExecutionProvider.DirectML, selection.Provider);
         Assert.Equal(Discrete, selection.Adapter);
@@ -27,7 +32,7 @@ public sealed class ProviderDetectorTests
     {
         FakeProbe probe = new(directMLWorks: false);
 
-        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto, [Discrete], probe);
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto, [Discrete], [], probe);
 
         Assert.Equal(ExecutionProvider.Cpu, selection.Provider);
         Assert.Equal("887A0004", selection.Fallback);
@@ -37,7 +42,7 @@ public sealed class ProviderDetectorTests
     [Fact]
     public void NoGpuFallsBackToCpuAndSaysSo()
     {
-        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.DirectML, [], new FakeProbe(directMLWorks: true));
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.DirectML, [], [], new FakeProbe(directMLWorks: true));
 
         Assert.Equal(ExecutionProvider.Cpu, selection.Provider);
         Assert.Equal("no DirectX 12 GPU found", selection.Fallback);
@@ -46,24 +51,119 @@ public sealed class ProviderDetectorTests
     [Fact]
     public void CpuPreferenceNeverTriesTheGpu()
     {
-        FakeProbe probe = new(directMLWorks: true);
+        FakeProbe probe = new(directMLWorks: true, windowsMLWorks: true);
 
-        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Cpu, [Discrete], probe);
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Cpu, [Discrete], [TensorRT], probe);
 
         Assert.Equal(ExecutionProvider.Cpu, selection.Provider);
         Assert.Equal("CPU", selection.Label);
-        Assert.DoesNotContain(ExecutionProvider.DirectML, probe.Tried);
+        Assert.Equal([ExecutionProvider.Cpu], probe.Tried);
     }
 
     [Fact]
     public void ACpuThatCannotRunIsAnError() =>
         Assert.Throws<InvalidOperationException>(() =>
-            ProviderDetector.Detect(ProviderPreference.Cpu, [], new FakeProbe(directMLWorks: false, cpuWorks: false)));
+            ProviderDetector.Detect(ProviderPreference.Cpu, [], [], new FakeProbe(directMLWorks: false, cpuWorks: false)));
+
+    [Fact]
+    public void AutoNeverTriesWindowsML()
+    {
+        // PB43: TensorRT-RTX builds its engine for 10 to 17 s per session, so DirectML stays the default.
+        FakeProbe probe = new(directMLWorks: true, windowsMLWorks: true);
+
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.Auto, [Discrete], [TensorRT], probe);
+
+        Assert.Equal(ExecutionProvider.DirectML, selection.Provider);
+        Assert.DoesNotContain(ExecutionProvider.WindowsML, probe.Tried);
+    }
+
+    [Fact]
+    public void WindowsMLPreferencePicksAProviderOnItsVendorsGpu()
+    {
+        FakeProbe probe = new(directMLWorks: true, windowsMLWorks: true);
+
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.WindowsML, [Integrated, Discrete], [TensorRT, OpenVINO], probe);
+
+        Assert.Equal(ExecutionProvider.WindowsML, selection.Provider);
+        Assert.Equal("NvTensorRTRTXExecutionProvider", selection.Accelerator);
+        Assert.Equal(Discrete, selection.Adapter);
+        Assert.Equal("TensorRT-RTX", selection.Name);
+        Assert.Equal("TensorRT-RTX · NVIDIA RTX 4060, 8 GB", selection.Label);
+        Assert.DoesNotContain(ExecutionProvider.DirectML, probe.Tried);
+    }
+
+    [Fact]
+    public void AWindowsMLProviderThatFailsLeavesDirectMLAsItWas()
+    {
+        // PB43: asked for Windows ML, DirectML still runs wherever Windows ML has nothing that does.
+        FakeProbe probe = new(directMLWorks: true, windowsMLWorks: false);
+
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.WindowsML, [Discrete], [TensorRT], probe);
+
+        Assert.Equal(ExecutionProvider.DirectML, selection.Provider);
+        Assert.Null(selection.Fallback);
+        Assert.Equal([ExecutionProvider.WindowsML, ExecutionProvider.DirectML], probe.Tried);
+    }
+
+    [Fact]
+    public void DirectMLPreferenceNeverTriesWindowsML()
+    {
+        FakeProbe probe = new(directMLWorks: true, windowsMLWorks: true);
+
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.DirectML, [Discrete], [TensorRT], probe);
+
+        Assert.Equal(ExecutionProvider.DirectML, selection.Provider);
+        Assert.DoesNotContain(ExecutionProvider.WindowsML, probe.Tried);
+    }
+
+    [Fact]
+    public void WindowsMLPreferenceWithNoProviderDoesWhatAutoDoes()
+    {
+        ProviderSelection onGpu = ProviderDetector.Detect(ProviderPreference.WindowsML, [Discrete], [], new FakeProbe(directMLWorks: true));
+        ProviderSelection noGpu = ProviderDetector.Detect(ProviderPreference.WindowsML, [], [], new FakeProbe(directMLWorks: true));
+
+        Assert.Equal(ExecutionProvider.DirectML, onGpu.Provider);
+        Assert.Equal(ExecutionProvider.Cpu, noGpu.Provider);
+        Assert.Equal("no DirectX 12 GPU found", noGpu.Fallback);
+    }
+
+    [Fact]
+    public void AWindowsMLProviderOnAGpuDxgiDoesNotListIsNamedWithoutOne()
+    {
+        FakeProbe probe = new(directMLWorks: true, windowsMLWorks: true);
+
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.WindowsML, [Discrete], [OpenVINO], probe);
+
+        Assert.Equal(ExecutionProvider.WindowsML, selection.Provider);
+        Assert.Null(selection.Adapter);
+        Assert.Equal("OpenVINO", selection.Label);
+    }
+
+    [Fact]
+    public void RankingPutsTensorRTFirstAndLeavesTheBuiltInProvidersOut()
+    {
+        WindowsMLDevice other = new("ContosoExecutionProvider", 0x1234);
+        IReadOnlyList<WindowsMLDevice> ranked = WindowsMLProviders.Rank(
+            [new("DmlExecutionProvider", Nvidia), other, OpenVINO, new("OpenVINOExecutionProvider.AUTO", Intel), TensorRT, TensorRT, new("CPUExecutionProvider", 0)]);
+
+        Assert.Equal([TensorRT, OpenVINO, other], ranked);
+        Assert.Equal("Contoso", WindowsMLDevice.ShortName(other.EpName));
+    }
+
+    [Fact]
+    public void ADeviceWithAnAdapterIndexRunsOnThatAdapterAndNotOnItsVendorsBiggest()
+    {
+        GpuAdapter second = new(2, "NVIDIA RTX 3050", 4L << 30, Nvidia);
+
+        Assert.Equal(second, new WindowsMLDevice(TensorRT.EpName, Nvidia, 2).AdapterIn([Discrete, second]));
+        Assert.Equal(Discrete, TensorRT.AdapterIn([Discrete, second]));
+    }
 
     [Theory]
     [InlineData("auto", ProviderPreference.Auto)]
     [InlineData("dml", ProviderPreference.DirectML)]
     [InlineData("DirectML", ProviderPreference.DirectML)]
+    [InlineData("winml", ProviderPreference.WindowsML)]
     [InlineData(" cpu ", ProviderPreference.Cpu)]
     public void ProviderFlagValuesParse(string value, ProviderPreference expected)
     {
@@ -81,7 +181,16 @@ public sealed class ProviderDetectorTests
     [Fact]
     public void TheRealProbeRunsOnCpu()
     {
-        Assert.True(new OnnxRuntimeProbe().TryRun(ExecutionProvider.Cpu, null, out string? error), error);
+        Assert.True(new OnnxRuntimeProbe().TryRun(new ProviderSelection(ExecutionProvider.Cpu, null, null), out string? error), error);
+    }
+
+    [Fact]
+    public void AWindowsMLProviderNotRegisteredIsAFailureNotAThrow()
+    {
+        ProviderSelection absent = new(ExecutionProvider.WindowsML, null, null, "NoSuchExecutionProvider");
+
+        Assert.False(new OnnxRuntimeProbe().TryRun(absent, out string? error));
+        Assert.Contains("not registered", error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -95,6 +204,28 @@ public sealed class ProviderDetectorTests
     }
 
     [Fact]
+    public void RealWindowsMLDetectionAlwaysAnswers()
+    {
+        // PB43: a Windows ML provider where this desk has one that runs, else what Auto picks.
+        ProviderSelection selection = ProviderDetector.Detect(ProviderPreference.WindowsML);
+
+        Assert.False(string.IsNullOrWhiteSpace(selection.Label));
+        Assert.Equal(selection.Provider == ExecutionProvider.WindowsML, selection.Accelerator is not null);
+    }
+
+    [Fact]
+    public void TheRealWindowsMLCatalogAnswersWithoutThrowing()
+    {
+        // PB43: an older Windows or a failing catalog reads as "nothing", never as a crash.
+        foreach (WindowsMLDevice device in WindowsMLProviders.Devices())
+        {
+            Assert.EndsWith("ExecutionProvider", device.EpName, StringComparison.Ordinal);
+        }
+
+        Assert.NotNull(WindowsMLProviders.Missing());
+    }
+
+    [Fact]
     public void EveryListedAdapterIsHardwareWithAName()
     {
         foreach (GpuAdapter adapter in GpuAdapters.Enumerate())
@@ -104,14 +235,19 @@ public sealed class ProviderDetectorTests
         }
     }
 
-    private sealed class FakeProbe(bool directMLWorks, bool cpuWorks = true) : IProviderProbe
+    private sealed class FakeProbe(bool directMLWorks, bool cpuWorks = true, bool windowsMLWorks = false) : IProviderProbe
     {
         public List<ExecutionProvider> Tried { get; } = [];
 
-        public bool TryRun(ExecutionProvider provider, GpuAdapter? adapter, out string? error)
+        public bool TryRun(ProviderSelection candidate, out string? error)
         {
-            Tried.Add(provider);
-            bool works = provider == ExecutionProvider.DirectML ? directMLWorks : cpuWorks;
+            Tried.Add(candidate.Provider);
+            bool works = candidate.Provider switch
+            {
+                ExecutionProvider.DirectML => directMLWorks,
+                ExecutionProvider.WindowsML => windowsMLWorks,
+                _ => cpuWorks,
+            };
             error = works ? null : "887A0004";
             return works;
         }

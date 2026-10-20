@@ -26,7 +26,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-set "EXE=%CD%\src\PhotoBoost.App\bin\Debug\net10.0-windows\win-x64\PhotoBoost.exe"
+set "EXE=%CD%\src\PhotoBoost.App\bin\Debug\net10.0-windows10.0.19041.0\win-x64\PhotoBoost.exe"
 set "REAL=.cache\weights\test-images"
 set "FIX=tests\fixtures\images"
 set "OWN_MODELS="

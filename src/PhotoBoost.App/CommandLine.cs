@@ -103,7 +103,7 @@ public static class CommandLine
         ProviderPreference provider = ProviderPreference.Auto;
         if (given.TryGetValue("--provider", out string? providerValue) && !ProviderDetector.TryParse(providerValue, out provider))
         {
-            return Refuse($"--provider {providerValue} is not one of auto, dml, cpu.");
+            return Refuse($"--provider {providerValue} is not one of auto, winml, dml, cpu.");
         }
 
         QualityMode? quality = null;

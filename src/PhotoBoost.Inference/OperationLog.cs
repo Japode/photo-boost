@@ -7,7 +7,7 @@ namespace PhotoBoost.Inference;
 /// <param name="Operation">What it was, e.g. "upscale x4".</param>
 /// <param name="Model">The model's folder name.</param>
 /// <param name="Variant">fp32, fp16 or int8.</param>
-/// <param name="Provider">DirectML or Cpu.</param>
+/// <param name="Provider">DirectML, Cpu, or the Windows ML provider's short name, e.g. TensorRT-RTX (PB43).</param>
 /// <param name="Adapter">The GPU, when there was one.</param>
 /// <param name="Width">Input columns.</param>
 /// <param name="Height">Input rows.</param>

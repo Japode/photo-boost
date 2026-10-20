@@ -3,14 +3,16 @@
   <!-- ONNX Runtime: provider detection, sessions loaded on demand and the one-at-a-time queue.
        It reads tensors from Imaging and never sees a UI type. -->
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Windows 10 19041: what Windows ML's WinRT projection needs to activate reg-free, unpackaged. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <RootNamespace>PhotoBoost.Inference</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The PB5 spike's choice (spike/onnx-runtime/README.md): any DX12 GPU, exact against CPU,
-         nothing fetched from Windows Update. -->
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+    <!-- PB43 (spike/onnx-runtime/README.md): Windows ML without the Windows App SDK. It carries its
+         own ONNX Runtime with DirectML, which stays the provider wherever Windows ML has nothing
+         better, and adds the TensorRT-RTX and OpenVINO providers Windows Update installs. -->
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" Version="2.1.74" />
     <!-- Only to list adapters and their video memory; rendering stays in PhotoBoost.Render. -->
     <PackageReference Include="Vortice.DXGI" Version="3.8.3" />
   </ItemGroup>

@@ -63,7 +63,7 @@ public partial class MainWindow
             return string.Join(Environment.NewLine, packages) + $"{Environment.NewLine}{Environment.NewLine}Each package's own license and notices are in {folder}.";
         }
 
-        return "ONNX Runtime (MIT), DirectML (Microsoft software license terms), SkiaSharp (MIT), Vortice and SharpGen (MIT). "
+        return "Windows ML, its ONNX Runtime (MIT) and DirectML (Microsoft software license terms), SkiaSharp (MIT), Vortice and SharpGen (MIT). "
             + "An installed copy carries each package's own license in its licenses folder.";
     }
 }

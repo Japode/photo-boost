@@ -240,7 +240,7 @@ public static class ModelSessions
         return new SessionCache<InferenceSession>(
             key =>
             {
-                using SessionOptions options = SessionOptionsFactory.Create(provider.Provider, provider.Adapter);
+                using SessionOptions options = SessionOptionsFactory.Create(provider);
                 return new InferenceSession(Path.Combine(root, key.Model, key.Variant + ".onnx"), options);
             },
             idle);

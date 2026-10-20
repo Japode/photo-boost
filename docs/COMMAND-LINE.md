@@ -4,7 +4,7 @@ PhotoBoost starts like any Windows app with no arguments. These flags exist so a
 case can reach a state without a file dialog or drag and drop, and they work for anyone.
 
 ```
-PhotoBoost.exe [--open <image>] [--models <folder>] [--provider auto|dml|cpu]
+PhotoBoost.exe [--open <image>] [--models <folder>] [--provider auto|winml|dml|cpu]
                [--export <file>] [--quality compact|high]
 ```
 
@@ -16,7 +16,7 @@ PhotoBoost says which one in a message box and exits with code 2.
 | --- | --- |
 | `--open <image>` | Opens this image at start instead of the empty screen. |
 | `--models <folder>` | Reads and downloads models in this folder instead of `%LOCALAPPDATA%\PhotoBoost\models`. |
-| `--provider auto\|dml\|cpu` | `auto` (the default) runs on DirectML on the GPU with the most video memory and falls back to the CPU; `dml` asks for DirectML; `cpu` never tries a GPU. The status bar shows what was chosen. |
+| `--provider auto\|winml\|dml\|cpu` | `auto` (the default) runs on DirectML on the GPU with the most video memory and falls back to the CPU; `winml` first tries a provider Windows ML installed for this PC (TensorRT-RTX on NVIDIA, OpenVINO on Intel), then does what `auto` does, and fetches a provider not installed yet in the background for the next start; `dml` asks for DirectML; `cpu` never tries a GPU. The status bar shows what was chosen. |
 | `--export <file>` | When the run finishes, writes the result here (PNG, JPG or WebP by extension) and stays open. |
 | `--quality compact\|high` | Starts in Compact (INT8 models) or High quality (FP16/FP32) instead of the saved choice. |
 

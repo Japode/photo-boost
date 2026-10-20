@@ -6,7 +6,8 @@ namespace PhotoBoost.Inference;
 /// <param name="Index">Its position in EnumAdapters1, which is the device id DirectML takes.</param>
 /// <param name="Name">Its description, e.g. NVIDIA GeForce RTX 4060.</param>
 /// <param name="DedicatedVideoMemory">Bytes of its own video memory.</param>
-public sealed record GpuAdapter(int Index, string Name, long DedicatedVideoMemory)
+/// <param name="VendorId">Its PCI vendor id, which matches it to a Windows ML provider's device (PB43).</param>
+public sealed record GpuAdapter(int Index, string Name, long DedicatedVideoMemory, uint VendorId = 0)
 {
     /// <summary>The name and memory as the status bar shows them, e.g. "NVIDIA GeForce RTX 4060, 8 GB".</summary>
     public string Label => $"{Name}, {Math.Round(DedicatedVideoMemory / (1024.0 * 1024 * 1024), 1)} GB";
@@ -41,7 +42,7 @@ public static class GpuAdapters
                     {
                         // Through nuint: PointerUSize's implicit conversion to uint overflows past 4 GB.
                         nuint memory = description.DedicatedVideoMemory;
-                        found.Add(new GpuAdapter((int)index, description.Description, (long)memory));
+                        found.Add(new GpuAdapter((int)index, description.Description, (long)memory, description.VendorId));
                     }
                 }
             }

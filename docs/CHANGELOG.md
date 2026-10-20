@@ -41,6 +41,7 @@
 - ✅ **PB45** **Exports drop the source photo's camera, date, copyright and GPS metadata, with no choice to keep it** — A Keep camera details box, off by default, copies camera, lens, exposure, dates, copyright and GPS into a JPEG export with Orientation 1; PNG and WebP say they cannot.
 - ✅ **PB42** **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Nearest-neighbour 4x/2x stand-ins under cases/fixtures/models; a case upscales, exports byte-exact, compares at 25 and undoes offline (WW556 workaround).
 - ✅ **PB26** **Open, upscale and export flow has no winwright case proving it end to end** — cases/upscale.cases.json opens, upscales 4x on the tiny model, reads progress and the run chip, exports and matches bytes; real model run by hand on DirectML (12.4 s).
+- ✅ **PB43** **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — --provider winml runs on Windows ML's TensorRT-RTX or OpenVINO and fetches missing ones; auto stays DirectML (design recorded in `src/PhotoBoost.Inference/WindowsMLProviders.cs`).
 
 ## Block D — Editor: comparison, history and quality modes
 

@@ -4,7 +4,15 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- The app's and PhotoBoost.Inference's, which Windows ML sets (PB43). -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <!-- The app's RID, so ONNX Runtime's natives sit beside the test exe as they do beside the app's.
+         Under runtimes\ only .NET finds them: Windows ML's native DLL asks Windows for onnxruntime.dll
+         by name, and Windows 11 answers with System32's 1.17, which cannot run this ORT. The folder
+         stays bin\<config>\<tfm>\, which run-tests.cmd reads. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <OutputType>Exe</OutputType>

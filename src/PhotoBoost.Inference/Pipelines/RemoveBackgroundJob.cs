@@ -53,7 +53,7 @@ public static class RemoveBackgroundJob
                         Operation,
                         RemoveBackground.Model,
                         variant,
-                        library.Provider.Provider.ToString(),
+                        library.Provider.Name,
                         library.Provider.Adapter?.Name,
                         image.Width,
                         image.Height,

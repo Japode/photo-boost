@@ -50,7 +50,7 @@ public static class DenoiseJob
                         Operation,
                         Denoise.Model,
                         variant,
-                        library.Provider.Provider.ToString(),
+                        library.Provider.Name,
                         library.Provider.Adapter?.Name,
                         image.Width,
                         image.Height,
