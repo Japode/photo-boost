@@ -75,20 +75,6 @@ stay available meanwhile). TensorRT-RTX differed from CPU by 2e-3, which PB10's 
 threshold must accept. And TensorRT-RTX builds its engine at session creation (about 0.5
 s on the tiny model), so PB16's idle release costs that again.
 
-### §PB44 Colour profile decode test
-
-ImageDecoder (PB17) converts a frame that embeds a colour profile to sRGB with WIC's
-IWICColorTransform, and leaves the pixels as they are when WIC cannot transform from
-that profile. No test exercises either path: the desk that built it had only the sRGB
-profile, and a fixture needs an image tagged with a wide-gamut one.
-
-Commit a tiny PNG or JPEG tagged with Display P3 or Adobe RGB (1998), made with Pillow
-and an ICC file whose license allows redistribution (the ICC's own sample profiles, or
-one built with ImageCms), and assert that a saturated green comes out with its red and
-blue channels moved the way the sRGB conversion predicts, within JPEG tolerance. Add a
-second fixture with a deliberately broken profile and assert the decode still succeeds
-unconverted. Record both in tests/fixtures/images/README.md beside the existing ones.
-
 ### §PB45 Keep metadata on export
 
 ImageEncoder (PB25) writes no metadata: the pixels are already upright and in sRGB, so a

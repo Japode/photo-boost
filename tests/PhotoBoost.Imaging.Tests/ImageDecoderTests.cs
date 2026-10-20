@@ -99,6 +99,28 @@ public sealed class ImageDecoderTests : IDisposable
     }
 
     [Fact]
+    public void ADisplayP3ImageIsConvertedToSrgb()
+    {
+        // PB44: P3 (100, 180, 120) under the fixture's profile is sRGB (64, 184, 115), computed from
+        // the colorant matrices and confirmed by LittleCMS (make-profile-fixtures.py).
+        RgbaImage image = ImageDecoder.Decode(Fixture("p3-swatch.png"));
+
+        ushort[] p = Pixel(image, 4, 4);
+        Assert.InRange(RgbaImage.To8(p[0]), 64 - 2, 64 + 2);
+        Assert.InRange(RgbaImage.To8(p[1]), 184 - 2, 184 + 2);
+        Assert.InRange(RgbaImage.To8(p[2]), 115 - 2, 115 + 2);
+    }
+
+    [Fact]
+    public void AProfileWindowsCannotReadLeavesThePixelsAsTheyAre()
+    {
+        RgbaImage image = ImageDecoder.Decode(Fixture("broken-profile.png"));
+
+        ushort[] p = Pixel(image, 4, 4);
+        Assert.Equal((100, 180, 120), (RgbaImage.To8(p[0]), RgbaImage.To8(p[1]), RgbaImage.To8(p[2])));
+    }
+
+    [Fact]
     public void AFileThatIsNotAnImageIsRefused()
     {
         string path = Path.Combine(scratch, "notes.png");
