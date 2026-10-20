@@ -85,6 +85,31 @@ public sealed class EngineCacheTests : IDisposable
         Assert.Empty(Directory.GetFiles(folder, "*.partial.onnx"));
     }
 
+    [Fact]
+    public void AModelTheProviderCannotBuildIsSaidOnceAndRunsOnDirectML()
+    {
+        // SCUNet: TensorRT-RTX 0.4 builds no engine for it (ShapeInferenceNotRegistered).
+        WindowsMLDevice? device = WindowsMLProviders.Devices().FirstOrDefault(d => d.EpName == "NvTensorRTRTXExecutionProvider");
+        string scunet = Path.Combine(Repository.Root, ".cache", "models", "scunet-color-real-psnr", "fp16.onnx");
+        if (device is null || !File.Exists(scunet))
+        {
+            Assert.Skip("needs the TensorRT-RTX provider and the exported SCUNet");
+        }
+
+        ProviderSelection selection = new(ExecutionProvider.WindowsML, device.AdapterIn(GpuAdapters.Enumerate()), null, device.EpName);
+        EngineCache cache = new(folder);
+
+        Assert.Throws<NotSupportedException>(() => cache.Open(scunet, selection).Dispose());
+        Assert.True(cache.Has(scunet, selection));
+        Stopwatch clock = Stopwatch.StartNew();
+        Assert.Throws<NotSupportedException>(() => cache.Open(scunet, selection).Dispose());
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(1), $"the second refusal took {clock.Elapsed}");
+
+        using SessionCache<InferenceSession> sessions = ModelSessions.Create(_ => scunet, selection, SessionCache<InferenceSession>.DefaultIdle, cache);
+        using SessionLease<InferenceSession> lease = sessions.Acquire(new ModelKey("scunet-color-real-psnr", "fp16"));
+        Assert.NotNull(lease.Session);
+    }
+
     private string Model()
     {
         string model = Path.Combine(folder, "probe", "fp16.onnx");

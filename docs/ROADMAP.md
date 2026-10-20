@@ -13,8 +13,6 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- ⏳ **PB52** (deps: PB43 ✅) **TensorRT-RTX builds its engine for 10 to 17 s at every session creation, so auto cannot prefer it** — Engines are built inside a user's first run, and auto still never tries TensorRT-RTX. → §PB52
-
 ## Block D — Editor: comparison, history and quality modes
 
 - 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between the bundled FP16 models and the downloaded FP32 High quality set** — High quality, and on a CPU speed too, comes from FP32, so the reader needs a way to pick it once it is downloaded. → §PB29

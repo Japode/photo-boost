@@ -90,25 +90,26 @@ stage-models.ps1 does for ViTMatte. Re-run the benchmark and update the README's
 ### §PB52 TensorRT-RTX engine reuse
 
 PB43 measured TensorRT-RTX on the RTX 4060 with Real-ESRGAN x4: FP16 tiles three times
-faster than DirectML, but 10 to 17 s of engine build at every session creation. Its
-runtime cache (nv_runtime_cache_path) only helps a new tile shape.
+faster than DirectML, but 10 to 17 s of engine build at every session creation.
 
-Landed: EngineCache (src/PhotoBoost.Inference/EngineCache.cs) writes the built engine as
-an ONNX Runtime EP context model under %LOCALAPPDATA%\PhotoBoost\engines and loads it
-afterwards, keyed by the model file, the provider package and version, the GPU and its
-driver, and the ORT version. Every Windows ML session goes through it. Measured on
-0014.jpg (FP16, x4): first upscale 8.1 s with the build, 1.8 s from the cached engine in
-a new process, 92 ms warm; DirectML's first upscale is 2.0 s and its warm run 0.21 s.
+Landed:
+- EngineCache keeps each built engine as an EP context model under
+  %LOCALAPPDATA%\PhotoBoost\engines, keyed by model file, provider package, GPU, driver and ORT.
+  First x4 upscale in a new process: 1.8 to 1.9 s from the cache against 8.1 s, 92 ms warm.
+- EngineWarmup builds the operations' engines on the queue at startup on Windows ML.
+- TensorRT-RTX 0.4 builds no engine for Real-ESRGAN x2plus, SCUNet or ViTMatte. The cache
+  records that once, and those models run on DirectML on the same GPU. Before this, 2x upscale,
+  denoise and refined background removal failed on --provider winml.
 
-Left:
-- Build the engines in the background after the first launch on --provider winml (each
-  model's default variant, one at a time, behind the inference queue), so no user upscale
-  pays the build.
-- Then let auto try TensorRT-RTX first (ProviderDetector), DirectML still the fallback, but
-  only for models whose engine is cached. Detection picks one provider for every session, so
-  this needs a per-model choice or a selection that falls back per session; decide which.
-- Open question: whether an explicit optimization profile (nv_profile_min/opt/max_shapes)
-  shortens the build; the provider warns that it assumed a fully dynamic one.
+Left, and waiting on the owner:
+- Whether auto should try TensorRT-RTX first. The owner set DirectML as the default (PB43).
+  With engines cached, the first x4 upscale only matches DirectML's 1.9 s; warm tiles are
+  about twice as fast, and three of the seven models fall back anyway. If yes: auto picks
+  Windows ML once its engines are prepared, DirectML otherwise.
+- The log and the status bar name the library's provider, so a model that fell back to
+  DirectML is logged as TensorRT-RTX. Name the session's provider instead.
+- An explicit optimization profile (nv_profile_min/opt/max_shapes, at the tile sizes PB41
+  picks) may let the three build: SCUNet's error says the default kOPT shape breaks a reshape.
 
 ## Block D — Editor: comparison, history and quality modes
 

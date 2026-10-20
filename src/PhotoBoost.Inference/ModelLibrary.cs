@@ -50,7 +50,8 @@ public sealed class ModelLibrary : IDisposable
             engines ??= new EngineCache(EngineCache.DefaultFolder);
         }
 
-        Sessions = ModelSessions.Create(PathOf, provider, keep, engines);
+        Engines = provider.Provider == ExecutionProvider.WindowsML ? engines : null;
+        Sessions = ModelSessions.Create(PathOf, provider, keep, Engines);
         if (provider.Provider != ExecutionProvider.Cpu)
         {
             cpu = new(() => ModelSessions.Create(PathOf, new ProviderSelection(ExecutionProvider.Cpu, null, null), keep));
@@ -68,6 +69,15 @@ public sealed class ModelLibrary : IDisposable
 
     /// <summary>The sessions, loaded on demand.</summary>
     public SessionCache<InferenceSession> Sessions { get; }
+
+    /// <summary>A Windows ML provider's compiled engines (PB52); null on DirectML and CPU.</summary>
+    public EngineCache? Engines { get; }
+
+    /// <summary>The ONNX file a model's variant is read from: in the first root that has it.</summary>
+    /// <param name="model">The model's folder name.</param>
+    /// <param name="variant">fp32, fp16 or int8.</param>
+    /// <returns>The path, in the first root when none has it.</returns>
+    public string FileOf(string model, string variant) => PathOf(new ModelKey(model, variant));
 
     /// <summary>Whether a model's variant is on disk.</summary>
     /// <param name="model">The model's folder name.</param>

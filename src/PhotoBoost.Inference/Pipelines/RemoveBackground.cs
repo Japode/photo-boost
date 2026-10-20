@@ -40,15 +40,25 @@ public static class RemoveBackground
             throw new InvalidDataException($"{Model}'s meta.json does not describe a fixed-size mask model.");
         }
 
-        // PB51: ViTMatte has no FP16 file, so the bundled FP16 set brings its FP32 instead.
-        string? matteVariant = !refine ? null
-            : library.Has(Matting.Model, variant) ? variant
-            : MatteFallbacks.FirstOrDefault(v => library.Has(Matting.Model, v));
+        string? matteVariant = refine ? MatteVariant(library, variant) : null;
         Action<float[]>? matting = matteVariant is not null
             ? mask => Matting.Run(library, image, mask, matteVariant)
             : null;
         using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, variant));
         return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine, matting);
+    }
+
+    /// <summary>
+    /// The ViTMatte variant Refine edges runs with: the one asked for, else FP32, else INT8, since
+    /// ViTMatte has no FP16 file and the bundled FP16 set brings its FP32 (PB51).
+    /// </summary>
+    /// <param name="library">The models.</param>
+    /// <param name="variant">The variant the operation runs in.</param>
+    /// <returns>The variant on disk, or null when ViTMatte is not.</returns>
+    public static string? MatteVariant(ModelLibrary library, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(library);
+        return library.Has(Matting.Model, variant) ? variant : MatteFallbacks.FirstOrDefault(v => library.Has(Matting.Model, v));
     }
 
     /// <summary>Mask values under this become fully transparent after refining: the faint specks.</summary>

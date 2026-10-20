@@ -250,12 +250,24 @@ public static class ModelSessions
         return new SessionCache<InferenceSession>(
             key =>
             {
+                ProviderSelection on = provider;
                 if (engines is not null && provider.Provider == ExecutionProvider.WindowsML)
                 {
-                    return engines.Open(path(key), provider);
+                    try
+                    {
+                        return engines.Open(path(key), provider);
+                    }
+                    catch (NotSupportedException)
+                    {
+                        // PB52: a model the Windows ML provider cannot build runs on DirectML on the
+                        // same GPU, or on the CPU, rather than failing its operation.
+                        on = provider.Adapter is { } adapter
+                            ? new ProviderSelection(ExecutionProvider.DirectML, adapter, null)
+                            : new ProviderSelection(ExecutionProvider.Cpu, null, null);
+                    }
                 }
 
-                using SessionOptions options = SessionOptionsFactory.Create(provider);
+                using SessionOptions options = SessionOptionsFactory.Create(on);
                 return new InferenceSession(path(key), options);
             },
             idle);

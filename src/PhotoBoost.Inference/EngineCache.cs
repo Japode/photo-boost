@@ -70,10 +70,16 @@ public sealed class EngineCache(string folder)
     /// <param name="modelPath">The ONNX file.</param>
     /// <param name="selection">A Windows ML selection.</param>
     /// <returns>The session; the caller disposes it.</returns>
+    /// <exception cref="NotSupportedException">The provider could not build this model, now or on an earlier run.</exception>
     public InferenceSession Open(string modelPath, ProviderSelection selection)
     {
-        ArgumentNullException.ThrowIfNull(selection);
-        string context = PathFor(modelPath, Key(modelPath, selection.Accelerator ?? string.Empty, Package(selection), Device(selection), Driver(selection), OrtEnv.Instance().GetVersionString()));
+        string context = ContextFor(modelPath, selection);
+        string unsupported = Unsupported(context);
+        if (File.Exists(unsupported))
+        {
+            throw new NotSupportedException($"{selection.Name} could not build an engine for {modelPath} on an earlier run.");
+        }
+
         if (File.Exists(context))
         {
             try
@@ -94,13 +100,48 @@ public sealed class EngineCache(string folder)
         options.AddSessionConfigEntry("ep.context_enable", "1");
         options.AddSessionConfigEntry("ep.context_file_path", partial);
         options.AddSessionConfigEntry("ep.context_embed_mode", "1");
-        InferenceSession session = new(modelPath, options);
+        InferenceSession session;
+        try
+        {
+            session = new(modelPath, options);
+        }
+        catch (OnnxRuntimeException failure)
+        {
+            // TensorRT-RTX 0.4 builds no engine for Real-ESRGAN x2plus, SCUNet or ViTMatte
+            // (ShapeInferenceNotRegistered, 2026-10-20). Said once, so later runs go straight to
+            // the fallback instead of failing the same build every start.
+            File.Delete(partial);
+            File.WriteAllText(unsupported, failure.Message);
+            throw new NotSupportedException($"{selection.Name} cannot build an engine for {modelPath}: {failure.Message}", failure);
+        }
+
         if (File.Exists(partial))
         {
             File.Move(partial, context, overwrite: true);
         }
 
         return session;
+    }
+
+    /// <summary>
+    /// Whether this model has nothing left to build for the selection's provider and GPU: its
+    /// engine is on disk, or the provider could not build one.
+    /// </summary>
+    /// <param name="modelPath">The ONNX file.</param>
+    /// <param name="selection">A Windows ML selection.</param>
+    /// <returns>True when there is nothing to build.</returns>
+    public bool Has(string modelPath, ProviderSelection selection)
+    {
+        string context = ContextFor(modelPath, selection);
+        return File.Exists(context) || File.Exists(Unsupported(context));
+    }
+
+    private static string Unsupported(string context) => context[..^".onnx".Length] + ".unsupported.txt";
+
+    private string ContextFor(string modelPath, ProviderSelection selection)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+        return PathFor(modelPath, Key(modelPath, selection.Accelerator ?? string.Empty, Package(selection), Device(selection), Driver(selection), OrtEnv.Instance().GetVersionString()));
     }
 
     private static string Package(ProviderSelection selection)

@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Win32;
 using PhotoBoost.Imaging;
 using PhotoBoost.Inference;
+using PhotoBoost.Inference.Pipelines;
 
 namespace PhotoBoost.App;
 
@@ -90,10 +91,48 @@ public partial class MainWindow : Window
         Provider = selection;
         ProviderStatus.Text = selection.Label;
         StartOperations(selection);
+        if (selection.Provider == ExecutionProvider.WindowsML)
+        {
+            await PrepareEnginesAsync(selection).ConfigureAwait(true);
+        }
+
         if (Options.Provider == ProviderPreference.WindowsML)
         {
             await AcquireWindowsMLAsync(selection).ConfigureAwait(true);
         }
+    }
+
+    /// <summary>
+    /// Builds the Windows ML engines the operations will need, on the queue, one model at a time
+    /// (PB52), so a user's first run loads a cached engine instead of building one for 10 to 17 s.
+    /// </summary>
+    private async Task PrepareEnginesAsync(ProviderSelection selection)
+    {
+        if (library is null || service is null)
+        {
+            return;
+        }
+
+        ModelLibrary models = library;
+        string variant = Variant;
+        IReadOnlyList<ModelKey> needed = await Task.Run(() => EngineWarmup.Needed(models, variant)).ConfigureAwait(true);
+        int done = 0;
+        foreach (InferenceJob<ModelKey> job in EngineWarmup.Enqueue(service, models, needed))
+        {
+            ProviderStatus.Text = $"{selection.Label} · preparing engines {done + 1} of {needed.Count}…";
+            try
+            {
+                await job.Completion.ConfigureAwait(true);
+            }
+            catch (Exception failure) when (failure is OperationCanceledException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException or InvalidOperationException or IOException)
+            {
+                // That model builds on its first run instead, as it did before PB52.
+            }
+
+            done++;
+        }
+
+        ProviderStatus.Text = selection.Label;
     }
 
     /// <summary>
