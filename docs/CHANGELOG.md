@@ -39,6 +39,7 @@
 - ✅ **PB41** **Initial tile size ignores the free video memory of the GPU** — An upscale with no tile given starts at the largest of 128 to 1024 px that fits 80% of free VRAM or RAM at 6x the largest activation, measured on DirectML; 416 px on the RTX 4060.
 - ✅ **PB44** **Decoding a wide-gamut image to sRGB is untested, so a wrong colour transform would pass the suite** — A Display P3 PNG fixture with a self-built profile decodes to the sRGB that the colorant maths and LittleCMS predict, and one with a broken profile decodes unconverted.
 - ✅ **PB45** **Exports drop the source photo's camera, date, copyright and GPS metadata, with no choice to keep it** — A Keep camera details box, off by default, copies camera, lens, exposure, dates, copyright and GPS into a JPEG export with Orientation 1; PNG and WebP say they cannot.
+- ✅ **PB42** **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Nearest-neighbour 4x/2x stand-ins under cases/fixtures/models; a case upscales, exports byte-exact, compares at 25 and undoes offline (WW556 workaround).
 
 ## Block D — Editor: comparison, history and quality modes
 

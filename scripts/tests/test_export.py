@@ -161,6 +161,25 @@ class ExportTests(unittest.TestCase):
         # Tiny RRDBNet: 8 features at 4x the side, in FP32 bytes.
         self.assertEqual(8 * 16 * 4, meta["tile"]["largest_activation_bytes_per_pixel"])
 
+    @unittest.skipIf(jsonschema is None, "jsonschema not installed")
+    def test_fixtures_are_nearest_upscalers_with_schema_valid_meta(self):
+        # PB42: the stand-ins UI cases run, and the committed copies must be what the script writes.
+        import onnxruntime as ort
+
+        schema = json.loads((SCRIPTS / "meta.schema.json").read_text(encoding="utf-8"))
+        committed = SCRIPTS.parent / "cases" / "fixtures" / "models"
+        rng = np.random.default_rng(7)
+        image = rng.random((1, 3, 5, 7)).astype(np.float32)
+        for name in self.ex.write_fixtures(self.folder):
+            meta = json.loads((self.folder / name / "meta.json").read_text(encoding="utf-8"))
+            jsonschema.validate(meta, schema)
+            scale = meta["scale"]
+            session = ort.InferenceSession(str(self.folder / name / "fp32.onnx"), providers=["CPUExecutionProvider"])
+            out = session.run(None, {"input": image})[0]
+            np.testing.assert_array_equal(image.repeat(scale, axis=2).repeat(scale, axis=3), out)
+            for file in ("fp32.onnx", "int8.onnx", "meta.json"):
+                self.assertEqual((committed / name / file).read_bytes(), (self.folder / name / file).read_bytes(), f"{name}/{file}")
+
     def test_ssim_is_one_for_identical_images_and_lower_otherwise(self):
         rng = np.random.default_rng(5)
         a = rng.random((1, 3, 32, 32)).astype(np.float32)

@@ -506,6 +506,61 @@ def export(spec: Export, weights: Path, out: Path, fp16: bool = True, int8: bool
     return [*lines, describe(spec, model, folder)]
 
 
+def tiny_upscaler(scale: int) -> onnx.ModelProto:
+    """A nearest-neighbour Resize with Real-ESRGAN's interface: same names, dynamic axes, [0, 1] RGB.
+
+    Deterministic to the bit on every provider, a few hundred bytes, and needing no download, so a
+    UI case can run a whole upscale offline and compare the exported file byte for byte.
+    """
+    from onnx import TensorProto, helper
+
+    scales = helper.make_tensor("scales", TensorProto.FLOAT, [4], [1.0, 1.0, float(scale), float(scale)])
+    node = helper.make_node("Resize", ["input", "", "scales"], ["output"], mode="nearest", nearest_mode="floor",
+                            coordinate_transformation_mode="asymmetric")
+    graph = helper.make_graph(
+        [node],
+        f"tiny-nearest-x{scale}",
+        [helper.make_tensor_value_info("input", TensorProto.FLOAT, ["batch", 3, "height", "width"])],
+        [helper.make_tensor_value_info("output", TensorProto.FLOAT, ["batch", 3, "out_height", "out_width"])],
+        [scales],
+    )
+    model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", OPSET)], producer_name="photoboost-fixture")
+    model.ir_version = 8
+    onnx.checker.check_model(model, full_check=True)
+    return model
+
+
+def write_fixtures(out: Path) -> list[str]:
+    """PB42: the stand-ins for realesrgan-x4plus and x2plus, under their real names, both variants."""
+    written = []
+    for spec, scale in ((EXPORTS[0], 4), (EXPORTS[1], 2)):
+        folder = out / spec.name
+        folder.mkdir(parents=True, exist_ok=True)
+        raw = tiny_upscaler(scale).SerializeToString()
+        variants = {}
+        for variant in ("fp32", "int8"):
+            path = folder / f"{variant}.onnx"
+            path.write_bytes(raw)
+            variants[variant] = {"file": path.name, "bytes": len(raw), "sha256": sha256_of(path)}
+        meta = {
+            "schema": META_SCHEMA_VERSION,
+            "name": spec.name,
+            "task": "upscale",
+            "scale": scale,
+            "input": {"name": "input", "layout": "NCHW", "colour_order": "RGB", "channels": 3, "value_range": [0.0, 1.0],
+                      "size": None, "multiple": 1, "batch": "dynamic"},
+            "output": {"name": "output", "channels": 3, "value_range": [0.0, 1.0]},
+            # The output is the largest tensor: 3 channels at scale x scale per input pixel, FP32.
+            "tile": {"recommended": UPSCALE_TILE, "largest_activation_bytes_per_pixel": 3.0 * scale * scale * 4},
+            "variants": variants,
+            "upstream": {"url": "https://github.com/xinntao/Real-ESRGAN", "license": "test fixture, no weights",
+                         "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE"},
+        }
+        (folder / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8", newline="\n")
+        written.append(spec.name)
+    return written
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Export the upstream weights to ONNX.")
     parser.add_argument("--weights", type=Path, default=WEIGHTS, help="where download_models.py put the files")
@@ -514,7 +569,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-fp16", action="store_true", help="skip the FP16 variant")
     parser.add_argument("--no-int8", action="store_true", help="skip the INT8 variant")
     parser.add_argument("--validate-only", action="store_true", help="only re-check the variants already in --out")
+    parser.add_argument("--fixtures", type=Path, metavar="DIR", help="write the tiny stand-in models UI cases run (PB42) and stop")
     args = parser.parse_args(argv)
+
+    if args.fixtures is not None:
+        for name in write_fixtures(args.fixtures):
+            print(f"fixture {name} -> {args.fixtures / name}")
+        return 0
 
     known = {e.name for e in EXPORTS}
     unknown = [n for n in args.only if n not in known]

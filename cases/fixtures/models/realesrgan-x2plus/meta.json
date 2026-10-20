@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "name": "realesrgan-x2plus",
+  "task": "upscale",
+  "scale": 2,
+  "input": {
+    "name": "input",
+    "layout": "NCHW",
+    "colour_order": "RGB",
+    "channels": 3,
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "size": null,
+    "multiple": 1,
+    "batch": "dynamic"
+  },
+  "output": {
+    "name": "output",
+    "channels": 3,
+    "value_range": [
+      0.0,
+      1.0
+    ]
+  },
+  "tile": {
+    "recommended": 256,
+    "largest_activation_bytes_per_pixel": 48.0
+  },
+  "variants": {
+    "fp32": {
+      "file": "fp32.onnx",
+      "bytes": 318,
+      "sha256": "4d129d74305280487bc765719151dc3d94927c4764a60e7b9f621339dc021df7"
+    },
+    "int8": {
+      "file": "int8.onnx",
+      "bytes": 318,
+      "sha256": "4d129d74305280487bc765719151dc3d94927c4764a60e7b9f621339dc021df7"
+    }
+  },
+  "upstream": {
+    "url": "https://github.com/xinntao/Real-ESRGAN",
+    "license": "test fixture, no weights",
+    "license_url": "https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE"
+  }
+}

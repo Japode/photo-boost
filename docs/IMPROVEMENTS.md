@@ -50,15 +50,6 @@ invokes the 4x upscale, waits on the progress reading, exports with --export and
 the file with sameBytesAs against a committed reference. Run it in the VM, never on the
 operator's desktop. Also run the real models by hand on DirectML.
 
-### §PB42 Tiny model fixture for cases
-
-export-and-quantize.py also emits a tiny ONNX model (e.g. a nearest-neighbour 4x or a
-3x3 conv) with a matching meta.json, committed under cases/fixtures/models. Fixtures
-stage it into {files} and pass --models and --provider cpu, so the exported bytes are
-stable and checkable with sameBytesAs. Cases waiting on it: an upscale run with tile
-progress (PB24), two runs then undo and redo (PB28), Compare with the divider set
-through the surface's RangeValue (PB27), and --export writing the result (PB25).
-
 ### §PB43 Windows ML providers
 
 The PB5 spike (spike/onnx-runtime/README.md) ran Microsoft.Windows.AI.MachineLearning
