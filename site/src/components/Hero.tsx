@@ -1,5 +1,5 @@
 import { SiteButton } from "@viglet/viglet-design-system/site";
-import { heroFor } from "../content";
+import { heroFor, releasesUrl } from "../content";
 import { useLang } from "../i18n";
 import { Compare } from "./Compare";
 
@@ -17,7 +17,7 @@ export function Hero() {
           <p className="hero-sub">{hero.sub}</p>
           <div className="hero-actions">
             <SiteButton href="#try">{hero.primary}</SiteButton>
-            <SiteButton variant="ghost" href="#download">
+            <SiteButton variant="ghost" href={releasesUrl} rel="noopener">
               {hero.secondary}
             </SiteButton>
           </div>

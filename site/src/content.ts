@@ -32,6 +32,11 @@ export const pageHref = (lang: Lang) => (lang === "en" ? BASE : `${BASE}pt/`);
 
 // --- what does not change with the language ---------------------------------------------
 
+// Every download button goes to the release page, as claude-tray's do: the installer's name
+// carries its version, so a direct file link goes stale with the next release, and
+// `releases/latest` is the one link that cannot.
+export const releasesUrl = `${repoUrl}/releases/latest`;
+
 const heroImages = {
   before: "demo/upscale-before.webp",
   after: "demo/upscale-after.webp",
@@ -306,7 +311,7 @@ const en: Words = {
   speed: {
     eyebrow: "Speed",
     title: "Fast with a graphics card. Works without one.",
-    lead: "With a DirectX 12 GPU PhotoBoost runs on DirectML; without one, it runs on the processor. Large photos are processed in tiles, as large as the card's free memory allows.",
+    lead: "With a DirectX 12 GPU PhotoBoost runs on DirectML, and on an NVIDIA RTX card it upscales with TensorRT-RTX once Windows has installed it; without a GPU, it runs on the processor. Large photos are processed in tiles, as large as the card's free memory allows.",
     head: ["Operation", "Size", "Time"],
     rows: [
       { op: "Upscale 4×", size: "375 × 334 → 1500 × 1336 px" },
@@ -333,18 +338,18 @@ const en: Words = {
   download: {
     eyebrow: "Download",
     title: "PhotoBoost for Windows.",
-    status: "In development",
-    body: "The installer is ready, but PhotoBoost has no public release yet: the AI models still have to be published somewhere the app can download them from. Follow along on GitHub.",
-    cta: "Follow on GitHub",
+    status: "Available",
+    body: "The installer carries the AI models, so PhotoBoost works offline from the first time you open it. A high-quality set, also faster on a PC without a graphics card, is an optional download from the app's About screen.",
+    cta: "Download the latest release",
     requirements: [
-      "Windows 10 (1809 or later) or Windows 11, 64-bit",
+      "Windows 10 (1903 or later) or Windows 11, 64-bit",
       "A DirectX 12 graphics card to use the GPU; without one, it runs on the processor",
       "Per-user install, no administrator needed",
-      "The AI models are downloaded separately and stay on your PC",
+      "The AI models come in the installer and stay on your PC",
     ],
     licensesTitle: "About the models' licenses",
     licenses:
-      "Real-ESRGAN (BSD-3), SCUNet (Apache-2.0) and YuNet (MIT) are free to use. GFPGAN v1.4 has parts under a non-commercial license, and RMBG-1.4 is licensed by BRIA for non-commercial use only; the app shows each license on its About screen.",
+      "Real-ESRGAN (BSD-3), SCUNet and ViTMatte (Apache-2.0) and YuNet (MIT) are free to use. GFPGAN v1.4 has parts under a non-commercial license, and RMBG-1.4 is licensed by BRIA for non-commercial use only; the app shows each license on its About screen.",
   },
   credits: {
     title: "Example photos",
@@ -495,7 +500,7 @@ const pt: Words = {
   speed: {
     eyebrow: "Desempenho",
     title: "Rápido com placa de vídeo. Funciona sem ela.",
-    lead: "Com uma GPU compatível com DirectX 12 o PhotoBoost usa DirectML; sem ela, roda no processador. Fotos grandes são processadas em blocos, do tamanho que a memória livre da placa permite.",
+    lead: "Com uma GPU compatível com DirectX 12 o PhotoBoost usa DirectML, e numa placa NVIDIA RTX amplia com o TensorRT-RTX quando o Windows o instalou; sem GPU, roda no processador. Fotos grandes são processadas em blocos, do tamanho que a memória livre da placa permite.",
     head: ["Operação", "Tamanho", "Tempo"],
     rows: [
       { op: "Ampliar 4×", size: "375 × 334 → 1500 × 1336 px" },
@@ -522,18 +527,18 @@ const pt: Words = {
   download: {
     eyebrow: "Baixar",
     title: "PhotoBoost para Windows.",
-    status: "Em desenvolvimento",
-    body: "O instalador está pronto, mas o PhotoBoost ainda não tem uma versão pública: falta publicar os modelos de IA num endereço de onde o app possa baixá-los. Acompanhe pelo GitHub.",
-    cta: "Acompanhar no GitHub",
+    status: "Disponível",
+    body: "O instalador já traz os modelos de IA, então o PhotoBoost funciona offline desde a primeira vez que você abre. Um conjunto de alta qualidade, também mais rápido num PC sem placa de vídeo, é um download opcional na tela Sobre do app.",
+    cta: "Baixar a versão mais recente",
     requirements: [
-      "Windows 10 (1809 ou mais novo) ou Windows 11, 64 bits",
+      "Windows 10 (1903 ou mais novo) ou Windows 11, 64 bits",
       "Placa de vídeo com DirectX 12 para usar a GPU; sem ela, roda no processador",
       "Instalação por usuário, sem precisar de administrador",
-      "Os modelos de IA são baixados à parte e ficam no seu PC",
+      "Os modelos de IA vêm no instalador e ficam no seu PC",
     ],
     licensesTitle: "Sobre as licenças dos modelos",
     licenses:
-      "Real-ESRGAN (BSD-3), SCUNet (Apache-2.0) e YuNet (MIT) são livres. O GFPGAN v1.4 tem partes sob licença não comercial, e o RMBG-1.4 é licenciado pela BRIA só para uso não comercial; o app mostra cada licença na tela Sobre.",
+      "Real-ESRGAN (BSD-3), SCUNet e ViTMatte (Apache-2.0) e YuNet (MIT) são livres. O GFPGAN v1.4 tem partes sob licença não comercial, e o RMBG-1.4 é licenciado pela BRIA só para uso não comercial; o app mostra cada licença na tela Sobre.",
   },
   credits: {
     title: "Fotos dos exemplos",

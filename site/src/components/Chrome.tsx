@@ -1,5 +1,5 @@
 import { SiteButton, SiteFooter, SiteNav, SiteThemeToggle } from "@viglet/viglet-design-system/site";
-import { asset, creditsFor, familyHref, familyName, languages, pageHref, type Lang } from "../content";
+import { asset, creditsFor, familyHref, familyName, languages, pageHref, releasesUrl, type Lang } from "../content";
 import { useLang, useWords } from "../i18n";
 
 // The nav and the footer, drawn by the design system's site layer so PhotoBoost sits in the
@@ -19,7 +19,7 @@ export function Nav() {
       links={w.nav.links}
       actions={
         <>
-          <SiteButton href="#download">{w.nav.cta}</SiteButton>
+          <SiteButton href={releasesUrl} rel="noopener">{w.nav.cta}</SiteButton>
           {/* The other language, named in that language's own words for screen readers. */}
           <SiteButton
             variant="ghost"

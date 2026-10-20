@@ -1,5 +1,5 @@
 import { SiteButton } from "@viglet/viglet-design-system/site";
-import { repoUrl, speedRowsFor } from "../content";
+import { releasesUrl, speedRowsFor } from "../content";
 import { useLang, useWords } from "../i18n";
 
 // The sections after the experience: what the reader asks once they have seen it work. Is my
@@ -104,7 +104,7 @@ export function Download() {
               {download.title} <span className="download-status">{download.status}</span>
             </h2>
             <p>{download.body}</p>
-            <SiteButton href={repoUrl} rel="noopener">
+            <SiteButton href={releasesUrl} rel="noopener">
               {download.cta}
             </SiteButton>
           </div>
