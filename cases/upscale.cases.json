@@ -98,6 +98,47 @@
     },
 
     {
+      "name": "About lists each model with the license its meta.json carries",
+      "catches": "a model's license missing from the app, or the About panel failing to open or close",
+      "filed": "PB46",
+      "tags": ["about"],
+      "fixture": "a window on the tiny models, exporting into its own folder",
+      "steps": [
+        {
+          "locator": "Button#AboutButton",
+          "act": "invoke",
+          "named": "About is opened"
+        },
+        {
+          "locator": "Text#AboutVersion",
+          "act": "read",
+          "reads": "name",
+          "matches": "^Version \\d+\\.\\d+\\.\\d+",
+          "named": "it says the version"
+        },
+        {
+          "locator": "List#AboutModels > ListItem[order=top]",
+          "act": "read",
+          "reads": "name",
+          "matches": "^realesrgan-x2plus · upscale · fp32, int8 · test fixture, no weights \\(https://",
+          "named": "the first model, its variants and its license"
+        },
+        {
+          "locator": "Button#AboutClose",
+          "act": "invoke",
+          "named": "About is closed"
+        },
+        {
+          "locator": "Button#AboutButton",
+          "act": "read",
+          "reads": "name",
+          "expect": "About",
+          "named": "and the photo is back"
+        }
+      ]
+    },
+
+    {
       "name": "an upscaled result is compared and undone",
       "catches": "a break in Compare's divider or in undo and redo once a real result exists, which PB27 and PB28 checked by hand",
       "filed": "PB42",

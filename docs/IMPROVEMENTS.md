@@ -108,17 +108,4 @@ Paste the result into the README with the hardware it ran on. The PB5 spike's Or
 --model already times a model file on CPU and DirectML from C#; PB9's first numbers are
 in the PB29 design.
 
-### §PB46 About page with model licenses
-
-Found by PB31. The roadmap's sections for face restore (PB31) and background removal
-(PB32) say the About page states GFPGAN's and RMBG-1.4's non-commercial terms, but the
-app has no About page. PB31 put GFPGAN's terms on the Restore faces card as a stopgap.
-
-An About window (from a button or the title bar) listing each model the models folder
-holds: name, task, variant on disk, upstream URL and license, read from each meta.json's
-`upstream` block so it never drifts from what export-and-quantize.py adopted. Beside
-them, the app's own third-party notices: ONNX Runtime and DirectML (MIT), SkiaSharp
-(MIT), Vortice (MIT), and the version. A winwright case reads it on PB42's tiny models
-folder. The installer's notices (PB35) can be generated from the same list.
-
 ## Block G — Phase 2: denoising

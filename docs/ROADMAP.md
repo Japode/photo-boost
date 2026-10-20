@@ -25,7 +25,6 @@
 
 - 📋 **PB33** (deps: PB12 ⏳, PB26 ✅) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
 - 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
-- 📋 **PB46** (deps: PB31 ✅) **App has no About page listing each model's license and the third-party notices** — GFPGAN and RMBG-1.4 carry non-commercial terms the user must see, and today only the Restore faces card states GFPGAN's. → §PB46
 
 ## Block G — Phase 2: denoising
 

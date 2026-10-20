@@ -3,6 +3,12 @@ using Microsoft.ML.OnnxRuntime;
 
 namespace PhotoBoost.Inference;
 
+/// <summary>A model on disk, as the About panel lists it (PB46).</summary>
+/// <param name="Name">Its folder name.</param>
+/// <param name="Meta">Its meta.json.</param>
+/// <param name="Variants">The variants whose ONNX files are present, e.g. fp32 and int8.</param>
+public sealed record InstalledModel(string Name, ModelMeta Meta, IReadOnlyList<string> Variants);
+
 /// <summary>
 /// The models folder as the pipelines use it (PB19): &lt;root&gt;/&lt;model&gt;/meta.json beside the
 /// ONNX variants, and one session cache on the detected provider.
@@ -52,6 +58,43 @@ public sealed class ModelLibrary : IDisposable
     /// <param name="model">The model's folder name.</param>
     /// <returns>Its description.</returns>
     public ModelMeta Meta(string model) => metas.GetOrAdd(model, name => ModelMeta.Load(Path.Combine(Root, name, "meta.json")));
+
+    /// <summary>
+    /// Every model in the folder with a meta.json this build can read, by name, with the variants
+    /// on disk (PB46: what the About panel lists, licenses included). A folder whose meta.json is
+    /// unreadable is left out rather than failing the list.
+    /// </summary>
+    /// <returns>The models, by folder name.</returns>
+    public IReadOnlyList<InstalledModel> Installed()
+    {
+        if (!Directory.Exists(Root))
+        {
+            return [];
+        }
+
+        List<InstalledModel> found = [];
+        foreach (string folder in Directory.EnumerateDirectories(Root).Order(StringComparer.Ordinal))
+        {
+            string name = Path.GetFileName(folder);
+            if (!File.Exists(Path.Combine(folder, "meta.json")))
+            {
+                continue;
+            }
+
+            try
+            {
+                ModelMeta meta = Meta(name);
+                string[] onDisk = [.. meta.Variants.Keys.Where(variant => File.Exists(Path.Combine(folder, variant + ".onnx"))).Order(StringComparer.Ordinal)];
+                found.Add(new(name, meta, onDisk));
+            }
+            catch (InvalidDataException)
+            {
+                // Listed nowhere: the operation that needs it says why when asked.
+            }
+        }
+
+        return found;
+    }
 
     /// <summary>Releases every session.</summary>
     public void Dispose()

@@ -56,6 +56,7 @@
 ## Block F — Delivery: README, benchmarks and installers
 
 - ✅ **PB35** **Release build produces no self-contained Windows installer** — build\build-installer.cmd publishes self-contained single-file R2R with natives beside, collects package notices, builds a per-user Inno installer; installed app ran DirectML, uninstalls clean.
+- ✅ **PB46** **App has no About page listing each model's license and the third-party notices** — An About panel from the status bar lists the version, each installed model with its meta.json license, and the installer's notices; a winwright case reads it.
 
 ## Block G — Phase 2: denoising
 

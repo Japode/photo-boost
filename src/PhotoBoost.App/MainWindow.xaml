@@ -34,6 +34,10 @@
           <TextBlock x:Name="LastRun" AutomationProperties.AutomationId="LastRun" />
         </Border>
       </StatusBarItem>
+      <!-- PB46: the version, each model's license and the third-party notices. -->
+      <StatusBarItem HorizontalAlignment="Right">
+        <Button x:Name="AboutButton" AutomationProperties.AutomationId="AboutButton" Content="About" Padding="10,2" Click="OnAboutClick" />
+      </StatusBarItem>
     </StatusBar>
 
     <!-- PB24: the operations panel: upscale, denoise (PB36), face restore (PB31) and background
@@ -177,8 +181,11 @@
       </StackPanel>
     </ScrollViewer>
 
-    <!-- PB23: the open screen. A drop zone and a button until an image is open, then the image. -->
+    <!-- PB23: the open screen. A drop zone and a button until an image is open, then the image.
+         PB46: the About panel takes the stage's place while open, since nothing WPF draws can lie
+         over the image surface's own window. -->
     <Grid Margin="24">
+     <Grid x:Name="Stage">
       <Border x:Name="DropZone" AutomationProperties.AutomationId="DropZone" Style="{StaticResource GroupCard}"
               Padding="48" HorizontalAlignment="Center" VerticalAlignment="Center">
         <StackPanel HorizontalAlignment="Center">
@@ -212,6 +219,40 @@
         <!-- The GPU surface (PB40's path): wheel to zoom, drag to pan, drag the divider to compare. -->
         <render:ImageSurface x:Name="Surface" AutomationProperties.AutomationId="Surface" />
       </DockPanel>
+     </Grid>
+
+      <ScrollViewer x:Name="AboutPanel" AutomationProperties.AutomationId="AboutPanel" Visibility="Collapsed"
+                    VerticalScrollBarVisibility="Auto">
+        <Border Style="{StaticResource GroupCard}" Padding="24" MaxWidth="760" HorizontalAlignment="Center" VerticalAlignment="Top">
+          <StackPanel>
+            <DockPanel Margin="0,0,0,4">
+              <Button x:Name="AboutClose" AutomationProperties.AutomationId="AboutClose" DockPanel.Dock="Right"
+                      Content="Close" Padding="12,4" Click="OnAboutClick" />
+              <TextBlock Text="PhotoBoost" Style="{StaticResource StatValue}" VerticalAlignment="Center" />
+            </DockPanel>
+            <TextBlock x:Name="AboutVersion" AutomationProperties.AutomationId="AboutVersion" Style="{StaticResource StatCaption}" />
+            <TextBlock Text="Photos are processed on this computer; nothing is uploaded." Style="{StaticResource StatCaption}" Margin="0,2,0,16" />
+
+            <TextBlock Text="Models" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+            <TextBlock x:Name="AboutModelsFolder" AutomationProperties.AutomationId="AboutModelsFolder"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,0,0,6" />
+            <ListBox x:Name="AboutModels" AutomationProperties.AutomationId="AboutModels" AutomationProperties.Name="Models"
+                     IsHitTestVisible="False" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Text="GFPGAN v1.4 and RMBG-1.4 are licensed for non-commercial use only; check each license before using results commercially."
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,6,0,16" />
+
+            <TextBlock Text="Third-party software" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+            <TextBlock x:Name="AboutNotices" AutomationProperties.AutomationId="AboutNotices"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </ScrollViewer>
     </Grid>
   </DockPanel>
 </Window>

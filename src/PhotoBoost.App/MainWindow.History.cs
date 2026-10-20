@@ -63,9 +63,9 @@ public partial class MainWindow
 
     private void OnFitClick(object sender, RoutedEventArgs e) => Surface.ResetView();
 
-    private void CanUndo(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = running is null && history.CanUndo;
+    private void CanUndo(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = !Busy && history.CanUndo;
 
-    private void CanRedo(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = running is null && history.CanRedo;
+    private void CanRedo(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = !Busy && history.CanRedo;
 
     private void OnUndo(object sender, ExecutedRoutedEventArgs e)
     {
