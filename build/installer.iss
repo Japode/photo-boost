@@ -43,7 +43,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; The single-file exe and the natives ONNX Runtime, DirectML, WPF and SkiaSharp load from beside
-; it (the PB5 spike ran DirectML this way). The licenses folder is collect-notices.ps1's.
+; it (the PB5 spike ran DirectML this way). The licenses folder is collect-notices.ps1's, and
+; the models folder (PB51) is stage-models.ps1's FP16 set, which the app reads before its own.
 Source: "{#MyPublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; \
     Excludes: "*.pdb,DirectML.Debug.dll,*.lib,*.xml"
 

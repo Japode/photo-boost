@@ -50,28 +50,6 @@ a file that fails its hash is deleted, never loaded. When the app runs on the CP
 suggests the download, because FP16 there takes about twice FP32's time (PB51's
 measurements). Later launches only re-check presence and hashes.
 
-### §PB51 Models inside the installer
-
-Decided by the owner on 2026-10-20: the installer carries the models, so a fresh install
-works offline, and FP16 is the set it carries. FP32 becomes an optional download from
-Hugging Face (PB12, PB13); nothing loose is stored on GitHub, only the installer asset.
-
-Why FP16: half of FP32's size (about 347 MB with YuNet, against 690 MB), 82 to 85 dB
-PSNR against FP32 (PB10), and as fast on DirectML (SCUNet 132 against 126 ms per 256 px
-tile). INT8 was slower than FP32 on the GPU (221 ms) and lost 29 to 33 dB, so it is not
-shipped. The cost is the CPU: measured 2026-10-20, FP16 runs about twice FP32's time
-there (Real-ESRGAN x4 2404 against 1141 ms at 128 px, GFPGAN 1864 against 981 ms; RMBG
-the exception, 539 against 590 ms), which is what the FP32 download answers.
-
-Work: build-installer.cmd copies each model's fp16.onnx and meta.json (and YuNet's
-fp32.onnx) from .cache/models into {app}\models, failing when one is missing; the app
-looks there before %LOCALAPPDATA%\PhotoBoost\models, which stays where downloads go; the
-default variant becomes FP16 (Variant in MainWindow.Operations.cs); the About panel and
-the cases keep reading what is on disk. The installer's size and a run of each operation
-from the installed folder are the check. ViTMatte (PB48) has no fp16.onnx (its graph
-does not survive the FP16 converter): bundle its int8 or fp32 and let Matting ask for
-that variant, or Refine edges falls back to the guided filter.
-
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ### §PB52 TensorRT-RTX engine reuse

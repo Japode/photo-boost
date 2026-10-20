@@ -10,28 +10,41 @@ namespace PhotoBoost.Inference;
 public sealed record InstalledModel(string Name, ModelMeta Meta, IReadOnlyList<string> Variants);
 
 /// <summary>
-/// The models folder as the pipelines use it (PB19): &lt;root&gt;/&lt;model&gt;/meta.json beside the
-/// ONNX variants, and one session cache on the detected provider.
+/// The models folders as the pipelines use them (PB19): &lt;root&gt;/&lt;model&gt;/meta.json beside the
+/// ONNX variants, and one session cache on the detected provider. Several roots are searched in
+/// order (PB51): the set the installer put beside the app, then the folder downloads go to, and a
+/// model's variant is read from the first root that has it.
 /// </summary>
 public sealed class ModelLibrary : IDisposable
 {
     private readonly ConcurrentDictionary<string, ModelMeta> metas = new(StringComparer.Ordinal);
     private readonly Lazy<SessionCache<InferenceSession>>? cpu;
 
-    /// <summary>Opens a models folder.</summary>
+    /// <summary>Opens one models folder.</summary>
     /// <param name="root">The folder holding one subfolder per model.</param>
     /// <param name="provider">Where sessions run.</param>
     /// <param name="idle">How long an unused session is kept.</param>
     public ModelLibrary(string root, ProviderSelection provider, TimeSpan? idle = null)
+        : this([root], provider, idle)
     {
+    }
+
+    /// <summary>Opens several models folders, searched in order.</summary>
+    /// <param name="roots">The folders, each holding one subfolder per model; the first that has a file wins.</param>
+    /// <param name="provider">Where sessions run.</param>
+    /// <param name="idle">How long an unused session is kept.</param>
+    public ModelLibrary(IReadOnlyList<string> roots, ProviderSelection provider, TimeSpan? idle = null)
+    {
+        ArgumentNullException.ThrowIfNull(roots);
         ArgumentNullException.ThrowIfNull(provider);
-        Root = root;
+        ArgumentOutOfRangeException.ThrowIfZero(roots.Count);
+        Roots = roots;
         Provider = provider;
         TimeSpan keep = idle ?? SessionCache<InferenceSession>.DefaultIdle;
-        Sessions = ModelSessions.Create(root, provider, keep);
+        Sessions = ModelSessions.Create(PathOf, provider, keep);
         if (provider.Provider != ExecutionProvider.Cpu)
         {
-            cpu = new(() => ModelSessions.Create(root, new ProviderSelection(ExecutionProvider.Cpu, null, null), keep));
+            cpu = new(() => ModelSessions.Create(PathOf, new ProviderSelection(ExecutionProvider.Cpu, null, null), keep));
         }
     }
 
@@ -41,8 +54,8 @@ public sealed class ModelLibrary : IDisposable
     /// <summary>CPU sessions for a GPU run that ran out of memory (PB21); null when already on CPU.</summary>
     public SessionCache<InferenceSession>? CpuFallback => cpu?.Value;
 
-    /// <summary>The models folder.</summary>
-    public string Root { get; }
+    /// <summary>The models folders, in the order they are searched.</summary>
+    public IReadOnlyList<string> Roots { get; }
 
     /// <summary>The sessions, loaded on demand.</summary>
     public SessionCache<InferenceSession> Sessions { get; }
@@ -50,41 +63,40 @@ public sealed class ModelLibrary : IDisposable
     /// <summary>Whether a model's variant is on disk.</summary>
     /// <param name="model">The model's folder name.</param>
     /// <param name="variant">fp32, fp16 or int8.</param>
-    /// <returns>True when both its meta.json and its ONNX file exist.</returns>
-    public bool Has(string model, string variant) =>
-        File.Exists(Path.Combine(Root, model, "meta.json")) && File.Exists(Path.Combine(Root, model, variant + ".onnx"));
+    /// <returns>True when one root holds both its meta.json and its ONNX file.</returns>
+    public bool Has(string model, string variant) => RootOf(model, variant) is not null;
 
-    /// <summary>A model's meta.json, read once.</summary>
+    /// <summary>A model's meta.json, read once, from the first root that has one.</summary>
     /// <param name="model">The model's folder name.</param>
     /// <returns>Its description.</returns>
-    public ModelMeta Meta(string model) => metas.GetOrAdd(model, name => ModelMeta.Load(Path.Combine(Root, name, "meta.json")));
+    public ModelMeta Meta(string model) => metas.GetOrAdd(model, name =>
+    {
+        string root = Roots.FirstOrDefault(r => File.Exists(Path.Combine(r, name, "meta.json"))) ?? Roots[0];
+        return ModelMeta.Load(Path.Combine(root, name, "meta.json"));
+    });
 
     /// <summary>
-    /// Every model in the folder with a meta.json this build can read, by name, with the variants
-    /// on disk (PB46: what the About panel lists, licenses included). A folder whose meta.json is
-    /// unreadable is left out rather than failing the list.
+    /// Every model in any root with a meta.json this build can read, by name, with the variants
+    /// on disk across the roots (PB46: what the About panel lists, licenses included). A folder
+    /// whose meta.json is unreadable is left out rather than failing the list.
     /// </summary>
     /// <returns>The models, by folder name.</returns>
     public IReadOnlyList<InstalledModel> Installed()
     {
-        if (!Directory.Exists(Root))
-        {
-            return [];
-        }
+        string[] names = [.. Roots.Where(Directory.Exists)
+            .SelectMany(Directory.EnumerateDirectories)
+            .Where(folder => File.Exists(Path.Combine(folder, "meta.json")))
+            .Select(folder => Path.GetFileName(folder))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)];
 
         List<InstalledModel> found = [];
-        foreach (string folder in Directory.EnumerateDirectories(Root).Order(StringComparer.Ordinal))
+        foreach (string name in names)
         {
-            string name = Path.GetFileName(folder);
-            if (!File.Exists(Path.Combine(folder, "meta.json")))
-            {
-                continue;
-            }
-
             try
             {
                 ModelMeta meta = Meta(name);
-                string[] onDisk = [.. meta.Variants.Keys.Where(variant => File.Exists(Path.Combine(folder, variant + ".onnx"))).Order(StringComparer.Ordinal)];
+                string[] onDisk = [.. meta.Variants.Keys.Where(variant => Has(name, variant)).Order(StringComparer.Ordinal)];
                 found.Add(new(name, meta, onDisk));
             }
             catch (InvalidDataException)
@@ -105,4 +117,10 @@ public sealed class ModelLibrary : IDisposable
             cpu.Value.Dispose();
         }
     }
+
+    private string? RootOf(string model, string variant) => Roots.FirstOrDefault(root =>
+        File.Exists(Path.Combine(root, model, "meta.json")) && File.Exists(Path.Combine(root, model, variant + ".onnx")));
+
+    private string PathOf(ModelKey key) =>
+        Path.Combine(RootOf(key.Model, key.Variant) ?? Roots[0], key.Model, key.Variant + ".onnx");
 }

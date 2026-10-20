@@ -29,7 +29,8 @@ public partial class MainWindow
     {
         string version = typeof(MainWindow).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
         AboutVersion.Text = $"Version {version}";
-        AboutModelsFolder.Text = $"From {Options.ModelsFolder}";
+        // PB51: the bundled folder only when the installer put one there.
+        AboutModelsFolder.Text = $"From {string.Join(" and ", Options.ModelFolders.Where(folder => folder == Options.ModelsFolder || Directory.Exists(folder)))}";
 
         // Before the provider is known there is no library yet; reading meta.json needs no session.
         IReadOnlyList<InstalledModel> installed;
@@ -39,7 +40,7 @@ public partial class MainWindow
         }
         else
         {
-            using ModelLibrary reading = new(Options.ModelsFolder, new ProviderSelection(ExecutionProvider.Cpu, null, null));
+            using ModelLibrary reading = new(Options.ModelFolders, new ProviderSelection(ExecutionProvider.Cpu, null, null));
             installed = reading.Installed();
         }
 

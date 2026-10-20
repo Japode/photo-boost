@@ -234,14 +234,23 @@ public static class ModelSessions
     /// <param name="provider">What PB14's detection chose.</param>
     /// <param name="idle">How long an unused session is kept.</param>
     /// <returns>The cache; the caller disposes it.</returns>
-    public static SessionCache<InferenceSession> Create(string root, ProviderSelection provider, TimeSpan idle)
+    public static SessionCache<InferenceSession> Create(string root, ProviderSelection provider, TimeSpan idle) =>
+        Create(key => Path.Combine(root, key.Model, key.Variant + ".onnx"), provider, idle);
+
+    /// <summary>A cache loading each model and variant from where <paramref name="path"/> says (PB51).</summary>
+    /// <param name="path">The ONNX file for a key.</param>
+    /// <param name="provider">What PB14's detection chose.</param>
+    /// <param name="idle">How long an unused session is kept.</param>
+    /// <returns>The cache; the caller disposes it.</returns>
+    public static SessionCache<InferenceSession> Create(Func<ModelKey, string> path, ProviderSelection provider, TimeSpan idle)
     {
+        ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(provider);
         return new SessionCache<InferenceSession>(
             key =>
             {
                 using SessionOptions options = SessionOptionsFactory.Create(provider);
-                return new InferenceSession(Path.Combine(root, key.Model, key.Variant + ".onnx"), options);
+                return new InferenceSession(path(key), options);
             },
             idle);
     }

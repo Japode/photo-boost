@@ -177,7 +177,7 @@ class ExportTests(unittest.TestCase):
             session = ort.InferenceSession(str(self.folder / name / "fp32.onnx"), providers=["CPUExecutionProvider"])
             out = session.run(None, {"input": image})[0]
             np.testing.assert_array_equal(image.repeat(scale, axis=2).repeat(scale, axis=3), out)
-            for file in ("fp32.onnx", "int8.onnx", "meta.json"):
+            for file in ("fp16.onnx", "fp32.onnx", "meta.json"):
                 self.assertEqual((committed / name / file).read_bytes(), (self.folder / name / file).read_bytes(), f"{name}/{file}")
 
     def test_yunet_heads_decode_as_opencv_does(self):

@@ -8,8 +8,9 @@ rem    (ONNX Runtime, DirectML, WPF's, SkiaSharp's) stay beside the exe rather t
 rem    extracted at start: a single-file publish of native ONNX Runtime binaries is where this
 rem    breaks, and the PB5 spike ran DirectML both ways.
 rem 2. The packages' own license and notice files into artifacts\publish\licenses.
-rem 3. ISCC compiles build\installer.iss into artifacts\installer\PhotoBoost-Setup-<version>.exe.
-rem Models are not bundled: the app downloads them.
+rem 3. PB51: the FP16 model set from .cache\models into artifacts\publish\models (stage-models.ps1),
+rem    which the app reads before %LOCALAPPDATA%\PhotoBoost\models. A missing model fails the build.
+rem 4. ISCC compiles build\installer.iss into artifacts\installer\PhotoBoost-Setup-<version>.exe.
 setlocal
 
 cd /d "%~dp0.."
@@ -38,6 +39,14 @@ echo === Collecting third-party notices ===
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0collect-notices.ps1" -Out "%PUBLISH%\licenses"
 if errorlevel 1 (
     echo *** Collecting the notices failed. ***
+    exit /b 1
+)
+
+echo.
+echo === Staging the models ===
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0stage-models.ps1" -Out "%PUBLISH%\models"
+if errorlevel 1 (
+    echo *** Staging the models failed; no installer was built. ***
     exit /b 1
 )
 

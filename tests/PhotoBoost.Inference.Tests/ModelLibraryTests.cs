@@ -34,6 +34,22 @@ public sealed class ModelLibraryTests : IDisposable
         Assert.Empty(library.Installed());
     }
 
+    [Fact]
+    public void EachVariantIsReadFromTheFirstRootThatHasIt()
+    {
+        // PB51: the installer's FP16 beside the app, a downloaded FP32 in the user's folder.
+        string example = File.ReadAllText(Path.Combine(Repository.Root, "scripts", "meta.example.json"));
+        Write("bundled/realesrgan-x4plus", example, "fp16.onnx");
+        Write("downloads/realesrgan-x4plus", example, "fp32.onnx");
+        using ModelLibrary library = new([Path.Combine(root, "bundled"), Path.Combine(root, "absent"), Path.Combine(root, "downloads")], Cpu);
+
+        Assert.True(library.Has("realesrgan-x4plus", "fp16"));
+        Assert.True(library.Has("realesrgan-x4plus", "fp32"));
+        Assert.False(library.Has("realesrgan-x4plus", "int8"));
+        InstalledModel model = Assert.Single(library.Installed());
+        Assert.Equal(["fp16", "fp32"], model.Variants);
+    }
+
     private void Write(string name, string meta, params string[] files)
     {
         string folder = Path.Combine(root, name);

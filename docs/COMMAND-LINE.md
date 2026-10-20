@@ -15,10 +15,10 @@ PhotoBoost says which one in a message box and exits with code 2.
 | Flag | What it does |
 | --- | --- |
 | `--open <image>` | Opens this image at start instead of the empty screen. |
-| `--models <folder>` | Reads and downloads models in this folder instead of `%LOCALAPPDATA%\PhotoBoost\models`. |
+| `--models <folder>` | Reads and downloads models in this folder alone, instead of the `models` folder the installer put beside the app followed by `%LOCALAPPDATA%\PhotoBoost\models`. |
 | `--provider auto\|winml\|dml\|cpu` | `auto` (the default) runs on DirectML on the GPU with the most video memory and falls back to the CPU; `winml` first tries a provider Windows ML installed for this PC (TensorRT-RTX on NVIDIA, OpenVINO on Intel), then does what `auto` does, and fetches a provider not installed yet in the background for the next start; `dml` asks for DirectML; `cpu` never tries a GPU. The status bar shows what was chosen. |
 | `--export <file>` | When the run finishes, writes the result here (PNG, JPG or WebP by extension) and stays open. |
-| `--quality compact\|high` | Starts in Compact (INT8 models) or High quality (FP16/FP32) instead of the saved choice. |
+| `--quality compact\|high` | Starts on the FP16 models the installer carries (compact) or the FP32 ones (high) instead of the saved choice. |
 
 `--provider` takes effect today. `--open`, `--models`, `--export` and `--quality` are parsed and
 validated now, and take effect as the open screen, the model download, the export and the

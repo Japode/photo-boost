@@ -6,7 +6,7 @@ namespace PhotoBoost.App;
 /// <summary>The quality mode a run starts in (PB29 names them; PB39 lets a flag pick one).</summary>
 public enum QualityMode
 {
-    /// <summary>The INT8 models: the small download.</summary>
+    /// <summary>The FP16 models the installer carries (PB51); PB29 renames it Standard.</summary>
     Compact,
 
     /// <summary>FP16 or FP32: the faithful result.</summary>
@@ -30,8 +30,14 @@ public sealed record AppOptions(
     public static string DefaultModels =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PhotoBoost", "models");
 
-    /// <summary>The models folder this run uses.</summary>
+    /// <summary>The models the installer put beside the app (PB51), read before <see cref="DefaultModels"/>.</summary>
+    public static string BundledModels => Path.Combine(AppContext.BaseDirectory, "models");
+
+    /// <summary>The models folder this run downloads into and names when a model is missing.</summary>
     public string ModelsFolder => Models ?? DefaultModels;
+
+    /// <summary>The folders this run reads models from, in order: --models alone, else the bundled set then the downloads.</summary>
+    public IReadOnlyList<string> ModelFolders => Models is { } given ? [given] : [BundledModels, DefaultModels];
 }
 
 /// <summary>A parse: the options, or why the command line was refused.</summary>

@@ -24,8 +24,8 @@ $lines = @(
     'PhotoBoost third-party notices',
     '',
     'PhotoBoost ships the packages below. Each folder here holds the license and notice files the',
-    'package itself carries. The models PhotoBoost downloads are not part of the installer; their',
-    'licenses are listed in the app (GFPGAN v1.4 and RMBG-1.4 carry non-commercial terms).',
+    'package itself carries. The models the installer carries, in the models folder, list their',
+    'licenses in the app''s About panel (GFPGAN v1.4 and RMBG-1.4 carry non-commercial terms).',
     ''
 )
 

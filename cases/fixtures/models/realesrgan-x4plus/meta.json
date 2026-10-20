@@ -29,13 +29,13 @@
     "largest_activation_bytes_per_pixel": 192.0
   },
   "variants": {
-    "fp32": {
-      "file": "fp32.onnx",
+    "fp16": {
+      "file": "fp16.onnx",
       "bytes": 318,
       "sha256": "cf6b75b6cfb2b256f1bc0b4f729969098f8990485d71ee00feaf77ba0e10235c"
     },
-    "int8": {
-      "file": "int8.onnx",
+    "fp32": {
+      "file": "fp32.onnx",
       "bytes": 318,
       "sha256": "cf6b75b6cfb2b256f1bc0b4f729969098f8990485d71ee00feaf77ba0e10235c"
     }

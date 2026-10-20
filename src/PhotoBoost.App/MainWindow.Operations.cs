@@ -22,8 +22,8 @@ public partial class MainWindow
     /// <summary>The version shown when it is an operation's result rather than the opened file.</summary>
     public RgbaImage? Result => history.Position > 0 ? Image : null;
 
-    /// <summary>The variant the quality mode names: INT8 for Compact, FP32 for High (PB29 adds FP16).</summary>
-    private string Variant => Options.Quality == QualityMode.High ? "fp32" : "int8";
+    /// <summary>The variant the quality mode names: FP16, the set the installer carries (PB51), or FP32 for High.</summary>
+    private string Variant => Options.Quality == QualityMode.High ? "fp32" : "fp16";
 
     private int Factor => Scale2.IsChecked == true ? 2 : 4;
 
@@ -33,7 +33,7 @@ public partial class MainWindow
     /// <summary>Called once the provider is known: opens the models folder and the queue.</summary>
     private void StartOperations(ProviderSelection provider)
     {
-        library = new ModelLibrary(Options.ModelsFolder, provider);
+        library = new ModelLibrary(Options.ModelFolders, provider);
         service = new InferenceService();
         Closed += async (_, _) =>
         {

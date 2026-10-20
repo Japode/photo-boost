@@ -772,7 +772,8 @@ def write_fixtures(out: Path) -> list[str]:
         folder.mkdir(parents=True, exist_ok=True)
         raw = tiny_upscaler(scale).SerializeToString()
         variants = {}
-        for variant in ("fp32", "int8"):
+        # PB51: the app's default is the FP16 set the installer carries, and High quality is FP32.
+        for variant in ("fp16", "fp32"):
             path = folder / f"{variant}.onnx"
             path.write_bytes(raw)
             variants[variant] = {"file": path.name, "bytes": len(raw), "sha256": sha256_of(path)}

@@ -11,10 +11,10 @@
       "files": [
         "tests/fixtures/images/rotated-exif6.jpg",
         { "from": "cases/fixtures/models/realesrgan-x4plus/fp32.onnx", "to": "models/realesrgan-x4plus/fp32.onnx" },
-        { "from": "cases/fixtures/models/realesrgan-x4plus/int8.onnx", "to": "models/realesrgan-x4plus/int8.onnx" },
+        { "from": "cases/fixtures/models/realesrgan-x4plus/fp16.onnx", "to": "models/realesrgan-x4plus/fp16.onnx" },
         { "from": "cases/fixtures/models/realesrgan-x4plus/meta.json", "to": "models/realesrgan-x4plus/meta.json" },
         { "from": "cases/fixtures/models/realesrgan-x2plus/fp32.onnx", "to": "models/realesrgan-x2plus/fp32.onnx" },
-        { "from": "cases/fixtures/models/realesrgan-x2plus/int8.onnx", "to": "models/realesrgan-x2plus/int8.onnx" },
+        { "from": "cases/fixtures/models/realesrgan-x2plus/fp16.onnx", "to": "models/realesrgan-x2plus/fp16.onnx" },
         { "from": "cases/fixtures/models/realesrgan-x2plus/meta.json", "to": "models/realesrgan-x2plus/meta.json" }
       ],
       "workingDirectory": "{files}",
@@ -120,7 +120,7 @@
           "locator": "List#AboutModels > ListItem[order=top]",
           "act": "read",
           "reads": "name",
-          "matches": "^realesrgan-x2plus · upscale · fp32, int8 · test fixture, no weights \\(https://",
+          "matches": "^realesrgan-x2plus · upscale · fp16, fp32 · test fixture, no weights \\(https://",
           "named": "the first model, its variants and its license"
         },
         {

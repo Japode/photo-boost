@@ -18,6 +18,9 @@ public static class RemoveBackground
     /// <summary>The stage name its one step reports under.</summary>
     public const string Stage = "background";
 
+    // The ViTMatte variants tried, in order, when the one asked for is not on disk.
+    private static readonly string[] MatteFallbacks = ["fp32", "int8"];
+
     /// <summary>Removes a photo's background; call it from the inference queue.</summary>
     /// <param name="library">The models and their sessions.</param>
     /// <param name="image">The photo, left as it is.</param>
@@ -37,8 +40,12 @@ public static class RemoveBackground
             throw new InvalidDataException($"{Model}'s meta.json does not describe a fixed-size mask model.");
         }
 
-        Action<float[]>? matting = refine && library.Has(Matting.Model, variant)
-            ? mask => Matting.Run(library, image, mask, variant)
+        // PB51: ViTMatte has no FP16 file, so the bundled FP16 set brings its FP32 instead.
+        string? matteVariant = !refine ? null
+            : library.Has(Matting.Model, variant) ? variant
+            : MatteFallbacks.FirstOrDefault(v => library.Has(Matting.Model, v));
+        Action<float[]>? matting = matteVariant is not null
+            ? mask => Matting.Run(library, image, mask, matteVariant)
             : null;
         using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, variant));
         return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine, matting);

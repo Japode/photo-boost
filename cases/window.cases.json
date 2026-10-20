@@ -185,7 +185,7 @@
           "locator": "Text#OperationNote",
           "act": "read",
           "reads": "name",
-          "matches": "^realesrgan-x4plus \\(int8\\) is not in .*Download the models first\\.$",
+          "matches": "^realesrgan-x4plus \\(fp16\\) is not in .*Download the models first\\.$",
           "named": "the note names the 4x model and its variant"
         },
         {
@@ -210,7 +210,7 @@
           "locator": "Text#DenoiseNote",
           "act": "read",
           "reads": "name",
-          "matches": "^scunet-color-real-psnr \\(int8\\) is not in .*Download the models first\\.$",
+          "matches": "^scunet-color-real-psnr \\(fp16\\) is not in .*Download the models first\\.$",
           "named": "the note names SCUNet and its variant"
         },
         {
@@ -276,7 +276,7 @@
           "locator": "Text#BackgroundNote",
           "act": "read",
           "reads": "name",
-          "matches": "^rmbg-1\\.4 \\(int8\\) is not in .*Download the models first\\.$",
+          "matches": "^rmbg-1\\.4 \\(fp16\\) is not in .*Download the models first\\.$",
           "named": "the note names RMBG-1.4 and its variant"
         },
         {

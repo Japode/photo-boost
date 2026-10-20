@@ -1,3 +1,4 @@
+using System.IO;
 using PhotoBoost.Inference;
 
 namespace PhotoBoost.App.Tests;
@@ -25,6 +26,16 @@ public sealed class CommandLineTests
             new AppOptions(@"C:\photos\a b.jpg", @"D:\models", ProviderPreference.Cpu, "out.png", QualityMode.High),
             parsed.Options);
         Assert.Equal(@"D:\models", parsed.Options!.ModelsFolder);
+        Assert.Equal([@"D:\models"], parsed.Options.ModelFolders);
+    }
+
+    [Fact]
+    public void WithoutModelsTheBundledSetIsReadBeforeTheDownloads()
+    {
+        // PB51: the installer's models beside the exe, then the folder downloads go to.
+        AppOptions options = new();
+
+        Assert.Equal([Path.Combine(AppContext.BaseDirectory, "models"), AppOptions.DefaultModels], options.ModelFolders);
     }
 
     [Theory]
