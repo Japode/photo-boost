@@ -2,7 +2,7 @@
 
 ## Block A — Project foundation
 
-- 📋 **PB57** (deps: PB38 ✅) **The UI cases still work around five winwright gaps that 1.1.4 closed, and the drop zone and Save dialog have no case** — Winwright 1.1.4 shipped WW550, WW551, WW555, WW556 and WW521, so the stand-ins can become real cases. → §PB57
+- ⏳ **PB57** (deps: PB38 ✅, winwright WW561) **The UI cases still work around five winwright gaps that 1.1.4 closed, and the drop zone and Save dialog have no case** — The Save dialog still has no case: choose file is unreliable on the guest (winwright WW561). → §PB57
 
 ## Block B — Model management
 
@@ -35,6 +35,12 @@
 - **Auto runs on TensorRT-RTX where its engine is cached** With an engine cached,
   --provider auto's status bar names TensorRT-RTX on the RTX 4060 desk, and DirectML
   still runs where no engine or provider exists.
+
+## Done when — PB57
+
+- **A Save as case checks the exact file the dialog was told to write** The case reads
+  "Saved saved.png" after choose file, and passes on the host and on the VMware guest in
+  two runs in a row.
 
 ## Non-goals
 

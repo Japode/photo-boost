@@ -3,8 +3,8 @@
   <!-- PB38: the driving half of the UI cases in ..\..\cases, as winwright's adoption guide and
        quickshell set it up. One package reference and nothing else: no reference to the app or to
        WPF, so a case asserts against what a user launches, not against types it was compiled with.
-       No RuntimeIdentifier, so run-tests.cmd finds the executable where it looks; the app under test
-       is launched by the path winwright.json spells. -->
+       The app under test is launched by the path winwright.json spells, {configuration} filled with
+       this build's (WW521). -->
   <PropertyGroup>
     <RootNamespace>PhotoBoost.Cases</RootNamespace>
     <!-- A Winwright version the feed does not have must fail the restore, not resolve to another. -->
@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Winwright" Version="1.1.3" />
+    <PackageReference Include="Winwright" Version="1.1.4" />
   </ItemGroup>
 
 </Project>

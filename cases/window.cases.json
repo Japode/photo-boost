@@ -8,7 +8,7 @@
       "shareable": true
     },
     {
-      // PB23: --open stands in for a drop from Explorer, which winwright cannot drive (WW550).
+      // PB23: --open reaches a photo without a dialog; the drop itself has its own case below (WW550).
       // The path is relative to winwright.json's folder, where the app is started (WW508).
       "name": "a window opened on the rotated JPEG fixture",
       "arguments": ["--open", "tests/fixtures/images/rotated-exif6.jpg", "--provider", "cpu"],
@@ -48,6 +48,12 @@
       "name": "a window asked for Windows ML",
       "arguments": ["--provider", "winml"],
       "shareable": true
+    },
+    {
+      // PB57: not lent, since a drop opens a photo in it.
+      "name": "an empty window to drop a photo on",
+      "arguments": ["--provider", "cpu"],
+      "shareable": false
     }
   ],
 
@@ -136,6 +142,31 @@
           "reads": "name",
           "expect": "Open image…",
           "named": "the open button is on the first screen"
+        }
+      ]
+    },
+
+    {
+      "name": "a photo dropped from Explorer on the empty screen opens upright",
+      "catches": "a drop zone that accepts the drag and opens nothing, or ignores the file's EXIF orientation",
+      "filed": "PB57",
+      "tags": ["open", "drop"],
+      "fixture": "an empty window to drop a photo on",
+      "steps": [
+        {
+          // Released over the drop zone's button: the zone itself is a Border, which has no
+          // automation peer, and the window's drop handler takes a drop anywhere on it.
+          "locator": "Button#OpenButton",
+          "act": "drop file",
+          "with": "tests/fixtures/images/rotated-exif6.jpg",
+          "named": "the photo is dropped on the drop zone"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "it opens, named and upright"
         }
       ]
     },
@@ -297,7 +328,6 @@
     },
 
     {
-      // The save dialog itself waits on winwright WW551; --export covers the write.
       "name": "choosing JPEG for a transparent photo warns and offers a background",
       "catches": "a JPEG export that silently turns transparent pixels black",
       "filed": "PB25",
@@ -308,15 +338,6 @@
           "locator": "ComboBox#ExportFormat",
           "act": "expand",
           "named": "the format list is opened"
-        },
-        {
-          // Workaround for winwright WW555: a select straight after expand can resolve before the
-          // popup realises its items, so this read (which polls) waits for the item first.
-          "locator": "ComboBox#ExportFormat > ListItem[name=\"JPEG\"]",
-          "act": "read",
-          "reads": "selected",
-          "expect": "not selected",
-          "named": "the opened list offers JPEG, not yet chosen (PNG is the default)"
         },
         {
           "locator": "ComboBox#ExportFormat > ListItem[name=\"JPEG\"]",

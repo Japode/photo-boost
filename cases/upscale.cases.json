@@ -5,8 +5,7 @@
 
   "fixtures": [
     {
-      // Not lent: it runs and writes. Started inside the staged folder, with the models staged
-      // beside the photo, because an argument cannot name '{files}' (winwright WW556).
+      // Not lent: it runs and writes. Its arguments name the staged folder through {files} (WW556).
       "name": "a window on the tiny models, exporting into its own folder",
       "files": [
         "tests/fixtures/images/rotated-exif6.jpg",
@@ -17,8 +16,7 @@
         { "from": "cases/fixtures/models/realesrgan-x2plus/fp16.onnx", "to": "models/realesrgan-x2plus/fp16.onnx" },
         { "from": "cases/fixtures/models/realesrgan-x2plus/meta.json", "to": "models/realesrgan-x2plus/meta.json" }
       ],
-      "workingDirectory": "{files}",
-      "arguments": ["--open", "rotated-exif6.jpg", "--models", "models", "--provider", "cpu", "--export", "out.png"],
+      "arguments": ["--open", "{files}/rotated-exif6.jpg", "--models", "{files}/models", "--provider", "cpu", "--export", "{files}/out.png"],
       "shareable": false
     }
   ],

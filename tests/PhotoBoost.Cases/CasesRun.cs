@@ -50,9 +50,8 @@ public sealed class CasesRun
     }
 
     /// <summary>
-    /// The declaration pointed at the configuration this assembly was built in: winwright.json names
-    /// the Debug app, and a Release suite must launch the Release one. A copy with that one segment
-    /// changed is written beside the original, since its paths are relative to its own folder.
+    /// The declaration with {configuration} filled with the one this assembly was built in
+    /// (WW521), so a Release suite launches the Release app.
     /// </summary>
     private static ProjectDeclaration ForThisBuild(string repository)
     {
@@ -62,19 +61,7 @@ public sealed class CasesRun
             .Select(one => one.Configuration)
             .FirstOrDefault() ?? "Debug";
 
-        string declared = Path.Combine(repository, "winwright.json");
-        if (configuration == "Debug")
-        {
-            return ProjectDeclaration.Load(declared);
-        }
-
-        string text = File.ReadAllText(declared);
-        string pointed = text.Replace("/bin/Debug/", $"/bin/{configuration}/", StringComparison.Ordinal);
-        Assert.True(pointed != text, "winwright.json names no /bin/Debug/ path to point at this build");
-
-        string copy = Path.Combine(repository, $"winwright.{configuration}.json");
-        File.WriteAllText(copy, pointed);
-        return ProjectDeclaration.Load(copy);
+        return ProjectDeclaration.Load(Path.Combine(repository, "winwright.json"), configuration);
     }
 
     /// <summary>The whole reading: failures, what could not be asked, what broke, and the trace.</summary>
