@@ -65,6 +65,26 @@ line need the same floor, and add an architecture test that holds installer.iss'
 MinVersion at or above the Windows ML package's minimum, so a package upgrade that
 raises it is caught.
 
+### §PB54 GFPGAN FP16 on DirectML
+
+Found by PB34's benchmark on 2026-10-20 (tools\PhotoBoost.Bench, RTX 4060). GFPGAN
+v1.4's fp16.onnx on DirectML pastes a flat brown square over each face of
+Blake_Lively.jpg: 12.7 dB PSNR and SSIM 0.62 against FP32 on the same provider. On the
+CPU the same file is right (76.8 dB), and so is FP32 on DirectML. Since PB51 FP16 is the
+default set the installer carries, so face restore is broken on every DirectML PC.
+
+Likely cause: an FP16 overflow in the StyleGAN2 decoder, whose modulated convolutions
+square, sum and take the inverse square root of the style-scaled weights (demodulation);
+the CPU provider computes those ops in FP32 internally and DirectML does not. The ORT
+log also says the decoder's constant_input Tile has no CPU kernel to fold.
+
+What to build: in export-and-quantize.py, convert GFPGAN to FP16 with the demodulation
+kept in FP32 (onnxconverter_common's node_block_list or op_block_list on the ReduceSum,
+Pow, Sqrt and Reciprocal nodes of each modulated conv), and add a DirectML check: PB10's
+validation runs on the CPU only, which is how this shipped. If no block list holds the
+quality at 40 dB on DirectML, bundle GFPGAN's fp32.onnx instead (+162 MB) as
+stage-models.ps1 does for ViTMatte. Re-run the benchmark and update the README's table.
+
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
 ### §PB52 TensorRT-RTX engine reuse
@@ -113,15 +133,5 @@ Standard and High. PB34's table compares the two sets.
 ## Block E — Face restoration and background removal
 
 ## Block F — Delivery: README, benchmarks and installers
-
-### §PB34 FP16 vs FP32 benchmark
-
-A script that runs each model and variant on fixed test images per available provider
-and prints a Markdown table of file size, peak memory, time and PSNR/SSIM against FP32.
-Paste the result into the README with the hardware it ran on. The PB5 spike's OrtSpike
---model already times a model file on CPU and DirectML from C#; PB9's first numbers are
-in the PB29 design, and PB51 has the first FP16 against FP32 times on CPU and DirectML.
-The table covers the two shipped sets (FP16 in the installer, FP32 downloaded); INT8 is
-no longer shipped.
 
 ## Block G — Phase 2: denoising

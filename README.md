@@ -123,6 +123,58 @@ TensorRT-RTX (NVIDIA) ou o OpenVINO (Intel). O TensorRT-RTX processa cada bloco 
 três vezes mais rápido, mas monta o motor por 10 a 17 s sempre que uma sessão é criada, por isso
 não é o padrão.
 
+## FP16 e FP32 medidos
+
+O instalador traz o conjunto FP16; o FP32 é o de alta qualidade. A tabela abaixo saiu de
+`tools\PhotoBoost.Bench`, que roda cada operação pelos mesmos pipelines do aplicativo, na foto de
+teste do próprio modelo, nas duas variantes, na CPU e no DirectML:
+
+```
+dotnet run --project tools\PhotoBoost.Bench -c Release -- --out bench.md
+```
+
+"1ª execução" inclui carregar a sessão; "Execução" é a mais rápida de duas execuções seguintes.
+O pico de memória é amostrado a cada 10 ms a partir de antes de carregar a sessão: memória de
+vídeo no DirectML, memória privada do processo na CPU. PSNR e SSIM comparam o resultado FP16 com
+o FP32 no mesmo provedor (só o canal alfa na remoção de fundo). Ampliação e remoção de ruído
+usam blocos de 256 px.
+
+Medido em 2026-10-20: Intel Core i7-14700; NVIDIA GeForce RTX 4060, 8 GB.
+
+| Operação | Provedor | Variante | Arquivo | 1ª execução | Execução | Pico de memória | PSNR vs FP32 | SSIM vs FP32 |
+| --- | --- | --- | --: | --: | --: | --: | --: | --: |
+| Ampliar 4× | CPU | FP16 | 32.2 MB | 7.53 s | 5.73 s | 1143 MB | 70.9 dB | 1.0000 |
+| Ampliar 4× | CPU | FP32 | 63.9 MB | 2.92 s | 2.06 s | 1151 MB | — | — |
+| Ampliar 4× | DirectML | FP16 | 32.2 MB | 1.99 s | 0.21 s | 413 MB | 60.1 dB | 0.9999 |
+| Ampliar 4× | DirectML | FP32 | 63.9 MB | 1.11 s | 0.16 s | 520 MB | — | — |
+| Ampliar 2× | CPU | FP16 | 32.2 MB | 3.08 s | 0.92 s | 191 MB | 71.9 dB | 1.0000 |
+| Ampliar 2× | CPU | FP32 | 64.0 MB | 1.41 s | 0.52 s | 282 MB | — | — |
+| Ampliar 2× | DirectML | FP16 | 32.2 MB | 2.02 s | 0.06 s | 146 MB | 59.7 dB | 1.0000 |
+| Ampliar 2× | DirectML | FP32 | 64.0 MB | 1.17 s | 0.04 s | 225 MB | — | — |
+| Restaurar rostos | CPU | FP16 | 162.5 MB | 3.77 s | 2.66 s | 1974 MB | 76.8 dB | 1.0000 |
+| Restaurar rostos | CPU | FP32 | 324.6 MB | 1.98 s | 1.54 s | 1446 MB | — | — |
+| Restaurar rostos | DirectML | FP16 | 162.5 MB | 1.19 s | 0.08 s | 1306 MB | 12.7 dB | 0.6177 |
+| Restaurar rostos | DirectML | FP32 | 324.6 MB | 1.10 s | 0.13 s | 1551 MB | — | — |
+| Remover fundo | CPU | FP16 | 84.1 MB | 0.90 s | 0.54 s | 1256 MB | 84.8 dB | 1.0000 |
+| Remover fundo | CPU | FP32 | 168.0 MB | 0.84 s | 0.54 s | 2322 MB | — | — |
+| Remover fundo | DirectML | FP16 | 84.1 MB | 0.89 s | 0.09 s | 412 MB | 74.8 dB | 1.0000 |
+| Remover fundo | DirectML | FP32 | 168.0 MB | 0.69 s | 0.07 s | 861 MB | — | — |
+| Remover ruído | CPU | FP16 | 35.6 MB | 5.63 s | 3.57 s | 958 MB | 82.6 dB | 1.0000 |
+| Remover ruído | CPU | FP32 | 69.5 MB | 6.06 s | 3.82 s | 578 MB | — | — |
+| Remover ruído | DirectML | FP16 | 35.6 MB | 10.16 s | 2.59 s | 314 MB | 66.0 dB | 1.0000 |
+| Remover ruído | DirectML | FP32 | 69.5 MB | 8.03 s | 1.41 s | 573 MB | — | — |
+
+O que a tabela mostra:
+
+- **O FP16 tem metade do tamanho e, fora um caso, a mesma imagem:** de 59,7 a 84,8 dB contra o
+  FP32, SSIM de 0,9999 ou mais.
+- **A exceção é o GFPGAN em FP16 no DirectML, que hoje sai errado** (12,7 dB): os rostos viram
+  um quadrado liso. Na CPU o mesmo arquivo está certo. A correção está registrada no roadmap
+  como PB54; até lá, no DirectML, use a alta qualidade para restaurar rostos.
+- **Na CPU o FP32 é mais rápido** na ampliação e na restauração de rostos (2,8× na ampliação 4×);
+  é o que o download do conjunto FP32 resolve. No DirectML as duas variantes têm tempos
+  próximos, fora a remoção de ruído, e o FP16 usa menos memória de vídeo.
+
 ## Licenças dos modelos
 
 | Modelo | Licença |

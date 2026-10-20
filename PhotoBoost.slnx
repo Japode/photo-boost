@@ -16,4 +16,7 @@
     <Project Path="tests/PhotoBoost.Inference.Tests/PhotoBoost.Inference.Tests.csproj" />
     <Project Path="tests/PhotoBoost.Render.Tests/PhotoBoost.Render.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/PhotoBoost.Bench/PhotoBoost.Bench.csproj" />
+  </Folder>
 </Solution>

@@ -77,7 +77,7 @@ public sealed class LayeringTests
 
         string[] onDisk = Directory.GetFiles(Repository.Root, "*.csproj", SearchOption.AllDirectories)
             .Select(path => Path.GetRelativePath(Repository.Root, path).Replace('\\', '/'))
-            .Where(path => path.StartsWith("src/", StringComparison.Ordinal) || path.StartsWith("tests/", StringComparison.Ordinal))
+            .Where(path => path.StartsWith("src/", StringComparison.Ordinal) || path.StartsWith("tests/", StringComparison.Ordinal) || path.StartsWith("tools/", StringComparison.Ordinal))
             .Order(StringComparer.Ordinal)
             .ToArray();
 
