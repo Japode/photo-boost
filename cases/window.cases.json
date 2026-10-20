@@ -175,6 +175,31 @@
     },
 
     {
+      // PB36: SCUNet is real-model only; a run was driven by hand on building.png.
+      "name": "with no models the Denoise card says which one is missing",
+      "catches": "a Denoise button that starts a run doomed to fail",
+      "filed": "PB36",
+      "tags": ["operations", "denoise"],
+      "fixture": "a window with a photo open and no models",
+      "steps": [
+        {
+          "locator": "Text#DenoiseNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^scunet-color-real-psnr \\(int8\\) is not in .*Download the models first\\.$",
+          "named": "the note names SCUNet and its variant"
+        },
+        {
+          "locator": "Button#DenoiseButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and the button cannot start a run"
+        }
+      ]
+    },
+
+    {
       // PB31: the detector and GFPGAN are real models only (no stand-in finds a face), so a run
       // was driven by hand: Blake_Lively.jpg, both faces restored on DirectML in 3.1 s.
       "name": "with no models the Restore faces card says which one is missing and shows GFPGAN's terms",

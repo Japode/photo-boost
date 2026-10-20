@@ -78,6 +78,17 @@
       "note": "PB30: the face detector GFPGAN's crops come from, fetched on 2026-10-20 and pinned to the opencv_zoo commit that added it. Already ONNX (opset 11): 1 x 3 x 640 x 640 BGR pixels 0 to 255, out per-stride heads (8, 16, 32) with a box and five landmarks per face. Chosen over facexlib's RetinaFace, which has no upstream ONNX and is 100 MB."
     },
     {
+      "name": "scunet-color-real-psnr",
+      "file": "scunet_color_real_psnr.pth",
+      "url": "https://github.com/cszn/KAIR/releases/download/v1.0/scunet_color_real_psnr.pth",
+      "size": 71982841,
+      "sha256": "fa78899ba2caec9d235a900e91d96c689da71c42029230c2028b00f09f809c2e",
+      "sha256_source": "computed",
+      "license": "Apache-2.0",
+      "license_url": "https://github.com/cszn/SCUNet/blob/52e440a80a655b01e0b41e9dd9bfe599bc11625e/LICENSE",
+      "note": "PB36: SCUNet for real-world photo noise (the PSNR-trained one, not the GAN one, so it removes noise rather than inventing texture). The asset SCUNet's README links, fetched on 2026-10-20; the architecture is vendored from SCUNet commit 52e440a into scripts/archs/scunet.py. Chosen over NAFNet, whose weights are only on Google Drive."
+    },
+    {
       "name": "u2net",
       "optional": true,
       "file": "u2net.onnx",
@@ -123,6 +134,17 @@
       "license": "Apache-2.0 with third-party terms (repository)",
       "license_url": "https://github.com/TencentARC/GFPGAN/blob/master/LICENSE",
       "note": "PB30: a whole photo with a face in it, which the detector must find and align."
+    },
+    {
+      "name": "image-scunet",
+      "file": "building.png",
+      "url": "https://raw.githubusercontent.com/cszn/SCUNet/52e440a80a655b01e0b41e9dd9bfe599bc11625e/testsets/real3/building.png",
+      "size": 211164,
+      "sha256": "e9ca4180ea3f849fa107e0f4e502832307822b712dcc63c95f18e788484fd1a9",
+      "sha256_source": "computed",
+      "license": "Apache-2.0 (repository)",
+      "license_url": "https://github.com/cszn/SCUNet/blob/52e440a80a655b01e0b41e9dd9bfe599bc11625e/LICENSE",
+      "note": "PB36: one of SCUNet's own real noisy photos, the denoiser's validation input."
     },
     {
       "name": "image-rmbg",

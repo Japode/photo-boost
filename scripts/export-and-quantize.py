@@ -10,6 +10,8 @@ writing a model that is quietly wrong. An FP16 variant that loses too much is dr
     GFPGAN v1.4                 1 x 3 x 512 x 512 aligned face; RGB in [-1, 1], out the same
     RMBG-1.4                    BRIA's own ONNX export, adopted once it matches PyTorch;
                                 batch x 3 x 1024 x 1024, pixels / 255 - 0.5; out the mask
+    SCUNet real PSNR            the denoiser; dynamic batch, height and width, each a multiple
+                                of 64; RGB in [0, 1], out the same
     YuNet 2023mar               OpenCV Zoo's face detector, adopted once it finds the test
                                 photo's face; 1 x 3 x 640 x 640 BGR 0-255; fp32 only
 
@@ -43,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from archs.gfpganv1_clean_arch import GFPGANv1Clean  # noqa: E402
 from archs.rrdbnet import RRDBNet  # noqa: E402
+from archs.scunet import SCUNet  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 WEIGHTS = REPO / ".cache" / "weights"
@@ -142,6 +145,13 @@ def build_gfpgan(folder: Path) -> nn.Module:
     return FirstOutput(net, lambda out: out[0], return_rgb=False, randomize_noise=False)
 
 
+def build_scunet(folder: Path) -> nn.Module:
+    # The configuration SCUNet's own real-photo test script loads these weights with.
+    net = SCUNet(in_nc=3, config=(4, 4, 4, 4, 4, 4, 4), dim=64)
+    net.load_state_dict(state_dict(folder / "scunet_color_real_psnr.pth"), strict=True)
+    return net
+
+
 def load_briarmbg(path: Path) -> type[nn.Module]:
     """BRIA's briarmbg.py with its transformers base class and config replaced by plain ones."""
     if not path.is_file():
@@ -174,8 +184,9 @@ def build_rmbg(folder: Path) -> nn.Module:
 
 # PB10: the lowest INT8 PSNR against FP32, on each model's test image, that may ship. Set about
 # 2 dB under what the first export measured on 2026-10-19 (x4plus 33.1, x2plus 33.2, GFPGAN 31.2,
-# RMBG 29.2 dB), so a quantization that got worse fails while run-to-run noise does not.
-INT8_FLOOR = {"realesrgan-x4plus": 31.0, "realesrgan-x2plus": 31.0, "gfpgan-v1.4": 29.0, "rmbg-1.4": 27.0}
+# RMBG 29.2 dB; SCUNet 46.9 dB on 2026-10-20), so a quantization that got worse fails while
+# run-to-run noise does not.
+INT8_FLOOR = {"realesrgan-x4plus": 31.0, "realesrgan-x2plus": 31.0, "gfpgan-v1.4": 29.0, "rmbg-1.4": 27.0, "scunet-color-real-psnr": 45.0}
 
 # The recommended tile side for the upscalers: the middle of the 128 to 1024 range PB41 picks
 # from by free video memory, and what the app starts from before it knows the GPU.
@@ -230,7 +241,28 @@ EXPORTS = [
         output_channels=1,
         source="rmbg-1.4",
     ),
+    Export(
+        "scunet-color-real-psnr",
+        "scunet_color_real_psnr.pth",
+        build_scunet,
+        # Three halvings of 8 px attention windows: whole windows at every level.
+        multiple=64,
+        test_image="building.png",
+        int8_min_psnr=INT8_FLOOR["scunet-color-real-psnr"],
+        task="denoise",
+        scale=1,
+        source="scunet-color-real-psnr",
+        tile=UPSCALE_TILE,
+    ),
 ]
+
+
+def trace_side(spec: Export) -> int:
+    """The square a model is traced and measured at: 32 multiples, but 2 for a windowed transformer,
+    where 32 x 64 px would be a 2048 px trace no CPU check needs."""
+    if spec.size is not None:
+        return spec.size
+    return spec.multiple * (2 if spec.multiple >= 32 else 32)
 
 
 def load(spec: Export, weights: Path) -> nn.Module:
@@ -241,7 +273,7 @@ def load(spec: Export, weights: Path) -> nn.Module:
 
 
 def export_fp32(model: nn.Module, spec: Export, target: Path) -> None:
-    side = spec.size or 32 * spec.multiple
+    side = trace_side(spec)
     sample = torch.rand(1, 3, side, side)
     axes = None
     if spec.size is None:
@@ -369,7 +401,7 @@ def largest_activation_bytes_per_pixel(model: nn.Module, spec: Export) -> float:
     Not the peak memory (several activations are alive at once): PB41 multiplies it by a margin
     against the free video memory to pick a tile.
     """
-    side = spec.size or 32 * spec.multiple
+    side = trace_side(spec)
     largest = 0
 
     def hook(_module, _inputs, output) -> None:
@@ -458,6 +490,8 @@ def sizes(spec: Export) -> list[tuple[int, int]]:
     """Two non-square sizes, neither the traced one, prove dynamic axes; a fixed model gets two inputs."""
     if spec.size is not None:
         return [(spec.size, spec.size)] * 2
+    if spec.multiple >= 32:
+        return [(2 * spec.multiple, 3 * spec.multiple), (3 * spec.multiple, 2 * spec.multiple)]
     return [(24 * spec.multiple, 40 * spec.multiple), (48 * spec.multiple, 36 * spec.multiple)]
 
 

@@ -59,3 +59,4 @@
 
 ## Block G — Phase 2: denoising
 
+- ✅ **PB36** **No denoising operation** — SCUNet real-PSNR (Apache-2.0) vendored with ≤5-D attention after DirectML crashed on upstream's graph; tiled Denoise card; 320 px photo in 7.4 s on DirectML.

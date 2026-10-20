@@ -9,7 +9,7 @@
   "properties": {
     "schema": { "const": 1 },
     "name": { "type": "string", "pattern": "^[a-z0-9.-]+$" },
-    "task": { "enum": ["upscale", "face-restore", "background-removal", "face-detection"] },
+    "task": { "enum": ["upscale", "face-restore", "background-removal", "face-detection", "denoise"] },
     "scale": { "type": "integer", "minimum": 1 },
     "input": {
       "type": "object",

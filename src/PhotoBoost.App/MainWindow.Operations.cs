@@ -58,6 +58,7 @@ public partial class MainWindow
             UpscaleButton.IsEnabled = false;
             RestoreFacesButton.IsEnabled = false;
             RemoveBackgroundButton.IsEnabled = false;
+            DenoiseButton.IsEnabled = false;
             return;
         }
 
@@ -65,6 +66,7 @@ public partial class MainWindow
         OperationNote.Text = missing ?? string.Empty;
         OperationNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
         UpscaleButton.IsEnabled = Image is not null && missing is null && !Busy;
+        RefreshDenoise();
         RefreshFaces();
         RefreshBackground();
     }

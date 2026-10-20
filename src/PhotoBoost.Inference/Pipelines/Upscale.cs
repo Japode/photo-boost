@@ -1,4 +1,3 @@
-using Microsoft.ML.OnnxRuntime;
 using PhotoBoost.Imaging;
 
 namespace PhotoBoost.Inference.Pipelines;
@@ -57,77 +56,9 @@ public static class Upscale
             throw new InvalidDataException($"{model}'s meta.json says x{meta.Scale}, not x{factor}.");
         }
 
-        using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(model, variant));
-        int context = overlap ?? DefaultOverlap;
-        if (tile is null)
-        {
-            // PB41: the starting tile from the memory there is, measured after the session loaded.
-            long free = MemoryBudget.Free(library.Provider);
-            tile = free > 0
-                ? TileSizer.Choose(free, meta.Tile.LargestActivationBytesPerPixel, context)
-                : meta.Tile.Recommended ?? Tiler.DefaultTile;
-            log?.Invoke($"Tile {tile} px from {free / 1048576.0:0} MB free on {library.Provider.Provider}.");
-        }
-
-        TileOptions options = new(
-            Scale: factor,
-            Low: (float)meta.Input.ValueRange[0],
-            High: (float)meta.Input.ValueRange[1],
-            Tile: tile.Value,
-            Overlap: context,
-            Multiple: meta.Input.Multiple);
-
-        // PB21: an out-of-memory tile is retried smaller down to 64 px, then the run moves to the
-        // CPU, whose session is only loaded if that ever happens.
-        SessionLease<InferenceSession>? cpuLease = null;
-        try
-        {
-            TileModel? fallback = library.CpuFallback is { } cpu
-                ? (input, width, height) => RunTile((cpuLease ??= cpu.Acquire(new ModelKey(model, variant))).Session, meta, input, width, height)
-                : null;
-            if (stats is not null)
-            {
-                stats.Model = model;
-                stats.Tile = options.Tile;
-            }
-
-            TileRetry retry = new(MemoryFailures.Classify, MinTile: MinTile, Fallback: fallback, Log: line =>
-            {
-                stats?.Retries.Add(line);
-                log?.Invoke(line);
-            });
-
-            RgbaImage result = Tiler.Run(
-                image,
-                (input, width, height) => RunTile(lease.Session, meta, input, width, height),
-                options,
-                (done, total) =>
-                {
-                    stats?.Tiles = done;
-                    progress?.Invoke(done, total);
-                },
-                retry);
-            if (image.HasTransparency)
-            {
-                AlphaResampler.ScaleInto(image, result, factor);
-            }
-
-            return result;
-        }
-        finally
-        {
-            cpuLease?.Dispose();
-        }
+        return TiledModel.Run(library, model, image, variant, tile, overlap ?? DefaultOverlap, MinTile, progress, log, stats);
     }
 
     /// <summary>The smallest tile an out-of-memory retry halves down to before moving to the CPU.</summary>
     public const int MinTile = 64;
-
-    private static float[] RunTile(InferenceSession session, ModelMeta meta, float[] input, int width, int height)
-    {
-        using OrtValue tensor = OrtValue.CreateTensorValueFromMemory(input, [1, 3, height, width]);
-        using RunOptions run = new();
-        using IDisposableReadOnlyCollection<OrtValue> outputs = session.Run(run, [meta.Input.Name], [tensor], [meta.Output.Name]);
-        return outputs[0].GetTensorDataAsSpan<float>().ToArray();
-    }
 }

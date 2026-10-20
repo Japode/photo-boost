@@ -122,9 +122,3 @@ them, the app's own third-party notices: ONNX Runtime and DirectML (MIT), SkiaSh
 folder. The installer's notices (PB35) can be generated from the same list.
 
 ## Block G — Phase 2: denoising
-
-### §PB36 Denoise pipeline
-
-Pick a denoising model with a verified source and license that exports to ONNX (e.g.
-SCUNet or NAFNet), run it through the same export, quantize and validate path, and add
-src/main/pipelines/denoise.ts using the shared tiling.

@@ -29,8 +29,6 @@
 
 ## Block G — Phase 2: denoising
 
-- 📋 **PB36** (deps: PB31 ✅, PB32 ✅) **No denoising operation** — Denoising is listed as an optional phase 2 operation. → §PB36
-
 ## Done when — PB12
 
 - **The manifest and model files are published at a stable URL** build-manifest.py ran

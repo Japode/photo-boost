@@ -36,8 +36,8 @@
       </StatusBarItem>
     </StatusBar>
 
-    <!-- PB24: the operations panel: upscale, face restore (PB31) and background removal (PB32).
-         Shown once an image is open. -->
+    <!-- PB24: the operations panel: upscale, denoise (PB36), face restore (PB31) and background
+         removal (PB32). Shown once an image is open. -->
     <ScrollViewer x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,24,24,24"
                   VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
       <StackPanel>
@@ -54,6 +54,19 @@
                     HorizontalAlignment="Stretch" Padding="12,6" Click="OnUpscaleClick" IsEnabled="False" />
             <TextBlock x:Name="OperationNote" AutomationProperties.AutomationId="OperationNote" Visibility="Collapsed"
                        Style="{StaticResource StatCaption}" Margin="0,10,0,0" />
+          </StackPanel>
+        </Border>
+
+        <!-- PB36: SCUNet over tiles, the same size out. -->
+        <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock Text="Denoise" FontSize="15" FontWeight="SemiBold" />
+            <TextBlock Text="SCUNet, removing the grain of a dark or high-ISO photo" Style="{StaticResource StatCaption}"
+                       TextWrapping="Wrap" Margin="0,2,0,12" />
+            <Button x:Name="DenoiseButton" AutomationProperties.AutomationId="DenoiseButton" Content="Denoise"
+                    HorizontalAlignment="Stretch" Padding="12,6" Click="OnDenoiseClick" IsEnabled="False" />
+            <TextBlock x:Name="DenoiseNote" AutomationProperties.AutomationId="DenoiseNote" Visibility="Collapsed"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,10,0,0" />
           </StackPanel>
         </Border>
 

@@ -208,6 +208,36 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(["fp32"], list(meta["variants"]))
         self.assertIn("anchor(s) over 0.9", lines[0])
 
+    def test_scunet_masks_shifted_windows_as_upstream_does(self):
+        # PB36: the band-label mask that replaced upstream's 6-D one (which crashed DirectML).
+        from archs.scunet import WMSA
+
+        def upstream(h: int, w: int, p: int, shift: int):
+            mask = torch.zeros(h, w, p, p, p, p, dtype=torch.bool)
+            s = p - shift
+            mask[-1, :, :s, :, s:, :] = True
+            mask[-1, :, s:, :, :s, :] = True
+            mask[:, -1, :, :s, :, s:] = True
+            mask[:, -1, :, s:, :, :s] = True
+            return mask.reshape(h * w, p * p, p * p)
+
+        attention = WMSA(32, 32, 32, 8, "SW")
+        for height, width in ((16, 24), (32, 8), (8, 8)):
+            with self.subTest(height=height, width=width):
+                expected = upstream(height // 8, width // 8, 8, 4)
+                self.assertTrue(torch.equal(expected, attention.generate_mask(height, width)))
+
+    def test_scunet_window_partition_round_trips(self):
+        from archs.scunet import WMSA
+
+        attention = WMSA(32, 32, 32, 8, "W")
+        x = torch.rand(2, 16, 24, 5)
+        windows = attention.partition(x)
+        self.assertEqual((2 * 2 * 3, 64, 5), tuple(windows.shape))
+        # The second window of the first image is rows 0-7, columns 8-15.
+        self.assertTrue(torch.equal(x[0, 0:8, 8:16].reshape(64, 5), windows[1]))
+        self.assertTrue(torch.equal(x, attention.unpartition(windows, 2, 16, 24)))
+
     def test_ssim_is_one_for_identical_images_and_lower_otherwise(self):
         rng = np.random.default_rng(5)
         a = rng.random((1, 3, 32, 32)).astype(np.float32)
