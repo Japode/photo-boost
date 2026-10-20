@@ -1,6 +1,7 @@
 <Window x:Class="PhotoBoost.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:render="clr-namespace:PhotoBoost.Render;assembly=PhotoBoost.Render"
         Title="PhotoBoost"
         Width="1100"
         Height="720"
@@ -134,12 +135,23 @@
       </Border>
 
       <DockPanel x:Name="Viewer" Visibility="Collapsed">
-        <TextBlock x:Name="ImageInfo" AutomationProperties.AutomationId="ImageInfo" DockPanel.Dock="Top"
-                   Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
-        <Border x:Name="Backdrop" Style="{StaticResource GroupCard}" Padding="0" ClipToBounds="True">
-          <Image x:Name="Picture" AutomationProperties.AutomationId="OpenedImage" Stretch="Uniform"
-                 RenderOptions.BitmapScalingMode="HighQuality" />
-        </Border>
+        <!-- PB27: the caption, and how the shown version is compared with the opened file. -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+            <RadioButton x:Name="ModeSingle" AutomationProperties.AutomationId="ModeSingle" Content="Result"
+                         GroupName="Compare" IsChecked="True" Margin="0,0,12,0" Checked="OnModeChanged" />
+            <RadioButton x:Name="ModeDivider" AutomationProperties.AutomationId="ModeDivider" Content="Compare"
+                         GroupName="Compare" Margin="0,0,12,0" Checked="OnModeChanged" />
+            <RadioButton x:Name="ModeSideBySide" AutomationProperties.AutomationId="ModeSideBySide" Content="Side by side"
+                         GroupName="Compare" Margin="0,0,12,0" Checked="OnModeChanged" />
+            <Button x:Name="FitButton" AutomationProperties.AutomationId="FitButton" Content="Fit" Padding="10,2"
+                    Click="OnFitClick" ToolTip="Show the whole image" />
+          </StackPanel>
+          <TextBlock x:Name="ImageInfo" AutomationProperties.AutomationId="ImageInfo"
+                     Style="{StaticResource SectionHeader}" Margin="2,0,0,0" VerticalAlignment="Center" />
+        </DockPanel>
+        <!-- The GPU surface (PB40's path): wheel to zoom, drag to pan, drag the divider to compare. -->
+        <render:ImageSurface x:Name="Surface" AutomationProperties.AutomationId="Surface" />
       </DockPanel>
     </Grid>
   </DockPanel>

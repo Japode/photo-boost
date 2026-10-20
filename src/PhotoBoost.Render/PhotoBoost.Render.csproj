@@ -5,7 +5,18 @@
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>PhotoBoost.Render</RootNamespace>
+    <!-- ImageSurface is an HwndHost (PB27): the child window its swapchain presents into. -->
+    <UseWPF>true</UseWPF>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The PB40 spike's path: D3D11 through Vortice, shaders compiled at start. -->
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
+    <PackageReference Include="Vortice.DXGI" Version="3.8.3" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.8.3" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PhotoBoost.Imaging\PhotoBoost.Imaging.csproj" />

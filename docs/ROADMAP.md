@@ -20,7 +20,6 @@
 
 ## Block D — Editor: comparison, history and quality modes
 
-- 📋 **PB27** (deps: PB24 ✅, PB40 ✅) **No before and after slider comparison** — Judging an enhancement needs both versions aligned at the same zoom. → §PB27
 - 📋 **PB29** (deps: PB13, PB16 ✅) **No UI choice between INT8 and the High quality FP16/FP32 models** — The brief requires both variants selectable, trading speed and memory for fidelity. → §PB29
 
 ## Block E — Face restoration and background removal

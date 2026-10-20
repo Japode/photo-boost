@@ -63,7 +63,9 @@ retry stays as the safety net. Log the choice.
 export-and-quantize.py also emits a tiny ONNX model (e.g. a nearest-neighbour 4x or a
 3x3 conv) with a matching meta.json, committed under cases/fixtures/models. Fixtures
 stage it into {files} and pass --models and --provider cpu, so the exported bytes are
-stable and checkable with sameBytesAs.
+stable and checkable with sameBytesAs. Cases waiting on it: an upscale run with tile
+progress (PB24), two runs then undo and redo (PB28), Compare with the divider set
+through the surface's RangeValue (PB27), and --export writing the result (PB25).
 
 ### §PB43 Windows ML providers
 
@@ -113,16 +115,6 @@ Variant construction is the part to prove first, in a test that round-trips a Ma
 DateTimeOriginal through a JPEG.
 
 ## Block D — Editor: comparison, history and quality modes
-
-### §PB27 Before/after comparator
-
-Draw both versions in the GPU surface from the display spike, with a draggable divider,
-synced zoom and pan and a side-by-side toggle. The before image is scaled to the output
-size so details line up. The divider is drawn by the surface's shader and dragged
-through the child HWND's own mouse messages: per the PB40 spike
-(spike/gpu-display/README.md) no ordinary WPF element can sit over the swapchain. A
-RangeValue automation peer on the host publishes and accepts the divider position, so a
-case can set it.
 
 ### §PB29 Quality mode selector
 

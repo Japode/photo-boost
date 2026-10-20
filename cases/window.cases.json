@@ -125,11 +125,21 @@
           "named": "the caption names the file and its upright size"
         },
         {
-          "locator": "Image#OpenedImage",
+          // PB27: the photo is in the GPU surface, which publishes its state as item status.
+          "locator": "Slider#Surface",
           "act": "read",
-          "reads": "name",
-          "expect": "rotated-exif6.jpg",
-          "named": "the photo is on screen, named for its file"
+          "reads": "status",
+          "matches": "^zoom 1x, Single",
+          "named": "the photo is on the surface, fitted, not compared"
+        },
+        {
+          // PB27: comparing needs a result; with models it was driven by hand (Compare, divider
+          // set to 25 through RangeValue, side by side) until PB42 gives cases a model.
+          "locator": "RadioButton#ModeDivider",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and there is nothing to compare it with yet"
         }
       ]
     },

@@ -1,4 +1,5 @@
-using System.Windows.Media;
+using PhotoBoost.Render;
+using Vortice.Mathematics;
 
 namespace PhotoBoost.App;
 
@@ -33,20 +34,15 @@ public static class Brand
     /// <summary>The other JPEG background offered, for subjects cut out to sit on dark pages.</summary>
     public static readonly (byte R, byte G, byte B) JpegNight = (0, 0, 0);
 
-    /// <summary>The checkerboard's light squares.</summary>
-    public static readonly Brush CheckerLight = Frozen(Color.FromRgb(CheckerLightLevel, CheckerLightLevel, CheckerLightLevel));
+    /// <summary>The grey around the photo in the image surface: neutral, so it biases no colour judgement.</summary>
+    public const byte SurfaceGroundLevel = 0x30;
 
-    /// <summary>The checkerboard's dark squares.</summary>
-    public static readonly Brush CheckerDark = Frozen(Color.FromRgb(CheckerDarkLevel, CheckerDarkLevel, CheckerDarkLevel));
+    /// <summary>The surface's own colours (PB27), converted at its edge: D3D wants floats.</summary>
+    public static SurfacePalette Surface { get; } = new(
+        Grey(SurfaceGroundLevel),
+        Grey(CheckerLightLevel),
+        Grey(CheckerDarkLevel),
+        new Color4(DividerR / 255f, DividerG / 255f, DividerB / 255f, 1));
 
-    /// <summary>The comparison slider's line (PB27).</summary>
-    public static readonly Brush Divider = Frozen(Color.FromRgb(DividerR, DividerG, DividerB));
-
-    /// <summary>Frozen, as every shared brush is: used across threads, never changed, no lock per draw.</summary>
-    private static SolidColorBrush Frozen(Color color)
-    {
-        SolidColorBrush brush = new(color);
-        brush.Freeze();
-        return brush;
-    }
+    private static Color4 Grey(byte level) => new(level / 255f, level / 255f, level / 255f, 1);
 }

@@ -45,6 +45,9 @@ public sealed class ImageHistory : IDisposable
     /// <summary>How many versions sit on disk rather than in memory.</summary>
     public int Spilled => versions.Count(v => v.Image is null);
 
+    /// <summary>The first version, the opened file: what a comparison shows as "before" (PB27).</summary>
+    public RgbaImage? Original => versions.Count == 0 ? null : Load(versions[0]);
+
     /// <summary>The current version, read back from disk if it had been spilled.</summary>
     public RgbaImage? Current => current < 0 ? null : Load(versions[current]);
 

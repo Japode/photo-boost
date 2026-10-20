@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 using PhotoBoost.Imaging;
+using PhotoBoost.Render;
 
 namespace PhotoBoost.App;
 
@@ -26,8 +27,16 @@ public partial class MainWindow
     private void ShowVersion(RgbaImage image)
     {
         Image = image;
-        Picture.Source = Preview.Bitmap(image);
-        Backdrop.Background = image.HasTransparency ? Preview.Checkerboard() : null;
+        // PB27: the surface compares the version shown against the opened file.
+        Surface.Palette = Brand.Surface;
+        Surface.Show(history.Position > 0 ? history.Original : null, image);
+        bool comparable = history.Position > 0;
+        ModeDivider.IsEnabled = comparable;
+        ModeSideBySide.IsEnabled = comparable;
+        if (!comparable)
+        {
+            ModeSingle.IsChecked = true;
+        }
         string name = System.IO.Path.GetFileName(ImagePath) ?? string.Empty;
         ImageInfo.Text = history.Position > 0
             ? $"{name} — {VersionLabel} — {image.Width} × {image.Height}"
@@ -39,6 +48,20 @@ public partial class MainWindow
         CommandManager.InvalidateRequerySuggested();
         RefreshOperations();
     }
+
+    private void OnModeChanged(object sender, RoutedEventArgs e)
+    {
+        if (Surface is null)
+        {
+            return; // A radio button checked while the window is still being built.
+        }
+
+        Surface.Mode = ModeDivider.IsChecked == true ? CompareMode.Divider
+            : ModeSideBySide.IsChecked == true ? CompareMode.SideBySide
+            : CompareMode.Single;
+    }
+
+    private void OnFitClick(object sender, RoutedEventArgs e) => Surface.ResetView();
 
     private void CanUndo(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = running is null && history.CanUndo;
 

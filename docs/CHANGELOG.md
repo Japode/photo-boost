@@ -40,6 +40,7 @@
 ## Block D — Editor: comparison, history and quality modes
 
 - ✅ **PB28** **No operation history with undo and redo** — Each operation adds a version to ImageHistory, spilled to temp past 1 GiB; undo and redo by button, Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z, and operations chain on the version shown.
+- ✅ **PB27** **No before and after slider comparison** — The photo now shows on a D3D11 surface with wheel zoom and drag pan, and compares result with original by divider or side by side, the divider settable through UI Automation.
 
 ## Block E — Face restoration and background removal
 

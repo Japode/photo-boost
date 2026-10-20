@@ -63,8 +63,6 @@ public partial class MainWindow : Window
 
         ImagePath = full;
 
-        // A screen reader, and a case, hears the photo by its file name rather than an empty image.
-        System.Windows.Automation.AutomationProperties.SetName(Picture, name);
         OpenError.Visibility = Visibility.Collapsed;
         DropZone.Visibility = Visibility.Collapsed;
         Viewer.Visibility = Visibility.Visible;
