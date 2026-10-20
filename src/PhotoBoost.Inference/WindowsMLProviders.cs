@@ -69,6 +69,8 @@ public sealed record WindowsMLDevice(string EpName, uint VendorId, int? AdapterI
 /// its engine for 10 to 17 s whenever a session is created, so the first upscale took 16 to 20 s
 /// against DirectML's 3 to 6 s, and PB16 releases an idle session after 5 minutes. Its runtime
 /// cache cut a new tile shape from 3.7 s to 0.8 s and left the session build as it was.
+/// <see cref="EngineCache"/> (PB52) keeps the built engine as an EP context model: the first
+/// upscale in a later process took 1.8 s against 8.1 s, with DirectML at 2.0 s.
 /// </para>
 /// <para>
 /// The device is chosen here, not by SetEpSelectionPolicy(PREFER_GPU) as in the spike: the policy

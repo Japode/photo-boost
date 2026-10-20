@@ -241,14 +241,20 @@ public static class ModelSessions
     /// <param name="path">The ONNX file for a key.</param>
     /// <param name="provider">What PB14's detection chose.</param>
     /// <param name="idle">How long an unused session is kept.</param>
+    /// <param name="engines">PB52: compiled engines for a Windows ML provider; null builds every session from the model.</param>
     /// <returns>The cache; the caller disposes it.</returns>
-    public static SessionCache<InferenceSession> Create(Func<ModelKey, string> path, ProviderSelection provider, TimeSpan idle)
+    public static SessionCache<InferenceSession> Create(Func<ModelKey, string> path, ProviderSelection provider, TimeSpan idle, EngineCache? engines = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(provider);
         return new SessionCache<InferenceSession>(
             key =>
             {
+                if (engines is not null && provider.Provider == ExecutionProvider.WindowsML)
+                {
+                    return engines.Open(path(key), provider);
+                }
+
                 using SessionOptions options = SessionOptionsFactory.Create(provider);
                 return new InferenceSession(path(key), options);
             },

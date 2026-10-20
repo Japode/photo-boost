@@ -89,28 +89,26 @@ stage-models.ps1 does for ViTMatte. Re-run the benchmark and update the README's
 
 ### §PB52 TensorRT-RTX engine reuse
 
-PB43 measured TensorRT-RTX on the RTX 4060 desk with Real-ESRGAN x4 on 0014.jpg: a tile
-in 112 ms against DirectML's 324 ms at FP16 (252 against 232 ms at FP32), but session
-creation builds the engine for 10 to 17 s, so the first upscale took 16 to 20 s against
-DirectML's 3 to 6 s. PB16 releases a session idle for 5 minutes, which pays the build
-again. That is why auto stays on DirectML and Windows ML is behind --provider winml
-(src/PhotoBoost.Inference/WindowsMLProviders.cs holds the numbers).
+PB43 measured TensorRT-RTX on the RTX 4060 with Real-ESRGAN x4: FP16 tiles three times
+faster than DirectML, but 10 to 17 s of engine build at every session creation. Its
+runtime cache (nv_runtime_cache_path) only helps a new tile shape.
 
-The runtime cache (nv_runtime_cache_path) was tried and is not the answer: it cut a new
-tile shape from 3.7 s to 0.8 s and left session creation at 10 to 17 s.
+Landed: EngineCache (src/PhotoBoost.Inference/EngineCache.cs) writes the built engine as
+an ONNX Runtime EP context model under %LOCALAPPDATA%\PhotoBoost\engines and loads it
+afterwards, keyed by the model file, the provider package and version, the GPU and its
+driver, and the ORT version. Every Windows ML session goes through it. Measured on
+0014.jpg (FP16, x4): first upscale 8.1 s with the build, 1.8 s from the cached engine in
+a new process, 92 ms warm; DirectML's first upscale is 2.0 s and its warm run 0.21 s.
 
-What to build: ONNX Runtime's EP context model. Create the session once with
-ep.context_enable=1 and ep.context_file_path under %LOCALAPPDATA%\PhotoBoost\engines,
-keyed by model, variant, GPU (DXGI LUID or device id), driver version and ORT version,
-and load that _ctx.onnx afterwards instead of the plain model. A key that no longer
-matches is rebuilt, never trusted. Measure session creation from the context model; if
-it falls under DirectML's, auto tries TensorRT-RTX first (ProviderDetector), with
-DirectML still the fallback. The first build should happen in the background after the
-first launch, not inside a user's first upscale.
-
-Open question: whether the tiles' fixed side (PB41 picks 128 to 1024) lets an explicit
-optimization profile (nv_profile_min/opt/max_shapes) shorten the build; the EP warns
-that it assumed a fully dynamic profile.
+Left:
+- Build the engines in the background after the first launch on --provider winml (each
+  model's default variant, one at a time, behind the inference queue), so no user upscale
+  pays the build.
+- Then let auto try TensorRT-RTX first (ProviderDetector), DirectML still the fallback, but
+  only for models whose engine is cached. Detection picks one provider for every session, so
+  this needs a per-model choice or a selection that falls back per session; decide which.
+- Open question: whether an explicit optimization profile (nv_profile_min/opt/max_shapes)
+  shortens the build; the provider warns that it assumed a fully dynamic one.
 
 ## Block D — Editor: comparison, history and quality modes
 

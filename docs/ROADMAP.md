@@ -13,7 +13,7 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- 📋 **PB52** (deps: PB43 ✅) **TensorRT-RTX builds its engine for 10 to 17 s at every session creation, so auto cannot prefer it** — It ran FP16 tiles three times faster than DirectML on the RTX 4060, but its first upscale took 16 to 20 s against DirectML's 3 to 6 s. → §PB52
+- ⏳ **PB52** (deps: PB43 ✅) **TensorRT-RTX builds its engine for 10 to 17 s at every session creation, so auto cannot prefer it** — Engines are built inside a user's first run, and auto still never tries TensorRT-RTX. → §PB52
 
 ## Block D — Editor: comparison, history and quality modes
 
@@ -36,6 +36,15 @@
 - **The winwright Claude plugin is enabled at project scope beside roadkeep's**
   .claude/settings.json lists the winwright plugin and its marketplace next to
   roadkeep@alegauss, and both resolve in a fresh session.
+
+## Done when — PB52
+
+- **No user upscale on --provider winml pays the engine build** After the first launch
+  the engines are built in the background; a run started once that finished takes under
+  DirectML's first-run time on the RTX 4060 desk.
+- **Auto runs on TensorRT-RTX where its engine is cached** With an engine cached,
+  --provider auto's status bar names TensorRT-RTX on the RTX 4060 desk, and DirectML
+  still runs where no engine or provider exists.
 
 ## Non-goals
 

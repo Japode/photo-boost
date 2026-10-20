@@ -33,7 +33,11 @@ public sealed class ModelLibrary : IDisposable
     /// <param name="roots">The folders, each holding one subfolder per model; the first that has a file wins.</param>
     /// <param name="provider">Where sessions run.</param>
     /// <param name="idle">How long an unused session is kept.</param>
-    public ModelLibrary(IReadOnlyList<string> roots, ProviderSelection provider, TimeSpan? idle = null)
+    /// <param name="engines">
+    /// PB52: where a Windows ML provider's compiled engines are kept; null uses
+    /// <see cref="EngineCache.DefaultFolder"/>. Other providers build every session from the model.
+    /// </param>
+    public ModelLibrary(IReadOnlyList<string> roots, ProviderSelection provider, TimeSpan? idle = null, EngineCache? engines = null)
     {
         ArgumentNullException.ThrowIfNull(roots);
         ArgumentNullException.ThrowIfNull(provider);
@@ -41,7 +45,12 @@ public sealed class ModelLibrary : IDisposable
         Roots = roots;
         Provider = provider;
         TimeSpan keep = idle ?? SessionCache<InferenceSession>.DefaultIdle;
-        Sessions = ModelSessions.Create(PathOf, provider, keep);
+        if (provider.Provider == ExecutionProvider.WindowsML)
+        {
+            engines ??= new EngineCache(EngineCache.DefaultFolder);
+        }
+
+        Sessions = ModelSessions.Create(PathOf, provider, keep, engines);
         if (provider.Provider != ExecutionProvider.Cpu)
         {
             cpu = new(() => ModelSessions.Create(PathOf, new ProviderSelection(ExecutionProvider.Cpu, null, null), keep));
