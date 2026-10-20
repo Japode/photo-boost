@@ -27,10 +27,11 @@ OutputBaseFilename=PhotoBoost-Setup-{#MyAppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-; x64 only, as the build is (Directory.Build.props), on Windows 10 1809 or later.
+; x64 only, as the build is (Directory.Build.props), on Windows 10 1903 (19H1) or later: Windows ML
+; (PB43), which every operation runs through, activates its WinRT types reg-free, which 1809 lacks.
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0.17763
+MinVersion=10.0.18362
 CloseApplications=yes
 RestartApplications=no
 

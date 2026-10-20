@@ -22,6 +22,7 @@
 - ✅ **PB11** **No models/<name>/{fp32.onnx, int8.onnx, meta.json} layout with SHA256 hashes** — Each .cache/models/<name>/ holds fp32, fp16 and int8 ONNX beside a meta.json with IO, ranges, tiling, SHA-256 per variant, license and validation, held to meta.schema.json and read by ModelMeta.
 - ✅ **PB12 (manifest builder)** **Generated ONNX models have no download location the app can fetch from** — build-manifest.py turns every meta.json into manifest.json with URL, size and SHA-256 per file, checks each file, and stages flat release assets for upload.
 - ✅ **PB51** **The installer carries no models, so a fresh install cannot run any operation** — The installer carries the FP16 set, which the app reads before its downloads folder; every operation ran from it offline (design recorded in `build/stage-models.ps1`).
+- ✅ **PB53** **The installer accepts Windows 10 1809, where Windows ML and so every operation cannot run** — The installer refuses Windows older than 10 1903, Windows ML's minimum, and a test holds that floor to the package version it was read for.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
