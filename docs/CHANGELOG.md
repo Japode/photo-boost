@@ -38,6 +38,8 @@
 
 ## Block D — Editor: comparison, history and quality modes
 
+- ✅ **PB28** **No operation history with undo and redo** — Each operation adds a version to ImageHistory, spilled to temp past 1 GiB; undo and redo by button, Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z, and operations chain on the version shown.
+
 ## Block E — Face restoration and background removal
 
 ## Block F — Delivery: README, benchmarks and installers

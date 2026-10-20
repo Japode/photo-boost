@@ -17,7 +17,7 @@ public partial class MainWindow
 
     private ImageFormat SelectedFormat => Formats[Math.Max(0, ExportFormat.SelectedIndex)];
 
-    private RgbaImage? Exportable => Result ?? Image;
+    private RgbaImage? Exportable => Image;
 
     /// <summary>Shows the quality slider and the transparency warning only where they apply.</summary>
     private void RefreshExport()

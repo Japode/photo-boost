@@ -9,6 +9,15 @@
         DragOver="OnDragOver"
         Drop="OnDrop"
         WindowStartupLocation="CenterScreen">
+  <!-- PB28: undo and redo through the application commands, which bring Ctrl+Z and Ctrl+Y;
+       Ctrl+Shift+Z is the other redo people reach for. -->
+  <Window.CommandBindings>
+    <CommandBinding Command="Undo" Executed="OnUndo" CanExecute="CanUndo" />
+    <CommandBinding Command="Redo" Executed="OnRedo" CanExecute="CanRedo" />
+  </Window.CommandBindings>
+  <Window.InputBindings>
+    <KeyBinding Command="Redo" Key="Z" Modifiers="Ctrl+Shift" />
+  </Window.InputBindings>
   <DockPanel>
     <!-- PB14: where inference runs, so a slow upscale on CPU is never a mystery. A chip that
          carries the word, per the design rules in Styles.xaml. -->
@@ -47,7 +56,24 @@
           </StackPanel>
         </Border>
 
-        <!-- PB25: export the result, or the opened image before any run. -->
+        <!-- PB28: every version this image went through; undo and redo move through them. -->
+        <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0">
+          <StackPanel>
+            <DockPanel Margin="0,0,0,8">
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button x:Name="UndoButton" AutomationProperties.AutomationId="UndoButton" Command="Undo"
+                        Content="Undo" Padding="10,3" Margin="0,0,6,0" ToolTip="Undo (Ctrl+Z)" />
+                <Button x:Name="RedoButton" AutomationProperties.AutomationId="RedoButton" Command="Redo"
+                        Content="Redo" Padding="10,3" ToolTip="Redo (Ctrl+Y)" />
+              </StackPanel>
+              <TextBlock Text="History" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+            <ListBox x:Name="HistoryList" AutomationProperties.AutomationId="History" AutomationProperties.Name="History"
+                     MaxHeight="160" IsHitTestVisible="False" BorderThickness="0" />
+          </StackPanel>
+        </Border>
+
+        <!-- PB25: export the current version. -->
         <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0">
           <StackPanel>
             <TextBlock Text="Export" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" />

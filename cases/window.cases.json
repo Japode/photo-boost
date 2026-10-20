@@ -198,6 +198,32 @@
     },
 
     {
+      // Chaining, undo and redo with real models were driven by hand on the PB28 desk:
+      // 179 -> 358 -> 716 px, undo to 358, redo to 716, three entries listed.
+      "name": "an opened photo starts a history with nothing to undo",
+      "catches": "a history that does not start from the opened file, or an undo that is offered with nothing behind it",
+      "filed": "PB28",
+      "tags": ["history"],
+      "fixture": "a window opened on the rotated JPEG fixture",
+      "steps": [
+        {
+          "locator": "List#History > ListItem[order=top]",
+          "act": "read",
+          "reads": "name",
+          "expect": "1. Opened rotated-exif6.jpg",
+          "named": "the first entry is the opened file"
+        },
+        {
+          "locator": "Button#UndoButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and undo has nothing to go back to"
+        }
+      ]
+    },
+
+    {
       "name": "--open on a missing file says so on the drop zone",
       "catches": "an open that fails silently or crashes the app on a bad path",
       "filed": "PB23",

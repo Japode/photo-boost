@@ -28,7 +28,7 @@ public partial class MainWindow : Window
     /// <summary>The provider every model session uses, once detection has finished (PB14).</summary>
     public ProviderSelection? Provider { get; private set; }
 
-    /// <summary>The image open now, or null on the drop zone.</summary>
+    /// <summary>The version shown now (PB28), which operations and export work on; null on the drop zone.</summary>
     public RgbaImage? Image { get; private set; }
 
     /// <summary>The file it came from.</summary>
@@ -61,19 +61,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        Image = image;
         ImagePath = full;
-        Picture.Source = Preview.Bitmap(image);
 
         // A screen reader, and a case, hears the photo by its file name rather than an empty image.
         System.Windows.Automation.AutomationProperties.SetName(Picture, name);
-        Backdrop.Background = image.HasTransparency ? Preview.Checkerboard() : null;
-        ImageInfo.Text = $"{name} — {image.Width} × {image.Height}";
         OpenError.Visibility = Visibility.Collapsed;
         DropZone.Visibility = Visibility.Collapsed;
         Viewer.Visibility = Visibility.Visible;
-        Result = null;
-        RefreshOperations();
+        history.Reset(image, $"Opened {name}");
+        ShowVersion(image);
     }
 
     private void ShowError(string message)

@@ -17,8 +17,8 @@ public partial class MainWindow
     private InferenceJob<RgbaImage>? running;
     private readonly OperationLog log = new(OperationLog.DefaultFolder);
 
-    /// <summary>The last finished result, which export (PB25) writes; null until a run succeeds.</summary>
-    public RgbaImage? Result { get; private set; }
+    /// <summary>The version shown when it is an operation's result rather than the opened file.</summary>
+    public RgbaImage? Result => history.Position > 0 ? Image : null;
 
     /// <summary>The variant the quality mode names: INT8 for Compact, FP32 for High (PB29 adds FP16).</summary>
     private string Variant => Options.Quality == QualityMode.High ? "fp32" : "int8";
@@ -35,6 +35,7 @@ public partial class MainWindow
             running?.Cancel();
             await service.DisposeAsync().ConfigureAwait(false);
             library.Dispose();
+            history.Dispose();
         };
         Scale2.Checked += (_, _) => RefreshOperations();
         Scale4.Checked += (_, _) => RefreshOperations();
@@ -78,8 +79,8 @@ public partial class MainWindow
         try
         {
             RgbaImage result = await running.Completion.ConfigureAwait(true);
-            Result = result;
-            ShowResult(result, factor);
+            running = null;
+            PushVersion(result, $"Upscale {factor}×");
             JobStatus.Text = "Done.";
             await ExportAfterRunAsync().ConfigureAwait(true);
         }
@@ -115,12 +116,6 @@ public partial class MainWindow
             ? $" · about {Math.Ceiling(remaining.TotalSeconds).ToString(CultureInfo.CurrentCulture)} s left"
             : string.Empty;
         JobStatus.Text = $"Tile {p.Done} of {p.Total}{left}";
-    }
-
-    private void ShowResult(RgbaImage result, int factor)
-    {
-        Picture.Source = Preview.Bitmap(result);
-        ImageInfo.Text = $"{System.IO.Path.GetFileName(ImagePath)} — upscaled {factor}× — {result.Width} × {result.Height}";
     }
 
     private void ShowLastRun()

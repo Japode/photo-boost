@@ -130,12 +130,6 @@ synced zoom and pan and a side-by-side toggle. The before image is scaled to the
 size so details line up. The divider is a Slider-like element with an automation id, so
 a case can set its range.
 
-### §PB28 History and undo/redo
-
-Each operation produces a new image version kept in memory, spilled to a temp folder for
-large images. A list shows the history; undo and redo move a pointer, and a new
-operation after undo drops the forward branch. Ctrl+Z and Ctrl+Y / Ctrl+Shift+Z.
-
 ### §PB29 Quality mode selector
 
 A Compact (INT8) / High quality toggle per operation or globally. Do not call INT8
