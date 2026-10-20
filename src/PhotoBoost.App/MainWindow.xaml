@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:render="clr-namespace:PhotoBoost.Render;assembly=PhotoBoost.Render"
         Title="PhotoBoost"
+        Icon="pack://application:,,,/PhotoBoost.ico"
         Width="1100"
         Height="720"
         FontFamily="{StaticResource AppFont}"

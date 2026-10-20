@@ -20,6 +20,8 @@ DefaultDirName={localappdata}\Programs\PhotoBoost
 DisableProgramGroupPage=yes
 DefaultGroupName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
+; The app's own icon on the setup wizard and its .exe (src/PhotoBoost.App/PhotoBoost.ico).
+SetupIconFile=..\src\PhotoBoost.App\PhotoBoost.ico
 OutputDir=..\artifacts\installer
 OutputBaseFilename=PhotoBoost-Setup-{#MyAppVersion}
 Compression=lzma2

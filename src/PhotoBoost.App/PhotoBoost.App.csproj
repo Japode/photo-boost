@@ -10,12 +10,20 @@
     <SelfContained>false</SelfContained>
     <!-- Per-Monitor V2 DPI awareness, so a photo is not bitmap-stretched on a second monitor. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The site's mark (site/public/icon.svg and favicon.svg), drawn per size by
+         `npm run app-icon` in site/: the exe's icon in Explorer, the taskbar and the installer. -->
+    <ApplicationIcon>PhotoBoost.ico</ApplicationIcon>
 
     <UseWPF>true</UseWPF>
     <!-- WPF0001: ThemeMode is still marked [Experimental] in the SDK and is the supported way to
          follow the system theme while running. The sibling apps carry the same suppression. -->
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The same file as a resource, for the window's own title-bar and Alt+Tab icon. -->
+    <Resource Include="PhotoBoost.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PhotoBoost.Imaging\PhotoBoost.Imaging.csproj" />
