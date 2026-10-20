@@ -32,8 +32,9 @@ set /a RAN=0
 set /a FAILED=0
 set "BROKEN="
 
-rem Only the *.Tests folders: tests\fixtures holds data, and a winwright Cases project runs apart.
-for /d %%P in (tests\*.Tests) do (
+rem The *.Tests folders and the winwright UI cases (PB38), which skip on a desk that cannot be
+rem observed; tests\fixtures holds data and is not a test application.
+for /d %%P in (tests\*.Tests tests\*.Cases) do (
     set "APP=%%P\bin\%CONFIG%\net10.0-windows\%%~nxP.exe"
     echo.
     echo === %%~nxP ===

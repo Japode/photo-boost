@@ -8,3 +8,4 @@ artifacts/
 .cache/
 __pycache__/
 .venv/
+winwright.*.json

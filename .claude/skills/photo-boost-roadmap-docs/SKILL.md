@@ -56,9 +56,10 @@ Validated means the project's own build and test were run, not that the edit loo
 | Command         | What it holds                                                               | When                       |
 | --------------- | --------------------------------------------------------------------------- | -------------------------- |
 | `roadkeep lint` | The governed files. Non-zero exit is the whole point of it.                 | Every task, without exception. |
-| `run-tests.cmd` | Builds `PhotoBoost.slnx` (warnings as errors, performance analyzers on, so the build is also the lint), then runs every test application under `tests\` and the Python `unittest` suite under `scripts\tests`. Fails on a red, missing or absent suite, and when Python is not on PATH. | Every task that touches code, a project file, `Directory.Build.props` or `global.json`. |
+| `run-tests.cmd` | Builds `PhotoBoost.slnx` (warnings as errors, performance analyzers on, so the build is also the lint), then runs every `tests\*.Tests` application, the winwright UI cases (`tests\PhotoBoost.Cases` over `cases\*.cases.json`, skipped with a reason on a desk that cannot be observed) and the Python `unittest` suite under `scripts\tests`. Fails on a red, missing or absent suite, and when Python is not on PATH. | Every task that touches code, a project file, `Directory.Build.props` or `global.json`. |
 
-UI cases are not in `run-tests.cmd`; they run through winwright once PB38 lands.
+Every element a UI case touches gets a unique AutomationId. When winwright cannot express what a
+case must prove, file it in winwright's roadmap (the `winwright-friction` skill) before cutting the case short.
 
 **Name EVERY task id an assertion holds, not just the one you are working**, so each test
 can be traced back to what it was for.

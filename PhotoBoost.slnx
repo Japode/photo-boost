@@ -10,6 +10,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/PhotoBoost.Architecture.Tests/PhotoBoost.Architecture.Tests.csproj" />
+    <Project Path="tests/PhotoBoost.Cases/PhotoBoost.Cases.csproj" />
     <Project Path="tests/PhotoBoost.Imaging.Tests/PhotoBoost.Imaging.Tests.csproj" />
     <Project Path="tests/PhotoBoost.Inference.Tests/PhotoBoost.Inference.Tests.csproj" />
   </Folder>

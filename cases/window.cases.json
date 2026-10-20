@@ -1,0 +1,49 @@
+{
+  // PB38: the first cases, read through the accessibility tree.
+
+  "fixtures": [
+    {
+      "name": "the window a default installation opens",
+      "arguments": [],
+      "shareable": true
+    }
+  ],
+
+  "cases": [
+    {
+      "name": "a default installation puts a window named PhotoBoost on the desk",
+      "catches": "an app that builds its window and then shows something else, or nothing at all, which every in-process test would pass",
+      "filed": "PB38",
+      "tags": ["smoke", "window"],
+      "fixture": "the window a default installation opens",
+      "steps": [
+        {
+          "locator": "TitleBar",
+          "act": "read",
+          "reads": "name",
+          "matches": "PhotoBoost$",
+          "named": "the title bar ends in the app's name"
+        }
+      ]
+    },
+
+    {
+      // PB14: the status bar names where inference runs once detection has finished, whatever the
+      // desk has: DirectML on a GPU, or CPU with or without a reason.
+      "name": "the status bar says whether inference runs on the GPU or the CPU",
+      "catches": "a status bar stuck on Detecting GPU, which is what a detection that hangs or throws would leave",
+      "filed": "PB38",
+      "tags": ["smoke", "window", "provider"],
+      "fixture": "the window a default installation opens",
+      "steps": [
+        {
+          "locator": "Text#ProviderStatus",
+          "act": "read",
+          "reads": "name",
+          "matches": "^(DirectML · |CPU)",
+          "named": "the provider chip names DirectML or CPU"
+        }
+      ]
+    }
+  ]
+}

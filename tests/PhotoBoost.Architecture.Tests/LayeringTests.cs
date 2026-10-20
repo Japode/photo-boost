@@ -84,6 +84,17 @@ public sealed class LayeringTests
         Assert.Equal(onDisk, inSolution);
     }
 
+    [Fact]
+    public void TheUiCasesReferenceNeitherTheAppNorWpf()
+    {
+        // PB38: a case asserts against what a user launches, not against types it was compiled with.
+        XDocument cases = XDocument.Load(Path.Combine(Repository.Root, "tests", "PhotoBoost.Cases", "PhotoBoost.Cases.csproj"));
+
+        Assert.Empty(cases.Descendants("ProjectReference"));
+        Assert.DoesNotContain(cases.Descendants("UseWPF"), element => element.Value.Trim() == "true");
+        Assert.Equal(["Winwright"], cases.Descendants("PackageReference").Select(p => p.Attribute("Include")?.Value));
+    }
+
     private static string SourceProject(string project) =>
         Path.Combine(Repository.Root, "src", project, project + ".csproj");
 

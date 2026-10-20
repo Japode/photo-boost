@@ -1,0 +1,21 @@
+{
+  // PB38: what is true of this project rather than of any one case, for winwright. Every relative
+  // path resolves against this file's directory, so a case carries no path and runs on any checkout.
+
+  // The Debug output under its RID: PhotoBoost.App sets win-x64 unconditionally and run-tests.cmd
+  // builds Debug. CasesRun points a copy at another configuration when the suite is built in one.
+  "executable": "src/PhotoBoost.App/bin/Debug/net10.0-windows/win-x64/PhotoBoost.exe",
+
+  "sourceRoot": "src",
+
+  "timeouts": {
+    // The window shows before provider detection starts, so a launch past a few seconds is itself
+    // a finding; ten still fails a hang rather than waiting on it.
+    "launch": 10000,
+    // Long enough for the probe session (PB14) to report the provider, which took 1.5 s here.
+    "resolve": 8000,
+    "act": 5000,
+    "poll": 25,
+    "stop": 5000
+  }
+}

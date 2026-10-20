@@ -8,6 +8,7 @@
 - ✅ **PB2** **No xunit.v3 test projects, analyzer gate or architecture tests in the build** — run-tests.cmd builds the solution and runs xunit.v3 Imaging, Inference and Architecture tests on Microsoft.Testing.Platform; layering and analyzer-gate rules now fail the run.
 - ✅ **PB5** **Unverified which ONNX Runtime package (DirectML, Windows ML, CUDA) runs in a self-contained WPF build** — DirectML 1.24.4 runs exactly in self-contained and single-file publishes and ships; CUDA is rejected and Windows ML is proposed as PB43 (design recorded in `spike/onnx-runtime/README.md`).
 - ✅ **PB37** **No design system: Brand, Theme, Appearance and the Fluent page styles from claude-tray are missing** — Brand, Theme, Appearance, Templates and a shared Styles.xaml with the sibling apps' card, header, stat, chip and nav styles now dress the window, and a test refuses colours outside Brand.cs.
+- ✅ **PB38 (cases half)** **No winwright Cases project, winwright.json or first case that opens the main window** — winwright.json, tests/PhotoBoost.Cases on Winwright 1.1.3 and cases/window.cases.json run in run-tests.cmd: the title and the provider chip are read from the live window.
 
 ## Block B — Model management
 

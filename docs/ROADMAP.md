@@ -2,7 +2,7 @@
 
 ## Block A — Project foundation
 
-- 📋 **PB38** (deps: PB1 ✅, PB2 ✅) **No winwright Cases project, winwright.json or first case that opens the main window** — UI behaviour is proven by winwright cases in the sibling apps, and the harness is cheapest to adopt before screens exist. → §PB38
+- ⏳ **PB38** (deps: PB1 ✅, PB2 ✅, winwright WW554) **No winwright Cases project, winwright.json or first case that opens the main window** — The winwright Claude plugin is not installed: its marketplace name collides with roadkeep's (WW554). → §PB38
 - 📋 **PB39** (deps: PB1 ✅) **No command-line flags to open a file, force a provider or point at a models folder** — Cases must reach states without file dialogs or drag and drop, which winwright cannot drive yet. → §PB39
 - 📋 **PB40** (deps: PB1 ✅) **Unverified how to show a 50 MP image on the GPU inside a WPF window with smooth zoom and pan** — WPF's own image control renders through DirectX 9 and struggles with very large bitmaps; the comparator needs a direct GPU path. → §PB40
 
@@ -18,7 +18,7 @@
 - ⏳ **PB25** (deps: PB19 ✅, PB24, PB39) **Results cannot be exported as PNG, JPG or WebP** — No save dialog, --export route or keep-metadata choice yet; they need the screens and flags that PB24 and PB39 add. → §PB25
 - 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24, PB25 ⏳, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB41** (deps: PB14 ✅, PB18 ✅) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
-- 📋 **PB42** (deps: PB11 ✅, PB38) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
+- 📋 **PB42** (deps: PB11 ✅, PB38 ⏳) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
 - 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
 - 📋 **PB44** (deps: PB17 ✅) **Decoding a wide-gamut image to sRGB is untested, so a wrong colour transform would pass the suite** — Phone photos often carry Display P3, and colours shifted on open would end up in every exported result. → §PB44
 
@@ -56,6 +56,12 @@
   PNG, JPG and WebP with a quality slider, warns via LosesTransparency before a JPEG and
   offers a background; --export writes without a dialog; metadata is kept or stripped by
   choice.
+
+## Done when — PB38
+
+- **The winwright Claude plugin is enabled at project scope beside roadkeep's**
+  .claude/settings.json lists the winwright plugin and its marketplace next to
+  roadkeep@alegauss, and both resolve in a fresh session.
 
 ## Non-goals
 
