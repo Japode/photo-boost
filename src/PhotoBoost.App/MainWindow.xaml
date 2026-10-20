@@ -47,6 +47,39 @@
           </StackPanel>
         </Border>
 
+        <!-- PB25: export the result, or the opened image before any run. -->
+        <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock Text="Export" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" />
+            <ComboBox x:Name="ExportFormat" AutomationProperties.AutomationId="ExportFormat"
+                      AutomationProperties.Name="Format" SelectedIndex="0" SelectionChanged="OnExportOptionChanged">
+              <ComboBoxItem Content="PNG" />
+              <ComboBoxItem Content="JPEG" />
+              <ComboBoxItem Content="WebP" />
+            </ComboBox>
+            <DockPanel x:Name="QualityRow" Margin="0,10,0,0" Visibility="Collapsed">
+              <TextBlock x:Name="QualityValue" DockPanel.Dock="Right" Width="28" TextAlignment="Right"
+                         Text="{Binding Value, ElementName=ExportQuality, StringFormat={}{0:0}}" />
+              <Slider x:Name="ExportQuality" AutomationProperties.AutomationId="ExportQuality" AutomationProperties.Name="Quality"
+                      Minimum="1" Maximum="100" Value="92" IsSnapToTickEnabled="True" TickFrequency="1" />
+            </DockPanel>
+            <StackPanel x:Name="TransparencyRow" Margin="0,10,0,0" Visibility="Collapsed">
+              <TextBlock x:Name="TransparencyWarning" AutomationProperties.AutomationId="TransparencyWarning"
+                         Style="{StaticResource StatCaption}"
+                         Text="JPEG has no transparency: transparent pixels are filled with the background below." />
+              <ComboBox x:Name="ExportBackground" AutomationProperties.AutomationId="ExportBackground"
+                        AutomationProperties.Name="Background" SelectedIndex="0" Margin="0,6,0,0">
+                <ComboBoxItem Content="White" />
+                <ComboBoxItem Content="Black" />
+              </ComboBox>
+            </StackPanel>
+            <Button x:Name="SaveButton" AutomationProperties.AutomationId="SaveButton" Content="Save as…"
+                    HorizontalAlignment="Stretch" Padding="12,6" Margin="0,12,0,0" Click="OnSaveClick" />
+            <TextBlock x:Name="ExportStatus" AutomationProperties.AutomationId="ExportStatus" Visibility="Collapsed"
+                       Style="{StaticResource StatCaption}" Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
+
         <Border x:Name="JobPanel" Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0" Visibility="Collapsed">
           <StackPanel>
             <ProgressBar x:Name="JobProgress" AutomationProperties.AutomationId="JobProgress" Height="6" Minimum="0" />

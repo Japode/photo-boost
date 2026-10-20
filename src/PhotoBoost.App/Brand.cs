@@ -27,6 +27,12 @@ public static class Brand
     /// <inheritdoc cref="DividerR"/>
     public const byte DividerB = 0x0C;
 
+    /// <summary>What transparency becomes in a JPEG export by default (PB25): paper white.</summary>
+    public static readonly (byte R, byte G, byte B) JpegPaper = (255, 255, 255);
+
+    /// <summary>The other JPEG background offered, for subjects cut out to sit on dark pages.</summary>
+    public static readonly (byte R, byte G, byte B) JpegNight = (0, 0, 0);
+
     /// <summary>The checkerboard's light squares.</summary>
     public static readonly Brush CheckerLight = Frozen(Color.FromRgb(CheckerLightLevel, CheckerLightLevel, CheckerLightLevel));
 

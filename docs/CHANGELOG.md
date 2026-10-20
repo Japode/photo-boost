@@ -32,7 +32,7 @@
 - ✅ **PB20** **UI receives no tile X of Y progress during inference** — Jobs report tile X of Y with a stage and a time-left estimate, throttled to 100 ms with first and last kept, and UpscaleJob queues an upscale wired to that progress.
 - ✅ **PB21** **An out-of-memory failure aborts the inference instead of retrying with smaller tiles** — An out-of-memory tile is retried at half size down to 64 px, then the run moves once to a CPU session; a lost GPU goes straight to CPU, and each step is logged.
 - ✅ **PB22** **Inference time and the provider used are not logged per operation** — Every queued upscale appends a JSON line with model, variant, provider, adapter, size, tiles, retries, wall time and outcome to a rotating log under LOCALAPPDATA.
-- ✅ **PB25 (encoder half)** **Results cannot be exported as PNG, JPG or WebP** — ImageEncoder writes PNG at 8 or 16 bits with alpha and JPEG with quality through WIC, flattening alpha on a chosen background, and WebP through SkiaSharp.
+- ✅ **PB25** **Results cannot be exported as PNG, JPG or WebP** — An export card saves the result or the opened image as PNG, JPEG or WebP with quality, warns before a transparent JPEG with a background choice, and --export writes after each run.
 - ✅ **PB23** **No screen to open an image by drag and drop or file picker** — The window opens on a drop zone with an Open button; a drop, the dialog or --open decode off the UI thread and show the photo upright with its name and size, or say why not.
 - ✅ **PB24** **No operations panel to run an upscale and pick 2x or 4x** — An operations panel runs a 2x or 4x upscale on the queue with tile progress, time left and cancel, shows the result, logs it and sums it in the status bar; missing models disable it.
 

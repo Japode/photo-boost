@@ -21,6 +21,12 @@
       "shareable": true
     },
     {
+      // PB25: a photo with transparency, so choosing JPEG has something to lose.
+      "name": "a window with a transparent photo open",
+      "arguments": ["--open", "tests/fixtures/images/alpha-lossless.webp", "--models", "tests/fixtures/images", "--provider", "cpu"],
+      "shareable": false
+    },
+    {
       "name": "a window asked to open a file that is not there",
       "arguments": ["--open", "tests/fixtures/images/missing.png", "--provider", "cpu"],
       "shareable": true
@@ -150,6 +156,43 @@
           "reads": "enabled",
           "expect": "not enabled",
           "named": "and the upscale button cannot start a run"
+        }
+      ]
+    },
+
+    {
+      // The save dialog itself waits on winwright WW551; --export covers the write.
+      "name": "choosing JPEG for a transparent photo warns and offers a background",
+      "catches": "a JPEG export that silently turns transparent pixels black",
+      "filed": "PB25",
+      "tags": ["export"],
+      "fixture": "a window with a transparent photo open",
+      "steps": [
+        {
+          "locator": "ComboBox#ExportFormat",
+          "act": "expand",
+          "named": "the format list is opened"
+        },
+        {
+          "locator": "ComboBox#ExportFormat > ListItem[name=\"JPEG\"]",
+          "act": "select",
+          "reads": "selected",
+          "expect": "selected",
+          "named": "JPEG is chosen"
+        },
+        {
+          "locator": "Text#TransparencyWarning",
+          "act": "read",
+          "reads": "name",
+          "matches": "^JPEG has no transparency",
+          "named": "the warning says what happens to transparent pixels"
+        },
+        {
+          "locator": "ComboBox#ExportBackground",
+          "act": "read",
+          "reads": "name",
+          "expect": "Background",
+          "named": "and a background can be chosen"
         }
       ]
     },

@@ -51,12 +51,6 @@ are optional extras.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-### §PB25 Export
-
-Save dialog plus an --export <path> route for cases. WIC writes PNG and JPG (quality
-slider); WebP via a library if WIC lacks an encoder. Warn when a transparent image goes
-to JPG and offer a background colour. Keep or strip metadata by choice.
-
 ### §PB26 End-to-end test
 
 cases/upscale.cases.json: a fixture stages a test image and the tiny model from the
@@ -109,6 +103,23 @@ one built with ImageCms), and assert that a saturated green comes out with its r
 blue channels moved the way the sRGB conversion predicts, within JPEG tolerance. Add a
 second fixture with a deliberately broken profile and assert the decode still succeeds
 unconverted. Record both in tests/fixtures/images/README.md beside the existing ones.
+
+### §PB45 Keep metadata on export
+
+ImageEncoder (PB25) writes no metadata: the pixels are already upright and in sRGB, so a
+viewer needs none, but a photographer loses camera, lens, date taken, copyright and GPS.
+
+Add EncodeOptions.MetadataFrom (the source path) and a "Keep metadata" check box on the
+export card, off by default (GPS leaving with a shared photo is the reason). Through
+WIC: read the source frame's IWICMetadataQueryReader and copy a curated set by query
+name into the encoder frame's MetadataQueryWriter, for JPEG under /app1/ifd and its exif
+and gps sub-IFDs, for PNG as an eXIf chunk where WIC supports it. Always write
+Orientation = 1, since the pixels were rotated on decode, and never copy the embedded
+thumbnail, which shows the original. WebP goes through SkiaSharp, which cannot write
+EXIF; say so beside the check box rather than dropping it silently. Vortice passes
+values as SharpGen Variants (GetMetadataByName(...).Value on read); the write side's
+Variant construction is the part to prove first, in a test that round-trips a Make and a
+DateTimeOriginal through a JPEG.
 
 ## Block D — Editor: comparison, history and quality modes
 

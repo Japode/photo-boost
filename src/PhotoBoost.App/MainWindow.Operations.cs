@@ -45,6 +45,7 @@ public partial class MainWindow
     private void RefreshOperations()
     {
         Operations.Visibility = Image is null ? Visibility.Collapsed : Visibility.Visible;
+        RefreshExport();
         if (library is null)
         {
             UpscaleButton.IsEnabled = false;
@@ -80,6 +81,7 @@ public partial class MainWindow
             Result = result;
             ShowResult(result, factor);
             JobStatus.Text = "Done.";
+            await ExportAfterRunAsync().ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {

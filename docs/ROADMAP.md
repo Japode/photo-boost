@@ -12,12 +12,12 @@
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 
-- ⏳ **PB25** (deps: PB19 ✅, PB24 ✅, PB39 ✅) **Results cannot be exported as PNG, JPG or WebP** — No save dialog, --export route or keep-metadata choice yet; they need the screens and flags that PB24 and PB39 add. → §PB25
-- 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24 ✅, PB25 ⏳, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
+- 📋 **PB26** (deps: PB21 ✅, PB22 ✅, PB24 ✅, PB25 ✅, PB42) **Open, upscale and export flow has no winwright case proving it end to end** — The brief gates GFPGAN and background removal on a proven Real-ESRGAN flow. → §PB26
 - 📋 **PB41** (deps: PB14 ✅, PB18 ✅) **Initial tile size ignores the free video memory of the GPU** — Starting from the VRAM budget avoids most out-of-memory retries on small GPUs and wastes no speed on large ones. → §PB41
 - 📋 **PB42** (deps: PB11 ✅, PB38 ⏳) **Cases have no tiny model fixture, so an inference case would need the real model downloads** — Cases must be fast, offline and byte-deterministic, which a 60 MB model on a GPU is not. → §PB42
 - 📋 **PB43** (deps: PB14 ✅, owner approval of the Windows ML switch) **App cannot use the TensorRT-RTX or OpenVINO providers that Windows ML installs** — The PB5 spike measured TensorRT-RTX five times faster than DirectML, but the brief requires the owner to approve a stack switch. → §PB43
 - 📋 **PB44** (deps: PB17 ✅) **Decoding a wide-gamut image to sRGB is untested, so a wrong colour transform would pass the suite** — Phone photos often carry Display P3, and colours shifted on open would end up in every exported result. → §PB44
+- 📋 **PB45** (deps: PB25 ✅) **Exports drop the source photo's camera, date, copyright and GPS metadata, with no choice to keep it** — A photographer's exported result loses the facts about the shot that catalogues and galleries read. → §PB45
 
 ## Block D — Editor: comparison, history and quality modes
 
@@ -46,13 +46,6 @@
 - **The manifest and model files are published at a stable URL** build-manifest.py ran
   with the real --base-url, every staged file is reachable there, and a download checks
   against the manifest's SHA-256.
-
-## Done when — PB25
-
-- **The current result can be saved from the UI and from --export** A save dialog offers
-  PNG, JPG and WebP with a quality slider, warns via LosesTransparency before a JPEG and
-  offers a background; --export writes without a dialog; metadata is kept or stripped by
-  choice.
 
 ## Done when — PB38
 
