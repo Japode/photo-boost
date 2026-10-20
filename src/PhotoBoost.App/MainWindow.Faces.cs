@@ -1,0 +1,77 @@
+using System.Windows;
+using PhotoBoost.Inference;
+using PhotoBoost.Inference.Pipelines;
+
+namespace PhotoBoost.App;
+
+/// <summary>
+/// The Restore faces card (PB31): GFPGAN on each face YuNet finds, blended by the strength slider,
+/// after an upscale by the Upscale card's factor when asked. It runs on the same queue, progress
+/// card and log as an upscale.
+/// </summary>
+public partial class MainWindow
+{
+    private int FaceUpscaleFactor => FaceUpscale.IsChecked == true ? Factor : 1;
+
+    /// <summary>Enables Restore faces only with an image, every model it needs, and nothing running.</summary>
+    private void RefreshFaces()
+    {
+        (string, string)[] needed = FaceUpscaleFactor == 1
+            ? [(FaceDetection.Model, "fp32"), (FaceRestore.Model, Variant)]
+            : [(FaceDetection.Model, "fp32"), (FaceRestore.Model, Variant), (Upscale.ModelFor(Factor), Variant)];
+        string? missing = Missing(needed);
+        FaceNote.Text = missing ?? string.Empty;
+        FaceNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
+        RestoreFacesButton.IsEnabled = Image is not null && missing is null && !Busy;
+    }
+
+    private void OnFaceOptionChanged(object sender, RoutedEventArgs e) => RefreshOperations();
+
+    private async void OnRestoreFacesClick(object sender, RoutedEventArgs e)
+    {
+        if (Image is not { } source || service is null || library is null)
+        {
+            return;
+        }
+
+        int upscale = FaceUpscaleFactor;
+        double strength = FaceStrength.Value / 100;
+        restoring = FaceRestoreJob.Enqueue(service, library, source, Variant, strength, upscale, new Progress<JobProgress>(ShowProgress), log);
+        JobProgress.Value = 0;
+        JobStatus.Text = "Finding faces…";
+        JobPanel.Visibility = Visibility.Visible;
+        CancelButton.IsEnabled = true;
+        RefreshOperations();
+
+        try
+        {
+            FaceRestoreResult result = await restoring.Completion.ConfigureAwait(true);
+            restoring = null;
+            if (result.Faces == 0)
+            {
+                JobStatus.Text = "No faces found.";
+                return;
+            }
+
+            string label = upscale == 1 ? "Restore faces" : $"Upscale {upscale}× + Restore faces";
+            PushVersion(result.Image, label);
+            JobStatus.Text = result.Faces == 1 ? "Done: 1 face." : $"Done: {result.Faces} faces.";
+            await ExportAfterRunAsync().ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            JobStatus.Text = "Cancelled.";
+        }
+        catch (Exception failure) when (failure is InvalidOperationException or InsufficientMemoryException or System.IO.IOException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
+        {
+            JobStatus.Text = failure.Message;
+        }
+        finally
+        {
+            restoring = null;
+            CancelButton.IsEnabled = false;
+            ShowLastRun();
+            RefreshOperations();
+        }
+    }
+}

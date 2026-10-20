@@ -161,10 +161,13 @@ public static class FaceAlignment
     /// <param name="image">The photo, changed in place.</param>
     /// <param name="crop">The crop, square.</param>
     /// <param name="toCrop">The transform it was cropped with.</param>
-    public static void PasteBack(RgbaImage image, RgbaImage crop, Similarity toCrop)
+    /// <param name="strength">How much of the crop shows where the mask is whole, 0 to 1 (PB31's blend).</param>
+    public static void PasteBack(RgbaImage image, RgbaImage crop, Similarity toCrop, double strength = 1)
     {
         ArgumentNullException.ThrowIfNull(image);
         ArgumentNullException.ThrowIfNull(crop);
+        ArgumentOutOfRangeException.ThrowIfLessThan(strength, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(strength, 1);
         int size = crop.Width;
         if (crop.Height != size)
         {
@@ -179,7 +182,7 @@ public static class FaceAlignment
             for (int x = area.X; x < area.X + area.Width; x++)
             {
                 PointD at = toCrop.Apply(new(x, y));
-                double weight = MaskWeight(at, size);
+                double weight = MaskWeight(at, size) * strength;
                 if (weight <= 0)
                 {
                     continue;

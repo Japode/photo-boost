@@ -8,13 +8,15 @@ namespace PhotoBoost.App;
 
 /// <summary>
 /// The operations panel (PB24): runs an upscale on the inference queue (PB15) with tile progress
-/// (PB20), a cancel, and the run logged (PB22) and summed up in the status bar.
+/// (PB20), a cancel, and the run logged (PB22) and summed up in the status bar. Face restore
+/// (PB31) shares the queue, the progress card and the log; see MainWindow.Faces.cs.
 /// </summary>
 public partial class MainWindow
 {
     private InferenceService? service;
     private ModelLibrary? library;
     private InferenceJob<RgbaImage>? running;
+    private InferenceJob<FaceRestoreResult>? restoring;
     private readonly OperationLog log = new(OperationLog.DefaultFolder);
 
     /// <summary>The version shown when it is an operation's result rather than the opened file.</summary>
@@ -25,6 +27,9 @@ public partial class MainWindow
 
     private int Factor => Scale2.IsChecked == true ? 2 : 4;
 
+    /// <summary>Whether an operation is queued or running, which keeps every Run button off.</summary>
+    private bool Busy => running is not null || restoring is not null;
+
     /// <summary>Called once the provider is known: opens the models folder and the queue.</summary>
     private void StartOperations(ProviderSelection provider)
     {
@@ -33,6 +38,7 @@ public partial class MainWindow
         Closed += async (_, _) =>
         {
             running?.Cancel();
+            restoring?.Cancel();
             await service.DisposeAsync().ConfigureAwait(false);
             library.Dispose();
             history.Dispose();
@@ -42,7 +48,7 @@ public partial class MainWindow
         RefreshOperations();
     }
 
-    /// <summary>Enables Upscale only with an image, models on disk, and nothing running.</summary>
+    /// <summary>Enables each operation only with an image, its models on disk, and nothing running.</summary>
     private void RefreshOperations()
     {
         Operations.Visibility = Image is null ? Visibility.Collapsed : Visibility.Visible;
@@ -50,15 +56,22 @@ public partial class MainWindow
         if (library is null)
         {
             UpscaleButton.IsEnabled = false;
+            RestoreFacesButton.IsEnabled = false;
             return;
         }
 
-        string model = Upscale.ModelFor(Factor);
-        bool present = library.Has(model, Variant);
-        OperationNote.Text = present ? string.Empty : $"{model} ({Variant}) is not in {Options.ModelsFolder}. Download the models first.";
-        OperationNote.Visibility = present ? Visibility.Collapsed : Visibility.Visible;
-        UpscaleButton.IsEnabled = Image is not null && present && running is null;
+        string? missing = Missing((Upscale.ModelFor(Factor), Variant));
+        OperationNote.Text = missing ?? string.Empty;
+        OperationNote.Visibility = missing is null ? Visibility.Collapsed : Visibility.Visible;
+        UpscaleButton.IsEnabled = Image is not null && missing is null && !Busy;
+        RefreshFaces();
     }
+
+    /// <summary>The note naming the first model not on disk, or null when all are.</summary>
+    private string? Missing(params (string Model, string Variant)[] needed) =>
+        needed.FirstOrDefault(one => !library!.Has(one.Model, one.Variant)) is { Model: not null } absent
+            ? $"{absent.Model} ({absent.Variant}) is not in {Options.ModelsFolder}. Download the models first."
+            : null;
 
     private async void OnUpscaleClick(object sender, RoutedEventArgs e)
     {
@@ -104,8 +117,9 @@ public partial class MainWindow
     private void OnCancelClick(object sender, RoutedEventArgs e)
     {
         running?.Cancel();
+        restoring?.Cancel();
         CancelButton.IsEnabled = false;
-        JobStatus.Text = "Cancelling after this tile…";
+        JobStatus.Text = restoring is null ? "Cancelling after this tile…" : "Cancelling after this step…";
     }
 
     private void ShowProgress(JobProgress p)
@@ -115,7 +129,8 @@ public partial class MainWindow
         string left = p.Remaining is { } remaining && p.Done < p.Total
             ? $" · about {Math.Ceiling(remaining.TotalSeconds).ToString(CultureInfo.CurrentCulture)} s left"
             : string.Empty;
-        JobStatus.Text = $"Tile {p.Done} of {p.Total}{left}";
+        string step = p.Stage == FaceRestore.Stage ? "Face" : "Tile";
+        JobStatus.Text = $"{step} {p.Done} of {p.Total}{left}";
     }
 
     private void ShowLastRun()

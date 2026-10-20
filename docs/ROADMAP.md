@@ -19,7 +19,6 @@
 
 ## Block E — Face restoration and background removal
 
-- 📋 **PB31** (deps: PB30 ✅) **No GFPGAN face restoration pipeline** — Face restoration is the second operation the brief lists. → §PB31
 - 📋 **PB32** (deps: PB26 ✅) **No background removal pipeline producing a transparent image** — Background removal is the third operation the brief lists. → §PB32
 
 ## Block F — Delivery: README, benchmarks and installers
@@ -27,10 +26,11 @@
 - 📋 **PB33** (deps: PB12 ⏳, PB26 ✅) **No README in Portuguese on running, generating models, Python and hardware requirements** — The brief lists the README as a deliverable, in Portuguese. → §PB33
 - 📋 **PB34** (deps: PB10 ✅, PB22 ✅, PB33) **No table comparing FP32 and INT8 size, inference time and quality** — The brief asks for this table so users can choose a quality mode on evidence. → §PB34
 - 📋 **PB35** (deps: PB26 ✅) **Release build produces no self-contained Windows installer** — Installers are a deliverable, and native ONNX Runtime binaries break easily in a single-file publish. → §PB35
+- 📋 **PB46** (deps: PB31 ✅) **App has no About page listing each model's license and the third-party notices** — GFPGAN and RMBG-1.4 carry non-commercial terms the user must see, and today only the Restore faces card states GFPGAN's. → §PB46
 
 ## Block G — Phase 2: denoising
 
-- 📋 **PB36** (deps: PB31, PB32) **No denoising operation** — Denoising is listed as an optional phase 2 operation. → §PB36
+- 📋 **PB36** (deps: PB31 ✅, PB32) **No denoising operation** — Denoising is listed as an optional phase 2 operation. → §PB36
 
 ## Done when — PB12
 

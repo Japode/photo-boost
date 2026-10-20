@@ -50,6 +50,7 @@
 ## Block E — Face restoration and background removal
 
 - ✅ **PB30** **No face detection and alignment to feed GFPGAN crops and paste results back** — YuNet (MIT, opencv_zoo f12e127) adopted with meta.json; FaceDetection decodes and suppresses; FaceAlignment fits FFHQ 512, crops and pastes back feathered.
+- ✅ **PB31** **No GFPGAN face restoration pipeline** — FaceRestore aligns each YuNet face, runs GFPGAN, pastes back by strength, optionally upscales first; Restore faces card states its terms; 2 faces in 3.1 s on DirectML.
 
 ## Block F — Delivery: README, benchmarks and installers
 

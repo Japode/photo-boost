@@ -150,8 +150,7 @@
     },
 
     {
-      // A run with real models needs PB42's tiny model fixture; until then the panel's other half
-      // was driven by hand on the PB24 desk (0014.jpg to 716 x 716 on DirectML in 1.8 s).
+      // The run itself is cases/upscale.cases.json's, on PB42's tiny models.
       "name": "with no models the operations panel says which one is missing",
       "catches": "an Upscale button that starts a run doomed to fail, or a panel that hides why it cannot run",
       "filed": "PB24",
@@ -171,6 +170,46 @@
           "reads": "enabled",
           "expect": "not enabled",
           "named": "and the upscale button cannot start a run"
+        }
+      ]
+    },
+
+    {
+      // PB31: the detector and GFPGAN are real models only (no stand-in finds a face), so a run
+      // was driven by hand: Blake_Lively.jpg, both faces restored on DirectML in 3.1 s.
+      "name": "with no models the Restore faces card says which one is missing and shows GFPGAN's terms",
+      "catches": "a Restore faces button that starts a run doomed to fail, or GFPGAN's non-commercial terms dropped from the card",
+      "filed": "PB31",
+      "tags": ["operations", "faces"],
+      "fixture": "a window with a photo open and no models",
+      "steps": [
+        {
+          "locator": "Text#FaceNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^yunet-2023mar \\(fp32\\) is not in .*Download the models first\\.$",
+          "named": "the note names the face detector first"
+        },
+        {
+          "locator": "Button#RestoreFacesButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and the button cannot start a run"
+        },
+        {
+          "locator": "Text#FaceLicence",
+          "act": "read",
+          "reads": "name",
+          "matches": "non-commercial licences: research or evaluation use only\\.$",
+          "named": "the card states GFPGAN's terms"
+        },
+        {
+          "locator": "Slider#FaceStrength",
+          "act": "read",
+          "reads": "range",
+          "expect": "100",
+          "named": "strength starts at full"
         }
       ]
     },

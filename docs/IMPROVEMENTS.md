@@ -76,15 +76,6 @@ model download flow.
 
 ## Block E — Face restoration and background removal
 
-### §PB31 Face restore pipeline
-
-Pipelines/FaceRestore.cs: detect, align, run GFPGANv1.4 per face, paste back with the
-mask, optionally upscale the background with Real-ESRGAN first. Expose a
-fidelity/strength blend. CodeFormer can be added later as an alternative model behind
-the same interface. GFPGAN's LICENSE puts its StyleGAN2 and DFDNet parts under
-non-commercial terms (scripts/model-sources.json), so the About page states it as it
-does for RMBG-1.4.
-
 ### §PB32 Background removal pipeline
 
 Pipelines/RemoveBackground.cs: resize to the RMBG-1.4 input (1024px), run, upscale the
@@ -121,6 +112,19 @@ export (PB25) needs it, MIT, to be credited beside ONNX Runtime and DirectML in 
 third-party notices. Smoke-test the installed app offline after models are downloaded.
 The non-goal Builds for macOS, Linux, web or mobile does not apply: this is the one
 Windows build.
+
+### §PB46 About page with model licenses
+
+Found by PB31. The roadmap's sections for face restore (PB31) and background removal
+(PB32) say the About page states GFPGAN's and RMBG-1.4's non-commercial terms, but the
+app has no About page. PB31 put GFPGAN's terms on the Restore faces card as a stopgap.
+
+An About window (from a button or the title bar) listing each model the models folder
+holds: name, task, variant on disk, upstream URL and license, read from each meta.json's
+`upstream` block so it never drifts from what export-and-quantize.py adopted. Beside
+them, the app's own third-party notices: ONNX Runtime and DirectML (MIT), SkiaSharp
+(MIT), Vortice (MIT), and the version. A winwright case reads it on PB42's tiny models
+folder. The installer's notices (PB35) can be generated from the same list.
 
 ## Block G — Phase 2: denoising
 

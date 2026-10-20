@@ -36,8 +36,8 @@
       </StatusBarItem>
     </StatusBar>
 
-    <!-- PB24: the operations panel. Upscale today; face restore and background removal join as
-         further cards in this stack. Shown once an image is open. -->
+    <!-- PB24: the operations panel. Upscale and face restore (PB31); background removal joins as
+         a further card in this stack. Shown once an image is open. -->
     <ScrollViewer x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,24,24,24"
                   VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
       <StackPanel>
@@ -54,6 +54,31 @@
                     HorizontalAlignment="Stretch" Padding="12,6" Click="OnUpscaleClick" IsEnabled="False" />
             <TextBlock x:Name="OperationNote" AutomationProperties.AutomationId="OperationNote" Visibility="Collapsed"
                        Style="{StaticResource StatCaption}" Margin="0,10,0,0" />
+          </StackPanel>
+        </Border>
+
+        <!-- PB31: GFPGAN on every face YuNet finds, blended by strength, after an optional upscale
+             at the factor the Upscale card has chosen. -->
+        <Border Style="{StaticResource GroupCard}" Padding="16" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock Text="Restore faces" FontSize="15" FontWeight="SemiBold" />
+            <TextBlock Text="GFPGAN, finding and sharpening each face" Style="{StaticResource StatCaption}" Margin="0,2,0,12" />
+            <DockPanel Margin="0,0,0,8">
+              <TextBlock Text="Strength" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,8,0" />
+              <TextBlock DockPanel.Dock="Right" Width="40" TextAlignment="Right" VerticalAlignment="Center"
+                         Text="{Binding Value, ElementName=FaceStrength, StringFormat={}{0:0}%}" />
+              <Slider x:Name="FaceStrength" AutomationProperties.AutomationId="FaceStrength" AutomationProperties.Name="Strength"
+                      Minimum="0" Maximum="100" Value="100" IsSnapToTickEnabled="True" TickFrequency="5" />
+            </DockPanel>
+            <CheckBox x:Name="FaceUpscale" AutomationProperties.AutomationId="FaceUpscale" Margin="0,0,0,12"
+                      Content="Upscale first, by the factor above" Checked="OnFaceOptionChanged" Unchecked="OnFaceOptionChanged" />
+            <Button x:Name="RestoreFacesButton" AutomationProperties.AutomationId="RestoreFacesButton" Content="Restore faces"
+                    HorizontalAlignment="Stretch" Padding="12,6" Click="OnRestoreFacesClick" IsEnabled="False" />
+            <TextBlock x:Name="FaceNote" AutomationProperties.AutomationId="FaceNote" Visibility="Collapsed"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,10,0,0" />
+            <TextBlock x:Name="FaceLicence" AutomationProperties.AutomationId="FaceLicence"
+                       Style="{StaticResource StatCaption}" TextWrapping="Wrap" Margin="0,10,0,0"
+                       Text="GFPGAN's StyleGAN2 and DFDNet parts are under non-commercial licences: research or evaluation use only." />
           </StackPanel>
         </Border>
 
