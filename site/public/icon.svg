@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- PhotoBoost's mark: a photo split by the comparison divider, coarse pixels before it and the
+       smooth scene after it, on the warm tone's clay tile. Drawn on a 512 grid with shapes large
+       enough to survive 16 px: the tile, the frame, one mountain, one sun, the divider. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e89070"/>
+      <stop offset="0.55" stop-color="#d97757"/>
+      <stop offset="1" stop-color="#a64b2e"/>
+    </linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff4ea"/>
+      <stop offset="1" stop-color="#fbd9c4"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a3520"/>
+      <stop offset="1" stop-color="#4a1f12"/>
+    </linearGradient>
+    <linearGradient id="light" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="0.45" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="photo">
+      <rect x="96" y="112" width="320" height="288" rx="40"/>
+    </clipPath>
+    <clipPath id="before">
+      <rect x="96" y="112" width="160" height="288"/>
+    </clipPath>
+    <clipPath id="after">
+      <rect x="256" y="112" width="160" height="288"/>
+    </clipPath>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <!-- a soft top light, so the tile reads as an object rather than a flat swatch -->
+  <rect width="512" height="512" rx="112" fill="url(#light)"/>
+
+  <g clip-path="url(#photo)">
+    <rect x="96" y="112" width="320" height="288" fill="url(#sky)"/>
+
+    <!-- before: the scene in coarse 32 px blocks -->
+    <g clip-path="url(#before)" fill="#8d4a33">
+      <rect x="96" y="336" width="160" height="64"/>
+      <rect x="128" y="304" width="128" height="32"/>
+      <rect x="160" y="272" width="96" height="32"/>
+      <rect x="192" y="240" width="64" height="32"/>
+      <rect x="224" y="208" width="32" height="32"/>
+      <rect x="128" y="176" width="32" height="32" fill="#f3b48f"/>
+    </g>
+
+    <!-- after: the same scene, smooth -->
+    <g clip-path="url(#after)">
+      <circle cx="356" cy="178" r="30" fill="#e9a33a"/>
+      <path d="M96 400 L240 214 Q256 194 272 214 L340 300 L372 262 Q384 248 396 262 L460 340 V400 Z" fill="url(#hill)"/>
+    </g>
+  </g>
+
+  <!-- the divider and its handle, as the app draws them -->
+  <rect x="248" y="96" width="16" height="320" rx="8" fill="#fff"/>
+  <circle cx="256" cy="256" r="38" fill="#fff"/>
+  <path d="M244 240 L230 256 L244 272 M268 240 L282 256 L268 272" fill="none" stroke="#a64b2e" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- the boost: a four-point sparkle at the corner the result is on -->
+  <path d="M404 64 Q410 98 444 104 Q410 110 404 144 Q398 110 364 104 Q398 98 404 64 Z" fill="#fff"/>
+</svg>

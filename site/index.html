@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-tone="warm">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/photo-boost/favicon.svg" />
+    <link rel="apple-touch-icon" href="/photo-boost/apple-touch-icon.png" />
+
+    <!--
+      The theme follows the OS, and a stored choice wins over it. The design system's
+      pre-paint script replaces the anchor below, inlined by vite.config.ts.
+    -->
+    <!--theme-script-->
+
+    <title>PhotoBoost: better photos, right on your PC</title>
+    <meta
+      name="description"
+      content="Upscale, denoise, restore faces and remove the background of your photos with AI, on your own Windows computer. No cloud, no account, nothing uploaded."
+    />
+    <!--hreflang-->
+
+    <!--
+      scripts/prerender.mjs patches the title, description, canonical and og:url by
+      replace-or-throw, inlines the rendered body into the root element, and per language sets
+      the html lang and replaces the hreflang anchor above with the alternate links. No closing
+      head or script token may appear in a comment here.
+    -->
+
+    <!-- Reveal-on-scroll starts at opacity 0 and is lifted by the client observer. With no
+         JS the prerendered text is still in the DOM; this makes it visible too. -->
+    <noscript>
+      <style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body class="vg-site">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

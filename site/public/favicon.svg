@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- The mark at tab size (16 to 32 px): icon.svg with what does not survive the scale taken
+       out. A larger photo, three coarse steps before the divider, one smooth slope after it,
+       and a divider thick enough to stay a line. No sun, no sparkle, no handle arrows. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e89070"/>
+      <stop offset="1" stop-color="#a64b2e"/>
+    </linearGradient>
+    <clipPath id="photo">
+      <rect x="72" y="88" width="368" height="336" rx="48"/>
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <g clip-path="url(#photo)">
+    <rect x="72" y="88" width="368" height="336" fill="#fff4ea"/>
+    <g fill="#8d4a33">
+      <rect x="72" y="344" width="184" height="80"/>
+      <rect x="136" y="280" width="120" height="64"/>
+      <rect x="200" y="216" width="56" height="64"/>
+    </g>
+    <path d="M256 216 L256 216 Q270 200 286 220 L440 400 V424 H256 Z" fill="#5c2817"/>
+  </g>
+  <rect x="236" y="64" width="40" height="384" rx="20" fill="#fff"/>
+</svg>
