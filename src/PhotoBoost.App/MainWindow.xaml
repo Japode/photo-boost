@@ -100,6 +100,11 @@
                 <ComboBoxItem Content="Black" />
               </ComboBox>
             </StackPanel>
+            <!-- PB45: off by default, since GPS leaving with a shared photo is the risk. -->
+            <CheckBox x:Name="KeepMetadata" AutomationProperties.AutomationId="KeepMetadata" Margin="0,10,0,0"
+                      Content="Keep camera details (date, camera, GPS)" Checked="OnExportOptionChanged" Unchecked="OnExportOptionChanged" />
+            <TextBlock x:Name="MetadataNote" AutomationProperties.AutomationId="MetadataNote" Visibility="Collapsed"
+                       Style="{StaticResource StatCaption}" Text="Only JPEG keeps camera details; PNG and WebP are saved without them." />
             <Button x:Name="SaveButton" AutomationProperties.AutomationId="SaveButton" Content="Save as…"
                     HorizontalAlignment="Stretch" Padding="12,6" Margin="0,12,0,0" Click="OnSaveClick" />
             <TextBlock x:Name="ExportStatus" AutomationProperties.AutomationId="ExportStatus" Visibility="Collapsed"

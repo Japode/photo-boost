@@ -22,7 +22,8 @@ public enum ImageFormat
 /// <param name="Quality">1 to 100, for JPEG and lossy WebP.</param>
 /// <param name="Lossless">WebP only: write it lossless.</param>
 /// <param name="Background">The colour transparency is flattened onto for JPEG, as 8-bit R, G, B.</param>
-public sealed record EncodeOptions(ImageFormat Format, int Quality = 92, bool Lossless = false, (byte R, byte G, byte B)? Background = null);
+/// <param name="MetadataFrom">A source file whose camera details to keep (PB45); JPEG only, see <see cref="ImageEncoder.CarriesMetadata"/>.</param>
+public sealed record EncodeOptions(ImageFormat Format, int Quality = 92, bool Lossless = false, (byte R, byte G, byte B)? Background = null, string? MetadataFrom = null);
 
 /// <summary>
 /// Writes an <see cref="RgbaImage"/> to a file (PB25). PNG and JPEG go through WIC, Windows' own
@@ -34,6 +35,28 @@ public static class ImageEncoder
 {
     /// <summary>White, what transparency becomes in a JPEG unless the user picks otherwise.</summary>
     public static readonly (byte R, byte G, byte B) DefaultBackground = (255, 255, 255);
+
+    /// <summary>
+    /// The tags kept (PB45), relative to the EXIF tree: camera and lens, exposure, the dates, who
+    /// made it and its copyright, and GPS. Never Orientation (written as 1, the pixels are upright),
+    /// never the thumbnail IFD (it shows the original), never the maker notes.
+    /// </summary>
+    private static readonly string[] KeptTags =
+    [
+        "/{ushort=271}", "/{ushort=272}", "/{ushort=306}", "/{ushort=315}", "/{ushort=33432}",
+        "/exif/{ushort=36867}", "/exif/{ushort=36868}", "/exif/{ushort=33434}", "/exif/{ushort=33437}",
+        "/exif/{ushort=34855}", "/exif/{ushort=37386}", "/exif/{ushort=42035}", "/exif/{ushort=42036}",
+        "/gps/{ushort=0}", "/gps/{ushort=1}", "/gps/{ushort=2}", "/gps/{ushort=3}", "/gps/{ushort=4}",
+        "/gps/{ushort=5}", "/gps/{ushort=6}", "/gps/{ushort=7}", "/gps/{ushort=29}",
+    ];
+
+    /// <summary>
+    /// Whether a format can keep the source's camera details. JPEG only: WIC's PNG encoder refuses
+    /// EXIF trees (WINCODEC_ERR_UNEXPECTEDMETADATATYPE on the PB45 desk) and SkiaSharp writes no EXIF.
+    /// </summary>
+    /// <param name="format">The format.</param>
+    /// <returns>True for JPEG.</returns>
+    public static bool CarriesMetadata(ImageFormat format) => format == ImageFormat.Jpeg;
 
     /// <summary>The format a file name asks for.</summary>
     /// <param name="path">The file name.</param>
@@ -103,18 +126,55 @@ public static class ImageEncoder
             ushort[] samples = Pack16(image, channels);
             byte[] bytes = new byte[samples.Length * 2];
             Buffer.BlockCopy(samples, 0, bytes, 0, bytes.Length);
-            WriteWic(path, ContainerFormatGuids.Png, alpha ? PixelFormat.Format64bppRGBA : PixelFormat.Format48bppRGB, image.Width, image.Height, bytes, image.Width * channels * 2, null);
+            WriteWic(path, ContainerFormatGuids.Png, alpha ? PixelFormat.Format64bppRGBA : PixelFormat.Format48bppRGB, image.Width, image.Height, bytes, image.Width * channels * 2, null, null);
         }
         else
         {
-            WriteWic(path, ContainerFormatGuids.Png, alpha ? PixelFormat.Format32bppBGRA : PixelFormat.Format24bppBGR, image.Width, image.Height, Pack8Bgr(image, alpha, null), image.Width * (alpha ? 4 : 3), null);
+            WriteWic(path, ContainerFormatGuids.Png, alpha ? PixelFormat.Format32bppBGRA : PixelFormat.Format24bppBGR, image.Width, image.Height, Pack8Bgr(image, alpha, null), image.Width * (alpha ? 4 : 3), null, null);
         }
     }
 
     private static void SaveJpeg(RgbaImage image, string path, EncodeOptions options)
     {
         byte[] bgr = Pack8Bgr(image, alpha: false, options.Background ?? DefaultBackground);
-        WriteWic(path, ContainerFormatGuids.Jpeg, PixelFormat.Format24bppBGR, image.Width, image.Height, bgr, image.Width * 3, options.Quality / 100f);
+        WriteWic(path, ContainerFormatGuids.Jpeg, PixelFormat.Format24bppBGR, image.Width, image.Height, bgr, image.Width * 3, options.Quality / 100f, options.MetadataFrom);
+    }
+
+    /// <summary>Copies the kept tags from a JPEG (/app1/ifd) or TIFF-style (/ifd) source into a JPEG frame.</summary>
+    private static void CopyMetadata(IWICImagingFactory factory, string source, IWICMetadataQueryWriter writer)
+    {
+        using IWICBitmapDecoder decoder = factory.CreateDecoderFromFileName(source, FileAccess.Read, DecodeOptions.CacheOnDemand);
+        using IWICBitmapFrameDecode frame = decoder.GetFrame(0);
+        IWICMetadataQueryReader reader;
+        try
+        {
+            reader = frame.MetadataQueryReader;
+        }
+        catch (SharpGen.Runtime.SharpGenException)
+        {
+            return; // A source with no metadata at all.
+        }
+
+        using (reader)
+        {
+            foreach (string tag in KeptTags)
+            {
+                foreach (string root in (string[])["/app1/ifd", "/ifd"])
+                {
+                    try
+                    {
+                        writer.SetMetadataByName("/app1/ifd" + tag, reader.GetMetadataByName(root + tag));
+                        break;
+                    }
+                    catch (SharpGen.Runtime.SharpGenException)
+                    {
+                        // Not under this root, or a type the writer refuses: try the next, then skip it.
+                    }
+                }
+            }
+        }
+
+        writer.SetMetadataByName("/app1/ifd/{ushort=274}", new Variant { Value = (ushort)1 });
     }
 
     private static void SaveWebp(RgbaImage image, string path, EncodeOptions options)
@@ -172,7 +232,7 @@ public static class ImageEncoder
     private static byte Over(ushort sample, byte background, float alpha) =>
         alpha >= 1f ? RgbaImage.To8(sample) : (byte)MathF.Round((sample / 257f * alpha) + (background * (1 - alpha)));
 
-    private static unsafe void WriteWic(string path, Guid container, Guid format, int width, int height, byte[] pixels, int stride, float? quality)
+    private static unsafe void WriteWic(string path, Guid container, Guid format, int width, int height, byte[] pixels, int stride, float? quality, string? metadataFrom)
     {
         using IWICImagingFactory factory = new();
         using IWICStream stream = factory.CreateStream(path, FileAccess.Write);
@@ -195,6 +255,12 @@ public static class ImageEncoder
         if (requested != format)
         {
             throw new InvalidOperationException($"WIC's encoder would not take {format}; it offered {requested}.");
+        }
+
+        if (metadataFrom is not null)
+        {
+            using IWICMetadataQueryWriter writer = frame.MetadataQueryWriter;
+            CopyMetadata(factory, metadataFrom, writer);
         }
 
         fixed (byte* data = pixels)

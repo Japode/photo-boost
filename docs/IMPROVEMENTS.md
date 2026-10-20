@@ -75,23 +75,6 @@ stay available meanwhile). TensorRT-RTX differed from CPU by 2e-3, which PB10's 
 threshold must accept. And TensorRT-RTX builds its engine at session creation (about 0.5
 s on the tiny model), so PB16's idle release costs that again.
 
-### §PB45 Keep metadata on export
-
-ImageEncoder (PB25) writes no metadata: the pixels are already upright and in sRGB, so a
-viewer needs none, but a photographer loses camera, lens, date taken, copyright and GPS.
-
-Add EncodeOptions.MetadataFrom (the source path) and a "Keep metadata" check box on the
-export card, off by default (GPS leaving with a shared photo is the reason). Through
-WIC: read the source frame's IWICMetadataQueryReader and copy a curated set by query
-name into the encoder frame's MetadataQueryWriter, for JPEG under /app1/ifd and its exif
-and gps sub-IFDs, for PNG as an eXIf chunk where WIC supports it. Always write
-Orientation = 1, since the pixels were rotated on decode, and never copy the embedded
-thumbnail, which shows the original. WebP goes through SkiaSharp, which cannot write
-EXIF; say so beside the check box rather than dropping it silently. Vortice passes
-values as SharpGen Variants (GetMetadataByName(...).Value on read); the write side's
-Variant construction is the part to prove first, in a test that round-trips a Make and a
-DateTimeOriginal through a JPEG.
-
 ## Block D — Editor: comparison, history and quality modes
 
 ### §PB29 Quality mode selector

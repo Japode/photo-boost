@@ -85,6 +85,63 @@ public sealed class ImageEncoderTests : IDisposable
         Assert.Single(Directory.GetFiles(scratch));
     }
 
+    [Fact]
+    public void AJpegCanKeepTheCameraDetailsAndIsWrittenUpright()
+    {
+        // PB45: exif-camera.jpg carries Make, Copyright, DateTimeOriginal, GPS and Orientation 6.
+        string source = Path.Combine(Repository.Root, "tests", "fixtures", "images", "exif-camera.jpg");
+        string path = Path.Combine(scratch, "kept.jpg");
+
+        ImageEncoder.Save(ImageDecoder.Decode(source), path, new EncodeOptions(ImageFormat.Jpeg, MetadataFrom: source));
+
+        Assert.Equal("PhotoBoostCam", Tag(path, "/app1/ifd/{ushort=271}"));
+        Assert.Equal("(c) Test Owner", Tag(path, "/app1/ifd/{ushort=33432}"));
+        Assert.Equal("2026:10:19 12:34:56", Tag(path, "/app1/ifd/exif/{ushort=36867}"));
+        Assert.Equal("S", Tag(path, "/app1/ifd/gps/{ushort=1}"));
+        Assert.Equal("1", Tag(path, "/app1/ifd/{ushort=274}"));
+        Assert.Equal((8, 16), (ImageDecoder.Decode(path).Width, ImageDecoder.Decode(path).Height));
+    }
+
+    [Fact]
+    public void WithoutAskingNothingIsKept()
+    {
+        string source = Path.Combine(Repository.Root, "tests", "fixtures", "images", "exif-camera.jpg");
+        string path = Path.Combine(scratch, "stripped.jpg");
+
+        ImageEncoder.Save(ImageDecoder.Decode(source), path, new EncodeOptions(ImageFormat.Jpeg));
+
+        Assert.Null(Tag(path, "/app1/ifd/{ushort=271}"));
+        Assert.Null(Tag(path, "/app1/ifd/gps/{ushort=1}"));
+    }
+
+    [Fact]
+    public void OnlyJpegCarriesMetadataAndAPngIgnoresTheRequest()
+    {
+        string source = Path.Combine(Repository.Root, "tests", "fixtures", "images", "exif-camera.jpg");
+
+        ImageEncoder.Save(ImageDecoder.Decode(source), Path.Combine(scratch, "x.png"), new EncodeOptions(ImageFormat.Png, MetadataFrom: source));
+
+        Assert.True(ImageEncoder.CarriesMetadata(ImageFormat.Jpeg));
+        Assert.False(ImageEncoder.CarriesMetadata(ImageFormat.Png));
+        Assert.False(ImageEncoder.CarriesMetadata(ImageFormat.Webp));
+    }
+
+    private static string? Tag(string path, string query)
+    {
+        using Vortice.WIC.IWICImagingFactory factory = new();
+        using Vortice.WIC.IWICBitmapDecoder decoder = factory.CreateDecoderFromFileName(path, FileAccess.Read, Vortice.WIC.DecodeOptions.CacheOnDemand);
+        using Vortice.WIC.IWICBitmapFrameDecode frame = decoder.GetFrame(0);
+        try
+        {
+            using Vortice.WIC.IWICMetadataQueryReader reader = frame.MetadataQueryReader;
+            return Convert.ToString(reader.GetMetadataByName(query).Value, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (SharpGen.Runtime.SharpGenException)
+        {
+            return null;
+        }
+    }
+
     [Theory]
     [InlineData("a.PNG", ImageFormat.Png)]
     [InlineData("b.jpeg", ImageFormat.Jpeg)]

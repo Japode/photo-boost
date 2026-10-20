@@ -27,6 +27,12 @@
       "shareable": false
     },
     {
+      // PB45: a photo with camera details, exported with the default format (PNG).
+      "name": "a window with a camera photo open",
+      "arguments": ["--open", "tests/fixtures/images/exif-camera.jpg", "--models", "tests/fixtures/images", "--provider", "cpu"],
+      "shareable": false
+    },
+    {
       "name": "a window asked to open a file that is not there",
       "arguments": ["--open", "tests/fixtures/images/missing.png", "--provider", "cpu"],
       "shareable": true
@@ -238,6 +244,37 @@
           "reads": "enabled",
           "expect": "not enabled",
           "named": "and undo has nothing to go back to"
+        }
+      ]
+    },
+
+    {
+      "name": "keeping camera details for a PNG says only JPEG keeps them",
+      "catches": "a Keep camera details box that silently does nothing for the chosen format",
+      "filed": "PB45",
+      "tags": ["export"],
+      "fixture": "a window with a camera photo open",
+      "steps": [
+        {
+          "locator": "CheckBox#KeepMetadata",
+          "act": "read",
+          "reads": "toggle",
+          "expect": "Off",
+          "named": "camera details are not kept unless asked"
+        },
+        {
+          "locator": "CheckBox#KeepMetadata",
+          "act": "toggle",
+          "reads": "toggle",
+          "expect": "On",
+          "named": "asking to keep them"
+        },
+        {
+          "locator": "Text#MetadataNote",
+          "act": "read",
+          "reads": "name",
+          "matches": "^Only JPEG keeps camera details",
+          "named": "the card says PNG will not carry them"
         }
       ]
     },

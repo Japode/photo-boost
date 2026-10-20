@@ -30,15 +30,19 @@ public partial class MainWindow
         QualityRow.Visibility = SelectedFormat == ImageFormat.Png ? Visibility.Collapsed : Visibility.Visible;
         bool loses = Exportable is { } image && ImageEncoder.LosesTransparency(image, SelectedFormat);
         TransparencyRow.Visibility = loses ? Visibility.Visible : Visibility.Collapsed;
+        MetadataNote.Visibility = KeepMetadata.IsChecked == true && !ImageEncoder.CarriesMetadata(SelectedFormat)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         SaveButton.IsEnabled = Exportable is not null;
     }
 
-    private void OnExportOptionChanged(object sender, SelectionChangedEventArgs e) => RefreshExport();
+    private void OnExportOptionChanged(object sender, RoutedEventArgs e) => RefreshExport();
 
     private EncodeOptions OptionsFor(ImageFormat format) => new(
         format,
         Quality: (int)ExportQuality.Value,
-        Background: ExportBackground.SelectedIndex == 1 ? Brand.JpegNight : Brand.JpegPaper);
+        Background: ExportBackground.SelectedIndex == 1 ? Brand.JpegNight : Brand.JpegPaper,
+        MetadataFrom: KeepMetadata.IsChecked == true ? ImagePath : null);
 
     private async void OnSaveClick(object sender, RoutedEventArgs e)
     {

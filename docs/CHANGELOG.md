@@ -38,6 +38,7 @@
 - ✅ **PB24** **No operations panel to run an upscale and pick 2x or 4x** — An operations panel runs a 2x or 4x upscale on the queue with tile progress, time left and cancel, shows the result, logs it and sums it in the status bar; missing models disable it.
 - ✅ **PB41** **Initial tile size ignores the free video memory of the GPU** — An upscale with no tile given starts at the largest of 128 to 1024 px that fits 80% of free VRAM or RAM at 6x the largest activation, measured on DirectML; 416 px on the RTX 4060.
 - ✅ **PB44** **Decoding a wide-gamut image to sRGB is untested, so a wrong colour transform would pass the suite** — A Display P3 PNG fixture with a self-built profile decodes to the sRGB that the colorant maths and LittleCMS predict, and one with a broken profile decodes unconverted.
+- ✅ **PB45** **Exports drop the source photo's camera, date, copyright and GPS metadata, with no choice to keep it** — A Keep camera details box, off by default, copies camera, lens, exposure, dates, copyright and GPS into a JPEG export with Orientation 1; PNG and WebP say they cannot.
 
 ## Block D — Editor: comparison, history and quality modes
 

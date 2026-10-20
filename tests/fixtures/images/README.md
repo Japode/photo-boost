@@ -9,6 +9,7 @@ carry. Both were made with Pillow (`scripts/requirements.txt`):
 | `rotated-exif6.jpg` | 16 x 8, left half red, right half blue, quality 100, EXIF Orientation 6 (display rotated 90° clockwise), so the upright image is 8 x 16 with red on top. |
 | `alpha-lossless.webp` | 4 x 2 lossless with exact alpha: red opaque, green at alpha 128, blue opaque, white fully transparent. |
 
+| `exif-camera.jpg` | 16 x 8, made with Pillow: Make "PhotoBoostCam", Model "Model 1", Copyright "(c) Test Owner", DateTimeOriginal 2026:10:19 12:34:56, GPS 23°33' S 46°38' W, Orientation 6 (PB45). |
 | `p3-swatch.png` | 8 x 8 of P3 (100, 180, 120), tagged with a Display P3 profile (gamma 2.2) built by `make-profile-fixtures.py`, so no third-party profile is redistributed. Decoded to sRGB it is (64, 184, 115), by the colorant matrices and by LittleCMS. |
 | `broken-profile.png` | The same pixels with an iCCP chunk that is not a profile; it must decode unconverted. |
 
