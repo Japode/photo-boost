@@ -36,6 +36,7 @@
 - ✅ **PB25** **Results cannot be exported as PNG, JPG or WebP** — An export card saves the result or the opened image as PNG, JPEG or WebP with quality, warns before a transparent JPEG with a background choice, and --export writes after each run.
 - ✅ **PB23** **No screen to open an image by drag and drop or file picker** — The window opens on a drop zone with an Open button; a drop, the dialog or --open decode off the UI thread and show the photo upright with its name and size, or say why not.
 - ✅ **PB24** **No operations panel to run an upscale and pick 2x or 4x** — An operations panel runs a 2x or 4x upscale on the queue with tile progress, time left and cancel, shows the result, logs it and sums it in the status bar; missing models disable it.
+- ✅ **PB41** **Initial tile size ignores the free video memory of the GPU** — An upscale with no tile given starts at the largest of 128 to 1024 px that fits 80% of free VRAM or RAM at 6x the largest activation, measured on DirectML; 416 px on the RTX 4060.
 
 ## Block D — Editor: comparison, history and quality modes
 

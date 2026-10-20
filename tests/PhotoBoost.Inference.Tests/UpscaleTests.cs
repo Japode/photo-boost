@@ -103,7 +103,10 @@ public sealed class UpscaleTests : IDisposable
 
         OperationRecord record = Assert.Single(log.ReadCurrent());
         Assert.Equal(("upscale x2", Upscale.X2, "fp32", "Cpu", "ok"), (record.Operation, record.Model, record.Variant, record.Provider, record.Outcome));
-        Assert.Equal((300, 40, 256, 2), (record.Width, record.Height, record.Tile, record.Tiles));
+        // The starting tile comes from the memory free on this desk (PB41); the count follows from it.
+        Assert.Equal((300, 40), (record.Width, record.Height));
+        Assert.InRange(record.Tile, TileSizer.MinTile, TileSizer.MaxTile);
+        Assert.Equal((int)Math.Ceiling(300.0 / record.Tile) * (int)Math.Ceiling(40.0 / record.Tile), record.Tiles);
         Assert.True(record.Milliseconds > 0);
         Assert.Empty(record.Retries);
     }

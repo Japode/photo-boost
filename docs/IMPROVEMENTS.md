@@ -50,14 +50,6 @@ invokes the 4x upscale, waits on the progress reading, exports with --export and
 the file with sameBytesAs against a committed reference. Run it in the VM, never on the
 operator's desktop. Also run the real models by hand on DirectML.
 
-### §PB41 Tile size from VRAM
-
-Read the local budget and usage with DXGI QueryVideoMemoryInfo through Vortice, multiply
-by the bytes per tile pixel in meta.json, and pick the largest tile from 128 to 1024
-that fits with a margin. On CPU, size from available RAM. Size the input, not the core:
-a tile reads Upscale.DefaultOverlap (32 px, measured in PB19) on each side. The OOM
-retry stays as the safety net. Log the choice.
-
 ### §PB42 Tiny model fixture for cases
 
 export-and-quantize.py also emits a tiny ONNX model (e.g. a nearest-neighbour 4x or a

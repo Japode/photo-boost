@@ -62,7 +62,10 @@ public sealed class JobContext
         if (progress is not null && (newStage || !sentAny || done >= total || time.GetElapsedTime(lastSent, now) >= interval))
         {
             TimeSpan elapsed = time.GetElapsedTime(stageStarted, now);
-            TimeSpan? remaining = done > 0 && !newStage ? elapsed / done * (total - done) : null;
+            // Finished is nothing left, even for a stage whose only step is also its first report.
+            TimeSpan? remaining = done >= total ? TimeSpan.Zero
+                : done > 0 && !newStage ? elapsed / done * (total - done)
+                : null;
             progress.Report(new JobProgress(Id, done, total, stage, remaining));
             lastSent = now;
             sentAny = true;

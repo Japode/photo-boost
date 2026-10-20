@@ -184,6 +184,15 @@
           "named": "the format list is opened"
         },
         {
+          // Workaround for winwright WW555: a select straight after expand can resolve before the
+          // popup realises its items, so this read (which polls) waits for the item first.
+          "locator": "ComboBox#ExportFormat > ListItem[name=\"JPEG\"]",
+          "act": "read",
+          "reads": "selected",
+          "expect": "not selected",
+          "named": "the opened list offers JPEG, not yet chosen (PNG is the default)"
+        },
+        {
           "locator": "ComboBox#ExportFormat > ListItem[name=\"JPEG\"]",
           "act": "select",
           "reads": "selected",

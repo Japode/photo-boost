@@ -58,12 +58,23 @@ public static class Upscale
         }
 
         using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(model, variant));
+        int context = overlap ?? DefaultOverlap;
+        if (tile is null)
+        {
+            // PB41: the starting tile from the memory there is, measured after the session loaded.
+            long free = MemoryBudget.Free(library.Provider);
+            tile = free > 0
+                ? TileSizer.Choose(free, meta.Tile.LargestActivationBytesPerPixel, context)
+                : meta.Tile.Recommended ?? Tiler.DefaultTile;
+            log?.Invoke($"Tile {tile} px from {free / 1048576.0:0} MB free on {library.Provider.Provider}.");
+        }
+
         TileOptions options = new(
             Scale: factor,
             Low: (float)meta.Input.ValueRange[0],
             High: (float)meta.Input.ValueRange[1],
-            Tile: tile ?? meta.Tile.Recommended ?? Tiler.DefaultTile,
-            Overlap: overlap ?? DefaultOverlap,
+            Tile: tile.Value,
+            Overlap: context,
             Multiple: meta.Input.Multiple);
 
         // PB21: an out-of-memory tile is retried smaller down to 64 px, then the run moves to the
