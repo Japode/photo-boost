@@ -2,16 +2,6 @@
 
 ## Block A — Project foundation
 
-### §PB38 winwright adoption
-
-Follow winwright's adoption guide and quickshell: winwright.json at the root naming the
-Debug exe and timeouts; tests/PhotoBoost.Cases with one PackageReference to Winwright
-(NU1603 as error), no reference to WPF or the app; CasesRun.cs loading
-cases/*.cases.json, asserting every case ran, exit 0 and nothing left running, skipping
-when the desk cannot be observed. Add DefaultItemExcludes if the app project sits above
-tests. Every element a case touches gets a unique automation id. Install the winwright
-Claude plugin at project scope. Friction goes to winwright's roadmap (WW).
-
 ### §PB57 Winwright 1.1.4 adoption
 
 Winwright 1.1.4 (2026-10-20) ships what this project's cases worked around, each still

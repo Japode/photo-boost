@@ -2,8 +2,7 @@
 
 ## Block A — Project foundation
 
-- ⏳ **PB38** (deps: PB1 ✅, PB2 ✅) **No winwright Cases project, winwright.json or first case that opens the main window** — WW554 shipped in winwright 1.1.4: the marketplace is now winwright, so the plugin installs beside roadkeep's. → §PB38
-- 📋 **PB57** (deps: PB38 ⏳) **The UI cases still work around five winwright gaps that 1.1.4 closed, and the drop zone and Save dialog have no case** — Winwright 1.1.4 shipped WW550, WW551, WW555, WW556 and WW521, so the stand-ins can become real cases. → §PB57
+- 📋 **PB57** (deps: PB38 ✅) **The UI cases still work around five winwright gaps that 1.1.4 closed, and the drop zone and Save dialog have no case** — Winwright 1.1.4 shipped WW550, WW551, WW555, WW556 and WW521, so the stand-ins can become real cases. → §PB57
 
 ## Block B — Model management
 
@@ -30,12 +29,6 @@
 - **The manifest and model files are published at a stable URL** build-manifest.py ran
   with the real --base-url, every staged file is reachable there, and a download checks
   against the manifest's SHA-256.
-
-## Done when — PB38
-
-- **The winwright Claude plugin is enabled at project scope beside roadkeep's**
-  .claude/settings.json lists the winwright plugin and its marketplace next to
-  roadkeep@alegauss, and both resolve in a fresh session.
 
 ## Done when — PB52
 

@@ -10,7 +10,9 @@
     "ask": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["roadkeep"],
+  "enabledMcpjsonServers": [
+    "roadkeep"
+  ],
   "hooks": {
     "SessionStart": [
       {
@@ -58,13 +60,20 @@
     ]
   },
   "enabledPlugins": {
-    "roadkeep@alegauss": true
+    "roadkeep@alegauss": true,
+    "winwright@winwright": true
   },
   "extraKnownMarketplaces": {
     "alegauss": {
       "source": {
         "source": "github",
         "repo": "alegauss/roadkeep"
+      }
+    },
+    "winwright": {
+      "source": {
+        "source": "github",
+        "repo": "alegauss/winwright"
       }
     }
   }
