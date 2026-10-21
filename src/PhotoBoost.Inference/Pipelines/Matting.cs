@@ -1,4 +1,4 @@
-using Microsoft.ML.OnnxRuntime;
+﻿using Microsoft.ML.OnnxRuntime;
 using PhotoBoost.Imaging;
 
 namespace PhotoBoost.Inference.Pipelines;
@@ -61,7 +61,8 @@ public static class Matting
     /// <param name="floor">Mask values within this of 0 or 1 are confident and kept.</param>
     /// <param name="tileSide">The tile core side.</param>
     /// <param name="context">Context read around each tile.</param>
-    public static void Run(ModelLibrary library, RgbaImage image, float[] mask, string variant, float floor = TrimapFloor, int tileSide = TileSide, int context = Context)
+    /// <param name="progress">Called with (done, total) before the first tile and after each; may throw to cancel.</param>
+    public static void Run(ModelLibrary library, RgbaImage image, float[] mask, string variant, float floor = TrimapFloor, int tileSide = TileSide, int context = Context, Action<int, int>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(library);
         ModelMeta meta = library.Meta(Model);
@@ -71,7 +72,7 @@ public static class Matting
         }
 
         using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, variant));
-        Refine(image, mask, meta, (input, width, height) => RunModel(lease.Session, meta, input, width, height), floor, tileSide, context);
+        Refine(image, mask, meta, (input, width, height) => RunModel(lease.Session, meta, input, width, height), floor, tileSide, context, progress);
     }
 
     /// <summary>
@@ -85,8 +86,13 @@ public static class Matting
     /// <param name="floor">Mask values within this of 0 or 1 are confident and kept.</param>
     /// <param name="tileSide">The tile core side.</param>
     /// <param name="context">Context read around each tile.</param>
+    /// <param name="progress">
+    /// PB62: called with (done, total) before the first tile and after each, the total being the
+    /// tiles that hold any of the edge, so an 8192 px photo's minute of matting shows as tiles;
+    /// may throw to cancel.
+    /// </param>
     /// <returns>How many tiles the model ran.</returns>
-    public static int Refine(RgbaImage image, float[] mask, ModelMeta meta, MattingModel model, float floor = TrimapFloor, int tileSide = TileSide, int context = Context)
+    public static int Refine(RgbaImage image, float[] mask, ModelMeta meta, MattingModel model, float floor = TrimapFloor, int tileSide = TileSide, int context = Context, Action<int, int>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(image);
         ArgumentNullException.ThrowIfNull(mask);
@@ -99,13 +105,10 @@ public static class Matting
         float low = (float)meta.Input.ValueRange[0];
         float high = (float)meta.Input.ValueRange[1];
         int ran = 0;
-        foreach (Tile tile in Tiler.Plan(padded.Width, padded.Height, tileSide, context, multiple))
+        Tile[] edge = [.. Tiler.Plan(padded.Width, padded.Height, tileSide, context, multiple).Where(tile => AnyUnknown(trimap, image.Width, image.Height, tile.Core))];
+        progress?.Invoke(0, edge.Length);
+        foreach (Tile tile in edge)
         {
-            if (!AnyUnknown(trimap, image.Width, image.Height, tile.Core))
-            {
-                continue;
-            }
-
             PixelRect input = tile.Input;
             float[] tensor = new float[4 * input.Area];
             TensorConversion.ToTensor(padded, input, low, high, tensor.AsSpan(0, 3 * input.Area));
@@ -142,6 +145,7 @@ public static class Matting
             }
 
             ran++;
+            progress?.Invoke(ran, edge.Length);
         }
 
         return ran;

@@ -30,6 +30,7 @@
 - ✅ **PB60** **A 4x of an 8192 px photo closes the app, and a run's progress sits below a panel taller than the window** — An upscale past 16384 px is refused on the card with what to choose; failures no longer close the app; the run's card is pinned above the operations.
 - ✅ **PB59** **No UI case drives a first-use download to the end: progress, pause, a failure and the auto-run are unobserved** — A UI case downloads a stand-in RMBG from a loopback fixture server via --manifest: progress, pause, resume, auto-run and a 404's Try again are now watched.
 - ✅ **PB61** **After an undo the run's card still says Done and the status bar still times a result no longer shown** — Undo, redo and opening another photo clear the run's card and the status bar's time, so neither describes a version no longer shown.
+- ✅ **PB62** **Remove background says only "Finding the subject…" through a minute of edge matting on a large photo** — Remove background reports the subject, then "Refining the edges: tile N of M" with the time left, counting only the tiles the edge crosses; Cancel lands between tiles.
 
 ## Block C — Inference and Real-ESRGAN end-to-end flow
 

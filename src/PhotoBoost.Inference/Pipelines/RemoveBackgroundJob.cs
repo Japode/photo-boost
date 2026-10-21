@@ -32,9 +32,8 @@ public static class RemoveBackgroundJob
                 try
                 {
                     context.Cancellation.ThrowIfCancellationRequested();
-                    RgbaImage result = RemoveBackground.Run(library, image, variant, refine);
-                    context.Report(1, 1, RemoveBackground.Stage);
-                    return result;
+                    // PB62: the subject, then the edge's tiles, each with the time left.
+                    return RemoveBackground.Run(library, image, variant, refine, (stage, done, total) => context.Report(done, total, stage));
                 }
                 catch (OperationCanceledException)
                 {

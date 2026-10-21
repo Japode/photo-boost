@@ -62,6 +62,22 @@ public sealed class MattingTests
     }
 
     [Fact]
+    public void ProgressCountsOnlyTheTilesTheEdgeCrosses()
+    {
+        // PB62: two edges in a 2500 px strip, in the first and third tiles, so the total is two of
+        // three and the report says so before the first tile runs, not once at the end.
+        const int width = 2500;
+        const int height = 64;
+        float[] mask = [.. Enumerable.Range(0, width * height).Select(i => (i % width) switch { < 100 => 1f, 100 or 2200 => 0.5f, > 2200 => 1f, _ => 0f })];
+        List<(int Done, int Total)> reports = [];
+
+        int ran = Matting.Refine(new RgbaImage(width, height), mask, Meta, (_, w, h) => [.. Enumerable.Repeat(0.25f, w * h)], 0.02f, progress: (done, total) => reports.Add((done, total)));
+
+        Assert.Equal(2, ran);
+        Assert.Equal([(0, 2), (1, 2), (2, 2)], reports);
+    }
+
+    [Fact]
     public void TheGrowRadiusIsEightPixelsOnTheTestPhotoAndScalesWithTheSide()
     {
         Assert.Equal(8, Matting.GrowRadius(933, 1405));

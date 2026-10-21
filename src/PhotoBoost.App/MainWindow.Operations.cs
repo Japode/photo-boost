@@ -207,7 +207,9 @@ public partial class MainWindow
         JobStatus.Text = p.Stage switch
         {
             FaceRestore.Stage => $"Face {p.Done} of {p.Total}{left}",
-            RemoveBackground.Stage => "Background found.",
+            RemoveBackground.Stage => p.Done < p.Total ? "Finding the subject…" : "Subject found.",
+            RemoveBackground.EdgesStage when p.Total == 1 => p.Done < p.Total ? "Refining the edges…" : "Edges refined.",
+            RemoveBackground.EdgesStage => $"Refining the edges: tile {p.Done} of {p.Total}{left}",
             _ => $"Tile {p.Done} of {p.Total}{left}",
         };
     }

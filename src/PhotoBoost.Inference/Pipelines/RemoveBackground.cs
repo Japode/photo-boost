@@ -1,4 +1,4 @@
-using Microsoft.ML.OnnxRuntime;
+﻿using Microsoft.ML.OnnxRuntime;
 using PhotoBoost.Imaging;
 
 namespace PhotoBoost.Inference.Pipelines;
@@ -15,8 +15,14 @@ public static class RemoveBackground
     /// <summary>The model's folder name.</summary>
     public const string Model = "rmbg-1.4";
 
-    /// <summary>The stage name its one step reports under.</summary>
+    /// <summary>The stage RMBG-1.4's own run reports under: one step, the subject found.</summary>
     public const string Stage = "background";
+
+    /// <summary>
+    /// PB62: the stage the edge refinement reports under, ViTMatte's tiles or the guided filter's
+    /// one step: on an 8192 px photo it is most of the run, and it said nothing for a minute.
+    /// </summary>
+    public const string EdgesStage = "edges";
 
     // The ViTMatte variants tried, in order, when the one asked for is not on disk.
     private static readonly string[] MatteFallbacks = ["fp32", "int8"];
@@ -29,8 +35,9 @@ public static class RemoveBackground
     /// Whether to refine the mask against the photo: with ViTMatte where its model is on disk
     /// (PB48), else with the guided filter (PB47). Off is BRIA's own result.
     /// </param>
+    /// <param name="progress">Called with (stage, done, total) as the subject is found and as the edges are refined; may throw to cancel.</param>
     /// <returns>The photo with the background transparent.</returns>
-    public static RgbaImage Run(ModelLibrary library, RgbaImage image, string variant, bool refine = true)
+    public static RgbaImage Run(ModelLibrary library, RgbaImage image, string variant, bool refine = true, Action<string, int, int>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(image);
@@ -42,10 +49,11 @@ public static class RemoveBackground
 
         string? matteVariant = refine ? MatteVariant(library, variant) : null;
         Action<float[]>? matting = matteVariant is not null
-            ? mask => Matting.Run(library, image, mask, matteVariant)
+            ? mask => Matting.Run(library, image, mask, matteVariant, progress: (done, total) => progress?.Invoke(EdgesStage, done, total))
             : null;
         using SessionLease<InferenceSession> lease = library.Sessions.Acquire(new ModelKey(Model, VariantFor(library, variant)));
-        return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine, matting);
+        progress?.Invoke(Stage, 0, 1);
+        return Matte(image, side, meta, input => RunModel(lease.Session, meta, input, side), refine, matting, progress);
     }
 
     /// <summary>
@@ -111,8 +119,12 @@ public static class RemoveBackground
     /// PB48: with <paramref name="refine"/>, what refines the unsure band in place instead of the
     /// guided filter (ViTMatte, see <see cref="Matting"/>); null keeps the guided filter.
     /// </param>
+    /// <param name="progress">
+    /// PB62: called with (<see cref="Stage"/>, 1, 1) once the mask is in, and with the guided
+    /// filter's one <see cref="EdgesStage"/> step around it; ViTMatte reports its own tiles.
+    /// </param>
     /// <returns>A copy of the photo with the mask as its alpha.</returns>
-    public static RgbaImage Matte(RgbaImage image, int side, ModelMeta meta, Func<float[], float[]> model, bool refine = false, Action<float[]>? matting = null)
+    public static RgbaImage Matte(RgbaImage image, int side, ModelMeta meta, Func<float[], float[]> model, bool refine = false, Action<float[]>? matting = null, Action<string, int, int>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(image);
         ArgumentNullException.ThrowIfNull(meta);
@@ -121,6 +133,7 @@ public static class RemoveBackground
         RgbaImage small = ImageResampler.Resize(image, side, side);
         TensorConversion.ToTensor(small, small.Bounds, (float)meta.Input.ValueRange[0], (float)meta.Input.ValueRange[1], input);
         float[] mask = ImageResampler.ResizePlane(model(input), side, side, image.Width, image.Height);
+        progress?.Invoke(Stage, 1, 1);
 
         // BRIA's postprocess: the mask stretched to its own range. A flat mask says nothing about
         // where the subject is, so it is read in the model's range instead of divided by zero.
@@ -150,7 +163,9 @@ public static class RemoveBackground
             // Only where BRIA's mask is unsure. Its confident 0 and 1 stay: on example_input.jpg,
             // filtering everywhere smoothed the mask out into the flat bright sky around the
             // giraffes' heads, a halo, since a flat photo gives the filter no edge to follow.
+            progress?.Invoke(EdgesStage, 0, 1);
             float[] filtered = GuidedFilter.Refine(image, mask, RefineRadius(image, side), Epsilon);
+            progress?.Invoke(EdgesStage, 1, 1);
             for (int i = 0; i < mask.Length; i++)
             {
                 mask[i] = mask[i] < Floor || mask[i] > 1 - Floor ? Snap(mask[i]) : Snap(filtered[i]);
