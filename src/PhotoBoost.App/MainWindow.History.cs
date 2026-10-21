@@ -71,6 +71,7 @@ public partial class MainWindow
     {
         if (history.Undo() is { } image)
         {
+            ClearRunStatus();
             ShowVersion(image);
         }
     }
@@ -79,6 +80,7 @@ public partial class MainWindow
     {
         if (history.Redo() is { } image)
         {
+            ClearRunStatus();
             ShowVersion(image);
         }
     }

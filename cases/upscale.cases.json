@@ -232,6 +232,13 @@
           "named": "the run finishes"
         },
         {
+          "locator": "Text#LastRun",
+          "act": "read",
+          "reads": "name",
+          "matches": "^upscale x4: ",
+          "named": "and the status bar times it"
+        },
+        {
           "locator": "RadioButton#ModeDivider",
           "act": "select",
           "reads": "selected",
@@ -264,6 +271,19 @@
           "reads": "name",
           "expect": "rotated-exif6.jpg — 8 × 16",
           "named": "the opened photo is back"
+        },
+        {
+          // PB61: the run's outcome describes a version no longer shown, so it goes from both places.
+          "locator": "Text#JobStatus",
+          "act": "read",
+          "absent": true,
+          "named": "the run's card no longer says Done"
+        },
+        {
+          "locator": "Text#LastRun",
+          "act": "read",
+          "absent": true,
+          "named": "nor the status bar its time"
         },
         {
           "locator": "Button#RedoButton",

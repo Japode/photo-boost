@@ -178,6 +178,17 @@ public partial class MainWindow
         JobChip.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// PB61: the last run's outcome goes once the version shown is no longer its result: an undo,
+    /// a redo or another photo would otherwise leave "Done" and its time describing an image the
+    /// person has moved away from. Only called with nothing running, since undo waits for a run.
+    /// </summary>
+    private void ClearRunStatus()
+    {
+        JobPanel.Visibility = Visibility.Collapsed;
+        LastRunChip.Visibility = Visibility.Collapsed;
+    }
+
     private void OnCancelClick(object sender, RoutedEventArgs e)
     {
         running?.Cancel();

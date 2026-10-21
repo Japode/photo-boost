@@ -85,6 +85,11 @@ public partial class MainWindow : Window
         DropZone.Visibility = Visibility.Collapsed;
         Viewer.Visibility = Visibility.Visible;
         history.Reset(image, $"Opened {name}");
+        if (!Busy)
+        {
+            ClearRunStatus();
+        }
+
         ShowVersion(image);
     }
 
