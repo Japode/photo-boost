@@ -55,6 +55,14 @@
     <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
   </Style>
 
+  <!-- A toolbar button's glyph (PB63), from the icon font Windows 11 ships, with Windows 10's
+       before it as the fallback. The button carries the name and the tooltip; this is the picture. -->
+  <Style x:Key="ToolbarIcon" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="Margin" Value="4,2" />
+  </Style>
+
   <!-- A destination in a nav strip: quiet text, the accent underline under the selected one. -->
   <Style x:Key="NavDest" TargetType="RadioButton">
     <Setter Property="Cursor" Value="Hand" />

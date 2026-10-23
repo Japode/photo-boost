@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Microsoft.Win32;
 using PhotoBoost.Imaging;
 
@@ -33,7 +34,6 @@ public partial class MainWindow
         MetadataNote.Visibility = KeepMetadata.IsChecked == true && !ImageEncoder.CarriesMetadata(SelectedFormat)
             ? Visibility.Visible
             : Visibility.Collapsed;
-        SaveButton.IsEnabled = Exportable is not null;
     }
 
     private void OnExportOptionChanged(object sender, RoutedEventArgs e) => RefreshExport();
@@ -58,7 +58,10 @@ public partial class MainWindow
         Background: ExportBackground.SelectedIndex == 1 ? Brand.JpegNight : Brand.JpegPaper,
         MetadataFrom: KeepMetadata.IsChecked == true ? ImagePath : null);
 
-    private async void OnSaveClick(object sender, RoutedEventArgs e)
+    // PB63: the SaveAs command, which the card's Save as…, the toolbar's and Ctrl+S share.
+    private void CanSaveAs(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = Exportable is not null;
+
+    private async void OnSaveAs(object sender, ExecutedRoutedEventArgs e)
     {
         if (Exportable is null)
         {

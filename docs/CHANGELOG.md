@@ -85,3 +85,4 @@
 
 ## Block H — Editor: basic edits and toolbar
 
+- ✅ **PB63** **The editor has no toolbar: opening, saving, undo and every basic edit live in the side panel or nowhere** — A toolbar above the photo holds Open, Save as, Undo and Redo, with shortcut tooltips and an overflow menu, off without a photo (design recorded in `src/PhotoBoost.App/MainWindow.xaml`).

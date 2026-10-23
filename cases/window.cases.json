@@ -74,6 +74,13 @@
       "files": ["tests/fixtures/images/rotated-exif6.jpg"],
       "arguments": ["--open", "{files}/rotated-exif6.jpg", "--provider", "cpu"],
       "shareable": false
+    },
+    {
+      // PB63: the same, for the toolbar's Save as.
+      "name": "a window on a staged photo, to save from the toolbar",
+      "files": ["tests/fixtures/images/rotated-exif6.jpg"],
+      "arguments": ["--open", "{files}/rotated-exif6.jpg", "--provider", "cpu"],
+      "shareable": false
     }
   ],
 
@@ -162,6 +169,74 @@
           "reads": "name",
           "expect": "Open image…",
           "named": "the open button is on the first screen"
+        }
+      ]
+    },
+
+    {
+      // PB63: a narrowed window moving the buttons into the overflow menu has no case, since
+      // winwright cannot resize a window (WW570).
+      "name": "the toolbar offers Open on the empty screen and keeps what needs a photo off",
+      "catches": "a toolbar that only appears with a photo, or whose Save as and Undo can be pressed with nothing open",
+      "filed": "PB63",
+      "tags": ["smoke", "toolbar"],
+      "fixture": "the window a default installation opens",
+      "steps": [
+        {
+          "locator": "Button#ToolbarOpen",
+          "act": "read",
+          "reads": "name",
+          "expect": "Open",
+          "named": "the toolbar names its Open button"
+        },
+        {
+          "locator": "Button#ToolbarOpen",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "enabled",
+          "named": "and it can be pressed"
+        },
+        {
+          "locator": "Button#ToolbarSaveAs",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "Save as waits for a photo"
+        },
+        {
+          "locator": "Button#UndoButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "not enabled",
+          "named": "and so does Undo"
+        }
+      ]
+    },
+
+    {
+      "name": "the toolbar's Save as writes the photo through the same dialog as the Export card",
+      "catches": "a toolbar Save as that is drawn and does nothing, or saves without the card's format",
+      "filed": "PB63",
+      "tags": ["toolbar", "export", "dialog"],
+      "fixture": "a window on a staged photo, to save from the toolbar",
+      "steps": [
+        {
+          "locator": "Button#ToolbarSaveAs",
+          "act": "invoke",
+          "named": "the toolbar's Save as is pressed"
+        },
+        {
+          "locator": "Window[class=\"#32770\"]",
+          "act": "choose file",
+          "with": "{files}/toolbar.png",
+          "named": "the dialog is told to save toolbar.png in the staged folder"
+        },
+        {
+          "locator": "Text#ExportStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "Saved toolbar.png",
+          "named": "the export card says it saved toolbar.png"
         }
       ]
     },

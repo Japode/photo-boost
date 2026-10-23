@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Win32;
 using PhotoBoost.Imaging;
 using PhotoBoost.Inference;
@@ -177,6 +178,11 @@ public partial class MainWindow : Window
             ? $"{selection.Label} · {names} ready from the next start"
             : $"{selection.Label} · {names} not fetched: {failure}";
     }
+
+    // PB63: the toolbar's Open and Ctrl+O; while a run is busy they wait, as undo does.
+    private void CanOpen(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = !Busy;
+
+    private void OnOpenCommand(object sender, ExecutedRoutedEventArgs e) => OnOpenClick(sender, e);
 
     private async void OnOpenClick(object sender, RoutedEventArgs e)
     {

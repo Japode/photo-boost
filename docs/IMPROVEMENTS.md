@@ -16,21 +16,6 @@
 
 ## Block H — Editor: basic edits and toolbar
 
-### §PB63 Editor toolbar
-
-Asked for by the owner on 2026-10-23, after finding no way to open a second photo and no
-basic edits. A toolbar above the photo, beside the Result, Compare and Side by side
-choice, with groups in this order: Open and Save as; Undo and Redo; Rotate left, Rotate
-right, Flip horizontal, Flip vertical; Crop; Invert colours. Each button has an icon and
-an accessible name, a tooltip naming its shortcut (Ctrl+O, Ctrl+S, Ctrl+Z, Ctrl+Y,
-Ctrl+R and Ctrl+Shift+R, C for crop), and an AutomationId for the UI cases. Buttons that
-need a photo are disabled without one, and while an AI operation runs, the edits wait
-for it as undo does. Every edit pushes a version onto the history (PB28), so it can be
-undone and compared like any operation. The side panel keeps the AI operations; its Undo
-and Redo move to the toolbar, and Save as stays in Export with the toolbar's button
-opening the same dialog. At a narrow width the groups collapse into an overflow menu
-rather than clipping.
-
 ### §PB64 Open another photo
 
 Found by the owner on 2026-10-23: the drop zone and its Open image button exist only on

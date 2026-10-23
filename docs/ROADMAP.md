@@ -16,12 +16,11 @@
 
 ## Block H — Editor: basic edits and toolbar
 
-- 📋 **PB63** (deps: —) **The editor has no toolbar: opening, saving, undo and every basic edit live in the side panel or nowhere** — The owner asked for a toolbar holding the basic commands, so the common actions sit above the photo instead of down a scrolling panel. → §PB63
-- 📋 **PB64** (deps: PB63) **Once a photo is open there is no way to open another: the Open button and the drop zone go with the empty screen** — Found by the owner: the only way to a second photo is restarting the app. → §PB64
-- 📋 **PB65** (deps: PB63) **A photo cannot be rotated: a sideways scan or a wrong EXIF orientation stays sideways** — Rotate left and right by 90° from the toolbar, exact pixel moves with no resampling, each a version in the history. → §PB65
-- 📋 **PB66** (deps: PB63) **A photo cannot be mirrored horizontally or vertically** — Flip horizontal and vertical from the toolbar, exact pixel moves, each a version in the history; two flips give back the same bytes. → §PB66
-- 📋 **PB67** (deps: PB63) **A photo cannot be cropped, so the subject cannot be framed before or after an upscale** — Crop from the toolbar: a rectangle drawn on the photo with handles, aspect presets and its size in pixels, applied as a version in the history. → §PB67
-- 💭 **PB68** (deps: PB63) **A photo's colours cannot be inverted, so a scanned negative stays a negative** — Asked for as "invert" and read as inverting the colours, since mirroring is PB66; an idea until the owner confirms which was meant. → §PB68
+- 📋 **PB64** (deps: PB63 ✅) **Once a photo is open there is no way to open another: the Open button and the drop zone go with the empty screen** — Found by the owner: the only way to a second photo is restarting the app. → §PB64
+- 📋 **PB65** (deps: PB63 ✅) **A photo cannot be rotated: a sideways scan or a wrong EXIF orientation stays sideways** — Rotate left and right by 90° from the toolbar, exact pixel moves with no resampling, each a version in the history. → §PB65
+- 📋 **PB66** (deps: PB63 ✅) **A photo cannot be mirrored horizontally or vertically** — Flip horizontal and vertical from the toolbar, exact pixel moves, each a version in the history; two flips give back the same bytes. → §PB66
+- 📋 **PB67** (deps: PB63 ✅) **A photo cannot be cropped, so the subject cannot be framed before or after an upscale** — Crop from the toolbar: a rectangle drawn on the photo with handles, aspect presets and its size in pixels, applied as a version in the history. → §PB67
+- 💭 **PB68** (deps: PB63 ✅) **A photo's colours cannot be inverted, so a scanned negative stays a negative** — Asked for as "invert" and read as inverting the colours, since mirroring is PB66; an idea until the owner confirms which was meant. → §PB68
 
 ## Non-goals
 

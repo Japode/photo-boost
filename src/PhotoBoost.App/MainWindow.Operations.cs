@@ -54,6 +54,9 @@ public partial class MainWindow
     {
         Operations.Visibility = Image is null ? Visibility.Collapsed : Visibility.Visible;
         RefreshExport();
+        // PB63: the toolbar's commands read Busy too, and a run starts and ends with no input to
+        // make WPF ask them again.
+        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
         if (library is null)
         {
             UpscaleButton.IsEnabled = false;
