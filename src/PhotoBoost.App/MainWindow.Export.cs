@@ -107,6 +107,7 @@ public partial class MainWindow
         try
         {
             await Task.Run(() => ImageEncoder.Save(image, full, options)).ConfigureAwait(true);
+            unsaved = false;
             ShowExportStatus($"Saved {Path.GetFileName(full)}");
         }
         catch (Exception failure) when (failure is IOException or UnauthorizedAccessException or InvalidOperationException)

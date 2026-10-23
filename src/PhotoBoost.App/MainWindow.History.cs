@@ -20,6 +20,7 @@ public partial class MainWindow
     private void PushVersion(RgbaImage image, string label)
     {
         history.Push(image, label);
+        unsaved = true;
         ShowVersion(image);
     }
 
@@ -27,6 +28,7 @@ public partial class MainWindow
     private void ShowVersion(RgbaImage image)
     {
         Image = image;
+        ViewerOpenError.Visibility = Visibility.Collapsed;
         // PB27: the surface compares the version shown against the opened file.
         Surface.Palette = Brand.Surface;
         Surface.Show(history.Position > 0 ? history.Original : null, image);

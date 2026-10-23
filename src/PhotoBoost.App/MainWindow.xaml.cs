@@ -54,8 +54,9 @@ public partial class MainWindow : Window
     public string? ImagePath { get; private set; }
 
     /// <summary>
-    /// Decodes a file off the UI thread and shows it, or says why not on the drop zone. Every way in
-    /// arrives here: the button, a drop from Explorer, and --open (PB39), which is how cases come.
+    /// Decodes a file off the UI thread and shows it, or says why not. Every way in arrives here:
+    /// the drop zone's button, the toolbar's Open and Ctrl+O, a drop anywhere on the window, and
+    /// --open (PB39), which is how cases come.
     /// </summary>
     /// <param name="path">The file.</param>
     /// <returns>When the file is shown or refused.</returns>
@@ -64,6 +65,13 @@ public partial class MainWindow : Window
         ArgumentNullException.ThrowIfNull(path);
         string full = Path.GetFullPath(path);
         string name = Path.GetFileName(full);
+        // PB64: opening replaces the photo and its history, so it waits for a run as undo does,
+        // and asks before versions nobody saved are thrown away.
+        if (Busy || (Image is not null && unsaved && !ConfirmDiscard(name)))
+        {
+            return;
+        }
+
         RgbaImage image;
         try
         {
@@ -86,16 +94,39 @@ public partial class MainWindow : Window
         DropZone.Visibility = Visibility.Collapsed;
         Viewer.Visibility = Visibility.Visible;
         history.Reset(image, $"Opened {name}");
-        if (!Busy)
-        {
-            ClearRunStatus();
-        }
-
+        unsaved = false;
+        ClearRunStatus();
         ShowVersion(image);
     }
 
+    /// <summary>Whether the history holds a version made since the photo was opened or last saved.</summary>
+    private bool unsaved;
+
+    private bool ConfirmDiscard(string next)
+    {
+        string current = Path.GetFileName(ImagePath) ?? "This photo";
+        return MessageBox.Show(
+            this,
+            $"{current} has versions that were not saved. Open {next} and discard them?",
+            "PhotoBoost",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.None,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
+    }
+
+    /// <summary>
+    /// Says why a file could not be opened: on the drop zone before the first photo, and over the
+    /// photo once one is open, which stays on screen (PB64).
+    /// </summary>
     private void ShowError(string message)
     {
+        if (Image is not null)
+        {
+            ViewerOpenError.Text = message;
+            ViewerOpenError.Visibility = Visibility.Visible;
+            return;
+        }
+
         OpenError.Text = message;
         OpenError.Visibility = Visibility.Visible;
         DropZone.Visibility = Visibility.Visible;
@@ -193,17 +224,22 @@ public partial class MainWindow : Window
         }
     }
 
+    // PB64: a drop is taken anywhere on the window, the photo surface included: its child window
+    // registers no drop target, so OLE hands the drop to this window's, and WPF routes it here.
     private void OnDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = !Busy && e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
     }
 
-    private async void OnDrop(object sender, DragEventArgs e)
+    private void OnDrop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
         {
-            await OpenAsync(files[0]).ConfigureAwait(true);
+            // Opened once the drop has returned: the discard prompt is modal, and inside the drop
+            // it would hold Explorer's drag until it was answered.
+            string path = files[0];
+            Dispatcher.BeginInvoke(async () => await OpenAsync(path).ConfigureAwait(true));
         }
     }
 }

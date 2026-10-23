@@ -314,6 +314,10 @@
         <!-- PB27: the caption; how it is compared sits beside the toolbar above (PB63). -->
         <TextBlock x:Name="ImageInfo" DockPanel.Dock="Top" AutomationProperties.AutomationId="ImageInfo"
                    Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
+        <!-- PB64: a later file that could not be opened, said over the photo, which stays. -->
+        <TextBlock x:Name="ViewerOpenError" DockPanel.Dock="Top" AutomationProperties.AutomationId="ViewerOpenError"
+                   Visibility="Collapsed" TextWrapping="Wrap" Margin="2,0,0,8"
+                   Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
         <!-- The GPU surface (PB40's path): wheel to zoom, drag to pan, drag the divider to compare. -->
         <render:ImageSurface x:Name="Surface" AutomationProperties.AutomationId="Surface" />
       </DockPanel>

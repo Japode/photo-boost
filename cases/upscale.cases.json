@@ -18,6 +18,17 @@
       ],
       "arguments": ["--open", "{files}/rotated-exif6.jpg", "--models", "{files}/models", "--provider", "cpu", "--export", "{files}/out.png"],
       "shareable": false
+    },
+    {
+      // PB64: no --export, so a run leaves a version nobody saved.
+      "name": "a window on the tiny models that saves nothing by itself",
+      "files": [
+        "tests/fixtures/images/rotated-exif6.jpg",
+        { "from": "cases/fixtures/models/realesrgan-x4plus/fp16.onnx", "to": "models/realesrgan-x4plus/fp16.onnx" },
+        { "from": "cases/fixtures/models/realesrgan-x4plus/meta.json", "to": "models/realesrgan-x4plus/meta.json" }
+      ],
+      "arguments": ["--open", "{files}/rotated-exif6.jpg", "--models", "{files}/models", "--provider", "cpu"],
+      "shareable": false
     }
   ],
 
@@ -200,6 +211,80 @@
           "reads": "enabled",
           "expect": "enabled",
           "named": "and the 4x upscale still has its model, now FP32"
+        }
+      ]
+    },
+
+    {
+      // The MessageBox's text is its static control, id 65535, and its buttons are addressed by
+      // their ids (IDYES 6, IDNO 7), since Windows names them in the desk's language.
+      "name": "opening another photo over an unsaved result asks before discarding it",
+      "catches": "a drop that silently throws away a result nobody saved, or a No that opens the photo anyway",
+      "filed": "PB64",
+      "tags": ["open", "drop", "history"],
+      "fixture": "a window on the tiny models that saves nothing by itself",
+      "steps": [
+        {
+          "locator": "Button#UpscaleButton",
+          "act": "read",
+          "reads": "enabled",
+          "expect": "enabled",
+          "named": "the models are loaded"
+        },
+        {
+          "locator": "Button#UpscaleButton",
+          "act": "invoke",
+          "named": "Upscale 4x is started"
+        },
+        {
+          "locator": "Text#JobStatus",
+          "act": "read",
+          "reads": "name",
+          "expect": "Done: 32 × 64.",
+          "named": "the run finishes, and nothing saves it"
+        },
+        {
+          "locator": "Slider#Surface",
+          "act": "drop file",
+          "with": "tests/fixtures/images/alpha-lossless.webp",
+          "named": "another photo is dropped on the result"
+        },
+        {
+          "locator": "Window[class=\"#32770\"] > Text#65535",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg has versions that were not saved. Open alpha-lossless.webp and discard them?",
+          "named": "it asks before discarding the result"
+        },
+        {
+          "locator": "Window[class=\"#32770\"] > Button#7",
+          "act": "invoke",
+          "named": "No is answered"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Upscale 4× — 32 × 64",
+          "named": "the result stays"
+        },
+        {
+          "locator": "Slider#Surface",
+          "act": "drop file",
+          "with": "tests/fixtures/images/alpha-lossless.webp",
+          "named": "it is dropped again"
+        },
+        {
+          "locator": "Window[class=\"#32770\"] > Button#6",
+          "act": "invoke",
+          "named": "and this time Yes is answered"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "alpha-lossless.webp — 4 × 2",
+          "named": "the other photo opens"
         }
       ]
     },

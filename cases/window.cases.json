@@ -76,6 +76,12 @@
       "shareable": false
     },
     {
+      // PB64: not lent, since a second photo is dropped on it.
+      "name": "a window on the rotated JPEG fixture, to drop another file on",
+      "arguments": ["--open", "tests/fixtures/images/rotated-exif6.jpg", "--provider", "cpu"],
+      "shareable": false
+    },
+    {
       // PB63: the same, for the toolbar's Save as.
       "name": "a window on a staged photo, to save from the toolbar",
       "files": ["tests/fixtures/images/rotated-exif6.jpg"],
@@ -262,6 +268,64 @@
           "reads": "name",
           "expect": "rotated-exif6.jpg — 8 × 16",
           "named": "it opens, named and upright"
+        }
+      ]
+    },
+
+    {
+      // PB64: the surface is a child window of its own, so this is the drop that used to have
+      // nowhere to land once a photo was open. No edits, so nothing is asked.
+      "name": "a file dropped on the open photo replaces it, or says why not and keeps it",
+      "catches": "a second photo that can only be reached by restarting, or a bad file that throws the open photo away",
+      "filed": "PB64",
+      "tags": ["open", "drop"],
+      "fixture": "a window on the rotated JPEG fixture, to drop another file on",
+      "steps": [
+        {
+          "locator": "Slider#Surface",
+          "act": "drop file",
+          "with": "tests/fixtures/images/README.md",
+          "named": "a file that is not an image is dropped on the photo"
+        },
+        {
+          "locator": "Text#ViewerOpenError",
+          "act": "read",
+          "reads": "name",
+          "expect": "README.md is not an image Windows can open.",
+          "named": "it says why over the photo"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "and the photo stays"
+        },
+        {
+          "locator": "Slider#Surface",
+          "act": "drop file",
+          "with": "tests/fixtures/images/alpha-lossless.webp",
+          "named": "another photo is dropped on it"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "alpha-lossless.webp — 4 × 2",
+          "named": "it replaces the first"
+        },
+        {
+          "locator": "List#History > ListItem[order=top]",
+          "act": "read",
+          "reads": "name",
+          "expect": "1. Opened alpha-lossless.webp",
+          "named": "with a history of its own"
+        },
+        {
+          "locator": "Text#ViewerOpenError",
+          "act": "read",
+          "absent": true,
+          "named": "and the earlier refusal is gone"
         }
       ]
     },

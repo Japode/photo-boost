@@ -16,18 +16,6 @@
 
 ## Block H — Editor: basic edits and toolbar
 
-### §PB64 Open another photo
-
-Found by the owner on 2026-10-23: the drop zone and its Open image button exist only on
-the empty screen, so after the first photo the app has to be restarted. Three ways in,
-all reaching the same open path the drop zone uses: the toolbar's Open (PB63), Ctrl+O,
-and a photo dropped anywhere on the window, the viewer included. Opening replaces the
-photo and starts a new history, so when the current one has versions that were never
-saved, a small prompt asks whether to discard them; nothing is asked for a photo with no
-edits. While an AI operation runs, Open waits as undo does, or offers to cancel the run
-first. A file that cannot be opened keeps the current photo on screen and says why in
-place, instead of going back to the empty drop zone as the first open does.
-
 ### §PB67 Crop
 
 The owner asked for crop on 2026-10-23. Pressing Crop (or C) turns the photo surface
