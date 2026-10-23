@@ -3,9 +3,9 @@ using System.Runtime.InteropServices;
 namespace PhotoBoost.Imaging;
 
 /// <summary>
-/// The edits that move pixels without changing any (PB65): a quarter turn either way. Each pixel's
-/// eight bytes are copied whole, alpha included, so nothing is resampled and four turns give back
-/// the same bytes. Rows are walked in blocks so the column-wise writes of a turn stay in the cache,
+/// The edits that move pixels without changing any: a quarter turn either way (PB65) and a mirror
+/// either way (PB66). Each pixel's eight bytes are copied whole, alpha included, so nothing is
+/// resampled, four turns give back the same bytes and so do two flips. Rows are walked in blocks so the column-wise writes of a turn stay in the cache,
 /// which keeps an 8192 px photo well under a second on the UI thread.
 /// </summary>
 public static class ImageTransforms
@@ -21,6 +21,38 @@ public static class ImageTransforms
     /// <param name="image">The source.</param>
     /// <returns>A new image, its width the source's height.</returns>
     public static RgbaImage RotateLeft(RgbaImage image) => Turn(image, clockwise: false);
+
+    /// <summary>The photo mirrored left to right.</summary>
+    /// <param name="image">The source.</param>
+    /// <returns>A new image of the same size.</returns>
+    public static RgbaImage FlipHorizontal(RgbaImage image)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        RgbaImage result = new(image.Width, image.Height, image.SourceBitDepth);
+        for (int y = 0; y < image.Height; y++)
+        {
+            Span<ulong> row = MemoryMarshal.Cast<ushort, ulong>(result.Row(y));
+            MemoryMarshal.Cast<ushort, ulong>(image.Row(y)).CopyTo(row);
+            row.Reverse();
+        }
+
+        return result;
+    }
+
+    /// <summary>The photo mirrored top to bottom.</summary>
+    /// <param name="image">The source.</param>
+    /// <returns>A new image of the same size.</returns>
+    public static RgbaImage FlipVertical(RgbaImage image)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        RgbaImage result = new(image.Width, image.Height, image.SourceBitDepth);
+        for (int y = 0; y < image.Height; y++)
+        {
+            image.Row(y).CopyTo(result.Row(image.Height - 1 - y));
+        }
+
+        return result;
+    }
 
     private static RgbaImage Turn(RgbaImage image, bool clockwise)
     {

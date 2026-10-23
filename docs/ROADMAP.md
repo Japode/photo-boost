@@ -16,7 +16,6 @@
 
 ## Block H — Editor: basic edits and toolbar
 
-- 📋 **PB66** (deps: PB63 ✅) **A photo cannot be mirrored horizontally or vertically** — Flip horizontal and vertical from the toolbar, exact pixel moves, each a version in the history; two flips give back the same bytes. → §PB66
 - 📋 **PB67** (deps: PB63 ✅) **A photo cannot be cropped, so the subject cannot be framed before or after an upscale** — Crop from the toolbar: a rectangle drawn on the photo with handles, aspect presets and its size in pixels, applied as a version in the history. → §PB67
 - 💭 **PB68** (deps: PB63 ✅) **A photo's colours cannot be inverted, so a scanned negative stays a negative** — Asked for as "invert" and read as inverting the colours, since mirroring is PB66; an idea until the owner confirms which was meant. → §PB68
 

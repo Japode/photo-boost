@@ -1,6 +1,6 @@
 namespace PhotoBoost.Imaging.Tests;
 
-/// <summary>PB65: quarter turns are exact moves of every pixel, alpha included.</summary>
+/// <summary>PB65, PB66: quarter turns and flips are exact moves of every pixel, alpha included.</summary>
 public sealed class ImageTransformsTests
 {
     // A 3 x 2 image whose every sample is distinct, so any misplaced pixel or channel shows.
@@ -61,6 +61,58 @@ public sealed class ImageTransformsTests
 
         Assert.True(image.Samples.SequenceEqual(right.Samples));
         Assert.True(image.Samples.SequenceEqual(left.Samples));
+    }
+
+    [Fact]
+    public void FlippingHorizontallySwapsColumnsAndKeepsRows()
+    {
+        RgbaImage image = Numbered();
+
+        RgbaImage flipped = ImageTransforms.FlipHorizontal(image);
+
+        Assert.Equal((3, 2), (flipped.Width, flipped.Height));
+        Assert.Equal(Pixel(image, 2, 0), Pixel(flipped, 0, 0));
+        Assert.Equal(Pixel(image, 1, 1), Pixel(flipped, 1, 1));
+        Assert.Equal(Pixel(image, 0, 1), Pixel(flipped, 2, 1));
+    }
+
+    [Fact]
+    public void FlippingVerticallySwapsRowsAndKeepsColumns()
+    {
+        RgbaImage image = Numbered();
+
+        RgbaImage flipped = ImageTransforms.FlipVertical(image);
+
+        Assert.Equal((3, 2), (flipped.Width, flipped.Height));
+        Assert.Equal(Pixel(image, 0, 1), Pixel(flipped, 0, 0));
+        Assert.Equal(Pixel(image, 2, 0), Pixel(flipped, 2, 1));
+    }
+
+    [Theory]
+    [InlineData(3, 2, 16)]
+    [InlineData(130, 67, 8)]
+    public void TwoFlipsEitherWayGiveBackTheSameBytesAndDepth(int width, int height, int depth)
+    {
+        RgbaImage image = Numbered(width, height, depth);
+
+        RgbaImage horizontal = ImageTransforms.FlipHorizontal(ImageTransforms.FlipHorizontal(image));
+        RgbaImage vertical = ImageTransforms.FlipVertical(ImageTransforms.FlipVertical(image));
+
+        Assert.True(image.Samples.SequenceEqual(horizontal.Samples));
+        Assert.True(image.Samples.SequenceEqual(vertical.Samples));
+        Assert.Equal(depth, horizontal.SourceBitDepth);
+        Assert.Equal(depth, vertical.SourceBitDepth);
+    }
+
+    [Fact]
+    public void BothFlipsAreAHalfTurn()
+    {
+        RgbaImage image = Numbered(130, 67);
+
+        RgbaImage flipped = ImageTransforms.FlipVertical(ImageTransforms.FlipHorizontal(image));
+        RgbaImage turned = ImageTransforms.RotateRight(ImageTransforms.RotateRight(image));
+
+        Assert.True(turned.Samples.SequenceEqual(flipped.Samples));
     }
 
     [Fact]

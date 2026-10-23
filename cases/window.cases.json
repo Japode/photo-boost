@@ -407,6 +407,53 @@
     },
 
     {
+      // PB66: the mirrored pixels are ImageTransformsTests'; this is the toolbar and the history.
+      "name": "the photo is flipped both ways from the toolbar, each flip a version that undoes",
+      "catches": "a flip button that does nothing, changes the photo's size, or flips without a history entry to undo",
+      "filed": "PB66",
+      "tags": ["toolbar", "edit", "history"],
+      "fixture": "a window on the rotated JPEG fixture, to edit",
+      "steps": [
+        {
+          "locator": "Button#FlipHorizontalButton",
+          "act": "invoke",
+          "named": "Flip horizontal is pressed"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Flip horizontal — 8 × 16",
+          "named": "the photo keeps its size, as a new version"
+        },
+        {
+          "locator": "Button#FlipVerticalButton",
+          "act": "invoke",
+          "named": "Flip vertical is pressed"
+        },
+        {
+          "locator": "List#History > ListItem[order=bottom]",
+          "act": "read",
+          "reads": "name",
+          "expect": "3. Flip vertical",
+          "named": "both flips are in the history"
+        },
+        {
+          "locator": "Button#UndoButton",
+          "act": "invoke",
+          "named": "the vertical flip is undone"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Flip horizontal — 8 × 16",
+          "named": "back to the horizontal flip"
+        }
+      ]
+    },
+
+    {
       // PB13, PB58: only the offer is read; the download itself needs the network, which a case
       // does not reach, and ModelDownloadsTests drives it against a stand-in server.
       "name": "with no models About offers to download everything",

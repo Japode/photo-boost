@@ -30,16 +30,6 @@ surface is PhotoBoost.Render's GPU surface, so the rectangle and dimming are dra
 and the handles are hit-tested in photo coordinates; the surface publishes the rectangle
 through its automation status, so a UI case can set it and read it back.
 
-### §PB66 Flip horizontal and vertical
-
-The owner asked for basic edits on 2026-10-23. Flip horizontal mirrors the photo left to
-right, and Flip vertical top to bottom. As with rotating (PB65), both are exact moves of
-the 16-bit samples in PhotoBoost.Imaging, alpha included and with no resampling, so
-flipping twice gives back the same bytes, which a unit test checks. Each flip is a
-version in the history (PB28), labelled "Flip horizontal" or "Flip vertical", and can be
-undone and compared. A UI case flips the tiny fixture photo and reads the history and
-the image size back.
-
 ### §PB68 Invert colours
 
 The owner listed "crop, invert, flip" on 2026-10-23. Flip is PB66, so invert is read

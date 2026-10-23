@@ -25,6 +25,9 @@
     <!-- PB65: the quarter turns, whose commands carry Ctrl+R and Ctrl+Shift+R. -->
     <CommandBinding Command="{x:Static local:MainWindow.RotateLeftCommand}" Executed="OnRotateLeft" CanExecute="CanEdit" />
     <CommandBinding Command="{x:Static local:MainWindow.RotateRightCommand}" Executed="OnRotateRight" CanExecute="CanEdit" />
+    <!-- PB66: the flips. -->
+    <CommandBinding Command="{x:Static local:MainWindow.FlipHorizontalCommand}" Executed="OnFlipHorizontal" CanExecute="CanEdit" />
+    <CommandBinding Command="{x:Static local:MainWindow.FlipVerticalCommand}" Executed="OnFlipVertical" CanExecute="CanEdit" />
   </Window.CommandBindings>
   <Window.InputBindings>
     <KeyBinding Command="SaveAs" Key="S" Modifiers="Ctrl" />
@@ -126,6 +129,19 @@
           <Button x:Name="RotateRightButton" AutomationProperties.AutomationId="RotateRightButton" AutomationProperties.Name="Rotate right"
                   Command="{x:Static local:MainWindow.RotateRightCommand}" ToolTip="Rotate right (Ctrl+R)">
             <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7AD;" />
+          </Button>
+          <!-- PB66: the font's two-way arrows, upright for the vertical flip. -->
+          <Button x:Name="FlipHorizontalButton" AutomationProperties.AutomationId="FlipHorizontalButton" AutomationProperties.Name="Flip horizontal"
+                  Command="{x:Static local:MainWindow.FlipHorizontalCommand}" ToolTip="Flip horizontal">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE8AB;" />
+          </Button>
+          <Button x:Name="FlipVerticalButton" AutomationProperties.AutomationId="FlipVerticalButton" AutomationProperties.Name="Flip vertical"
+                  Command="{x:Static local:MainWindow.FlipVerticalCommand}" ToolTip="Flip vertical">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE8AB;" RenderTransformOrigin="0.5,0.5">
+              <TextBlock.RenderTransform>
+                <RotateTransform Angle="90" />
+              </TextBlock.RenderTransform>
+            </TextBlock>
           </Button>
         </ToolBar>
       </ToolBarTray>
