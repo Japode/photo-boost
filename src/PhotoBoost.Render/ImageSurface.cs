@@ -19,6 +19,8 @@ public sealed class ImageSurface : HwndHost
 {
     private const uint WmLButtonDown = 0x0201, WmLButtonUp = 0x0202, WmMouseMove = 0x0200, WmMouseWheel = 0x020A, WmSetCursor = 0x0020;
     private const string ClassName = "PhotoBoostImageSurface";
+    private const int HtClient = 1;
+    private const double GrabDips = 12;
     private static SurfaceProc? procKeepAlive;
     private static readonly Dictionary<nint, ImageSurface> Hosts = [];
 
@@ -33,6 +35,7 @@ public sealed class ImageSurface : HwndHost
     private RgbaImage? after;
     private PixelRect? crop;
     private CropHandle grabbed;
+    private CropHandle hovered;
     private PixelRect grabbedFrom;
     private (double X, double Y) grabbedAt;
 
@@ -63,6 +66,7 @@ public sealed class ImageSurface : HwndHost
             if (crop is null)
             {
                 drag = drag == Drag.Crop ? Drag.None : drag;
+                hovered = CropHandle.None;
             }
 
             Redraw();
@@ -191,7 +195,7 @@ public sealed class ImageSurface : HwndHost
 
     private (int Width, int Height) PixelSize()
     {
-        double scale = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M11 ?? VisualTreeHelper.GetDpi(this).DpiScaleX;
+        double scale = DeviceScale();
         return (Math.Max(1, (int)Math.Round(ActualWidth * scale)), Math.Max(1, (int)Math.Round(ActualHeight * scale)));
     }
 
@@ -205,12 +209,31 @@ public sealed class ImageSurface : HwndHost
         return (u * iw, v * ih);
     }
 
-    /// <summary>Photo pixels per surface pixel at this view, so a handle is grabbed at the same distance at any zoom.</summary>
-    private double PhotoPerSurfacePixel()
+    /// <summary>
+    /// How far from a handle a press still grabs it, in photo pixels: 12 of the screen's own pixels at
+    /// any zoom and any display scale. PB69: it was 8 device pixels, about 5 at 150 %, so most presses
+    /// aimed at a corner landed beside it.
+    /// </summary>
+    private double Grab()
     {
         (int iw, int ih) = renderer!.ImageSize;
-        return ViewMath.Span(iw, ih, renderer.Width, renderer.Height, view.Zoom).X * iw / renderer.Width;
+        double photoPerDevicePixel = ViewMath.Span(iw, ih, renderer.Width, renderer.Height, view.Zoom).X * iw / renderer.Width;
+        return GrabDips * DeviceScale() * photoPerDevicePixel;
     }
+
+    private double DeviceScale() =>
+        PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M11 ?? VisualTreeHelper.GetDpi(this).DpiScaleX;
+
+    /// <summary>The system cursor that says what a press on this part of the crop does.</summary>
+    private static nint CursorFor(CropHandle handle) => handle switch
+    {
+        CropHandle.Move => 32646,                                    // IDC_SIZEALL
+        CropHandle.TopLeft or CropHandle.BottomRight => 32642,       // IDC_SIZENWSE
+        CropHandle.TopRight or CropHandle.BottomLeft => 32643,       // IDC_SIZENESW
+        CropHandle.Left or CropHandle.Right => 32644,                // IDC_SIZEWE
+        CropHandle.Top or CropHandle.Bottom => 32645,                // IDC_SIZENS
+        _ => 32512,                                                  // IDC_ARROW
+    };
 
     private nint OnMessage(uint msg, nint wParam, nint lParam)
     {
@@ -228,7 +251,7 @@ public sealed class ImageSurface : HwndHost
                 SetCapture(child);
                 grabbedAt = PhotoPoint(x, y);
                 grabbedFrom = crop ?? default;
-                grabbed = crop is { } rect ? CropMath.HitTest(rect, grabbedAt.X, grabbedAt.Y, 8 * PhotoPerSurfacePixel()) : CropHandle.None;
+                grabbed = crop is { } rect ? CropMath.HitTest(rect, grabbedAt.X, grabbedAt.Y, Grab()) : CropHandle.None;
                 if (grabbed != CropHandle.None)
                 {
                     drag = Drag.Crop;
@@ -252,10 +275,18 @@ public sealed class ImageSurface : HwndHost
                 last = (x, y);
                 Redraw();
                 return 0;
+            case WmMouseMove when crop is { } hover:
+                // PB69: what a press here would grab, so the cursor can say so before it does.
+                (double hx, double hy) = PhotoPoint(x, y);
+                hovered = CropMath.HitTest(hover, hx, hy, Grab());
+                break;
             case WmLButtonUp:
                 drag = Drag.None;
                 ReleaseCapture();
                 return 0;
+            case WmSetCursor when crop is not null && (lParam & 0xFFFF) == HtClient:
+                SetCursor(LoadCursorW(0, CursorFor(drag == Drag.Crop ? grabbed : hovered)));
+                return 1;
             case WmMouseWheel:
                 // Wheel coordinates are screen coordinates.
                 POINT p = new() { X = x, Y = y };
@@ -344,6 +375,9 @@ public sealed class ImageSurface : HwndHost
 
     [DllImport("user32.dll")]
     private static extern nint LoadCursorW(nint instance, nint name);
+
+    [DllImport("user32.dll")]
+    private static extern nint SetCursor(nint cursor);
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern nint GetModuleHandleW(string? name);

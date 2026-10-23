@@ -30,6 +30,10 @@ public sealed class CropMathTests
     [InlineData(40, 11, CropHandle.Top)]
     [InlineData(61, 40, CropHandle.BottomRight)]
     [InlineData(19, 25, CropHandle.Left)]
+    [InlineData(26, 9, CropHandle.Top)]      // PB69: an edge is grabbed along its length, not only at its middle
+    [InlineData(61, 36, CropHandle.Right)]
+    [InlineData(52, 41, CropHandle.Bottom)]
+    [InlineData(21, 12, CropHandle.TopLeft)] // and a corner wins where an edge and it overlap
     [InlineData(35, 30, CropHandle.Move)]
     [InlineData(5, 5, CropHandle.None)]
     public void APressGrabsTheNearestHandleTheInsideOrNothing(double x, double y, CropHandle expected) =>

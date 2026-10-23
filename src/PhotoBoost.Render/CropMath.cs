@@ -72,7 +72,11 @@ public static class CropMath
         return new PixelRect(Math.Clamp(rect.X, 0, width - w), Math.Clamp(rect.Y, 0, height - h), w, h);
     }
 
-    /// <summary>What a press at a photo point grabs: a handle within the grab distance, the inside, or nothing.</summary>
+    /// <summary>
+    /// What a press at a photo point grabs: a corner within the grab distance, then an edge anywhere
+    /// along its length (PB69: only its middle handle counted, so most presses on an edge missed),
+    /// then the inside, or nothing.
+    /// </summary>
     /// <param name="rect">The crop rectangle.</param>
     /// <param name="x">The point, in photo pixels from the left.</param>
     /// <param name="y">The point, in photo pixels from the top.</param>
@@ -83,17 +87,17 @@ public static class CropMath
         double left = rect.X, top = rect.Y, right = rect.X + rect.Width, bottom = rect.Y + rect.Height;
         bool nearLeft = Math.Abs(x - left) <= grab, nearRight = Math.Abs(x - right) <= grab;
         bool nearTop = Math.Abs(y - top) <= grab, nearBottom = Math.Abs(y - bottom) <= grab;
-        bool nearMiddleX = Math.Abs(x - ((left + right) / 2)) <= grab, nearMiddleY = Math.Abs(y - ((top + bottom) / 2)) <= grab;
+        bool alongX = x >= left - grab && x <= right + grab, alongY = y >= top - grab && y <= bottom + grab;
         return (nearLeft, nearRight, nearTop, nearBottom) switch
         {
             (true, _, true, _) => CropHandle.TopLeft,
             (_, true, true, _) => CropHandle.TopRight,
             (_, true, _, true) => CropHandle.BottomRight,
             (true, _, _, true) => CropHandle.BottomLeft,
-            (_, _, true, _) when nearMiddleX => CropHandle.Top,
-            (_, _, _, true) when nearMiddleX => CropHandle.Bottom,
-            (true, _, _, _) when nearMiddleY => CropHandle.Left,
-            (_, true, _, _) when nearMiddleY => CropHandle.Right,
+            (_, _, true, _) when alongX => CropHandle.Top,
+            (_, _, _, true) when alongX => CropHandle.Bottom,
+            (true, _, _, _) when alongY => CropHandle.Left,
+            (_, true, _, _) when alongY => CropHandle.Right,
             _ when x > left && x < right && y > top && y < bottom => CropHandle.Move,
             _ => CropHandle.None,
         };
