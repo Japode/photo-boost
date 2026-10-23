@@ -13,3 +13,6 @@
 ## Block F — Delivery: README, benchmarks and installers
 
 ## Block G — Phase 2: denoising
+
+## Block H — Editor: basic edits and toolbar
+
