@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:render="clr-namespace:PhotoBoost.Render;assembly=PhotoBoost.Render"
+        xmlns:local="clr-namespace:PhotoBoost.App"
         Title="PhotoBoost"
         Icon="pack://application:,,,/PhotoBoost.ico"
         Width="1100"
@@ -21,6 +22,9 @@
     <CommandBinding Command="SaveAs" Executed="OnSaveAs" CanExecute="CanSaveAs" />
     <CommandBinding Command="Undo" Executed="OnUndo" CanExecute="CanUndo" />
     <CommandBinding Command="Redo" Executed="OnRedo" CanExecute="CanRedo" />
+    <!-- PB65: the quarter turns, whose commands carry Ctrl+R and Ctrl+Shift+R. -->
+    <CommandBinding Command="{x:Static local:MainWindow.RotateLeftCommand}" Executed="OnRotateLeft" CanExecute="CanEdit" />
+    <CommandBinding Command="{x:Static local:MainWindow.RotateRightCommand}" Executed="OnRotateRight" CanExecute="CanEdit" />
   </Window.CommandBindings>
   <Window.InputBindings>
     <KeyBinding Command="SaveAs" Key="S" Modifiers="Ctrl" />
@@ -66,9 +70,70 @@
       </StatusBarItem>
     </StatusBar>
 
+    <!-- PB63: the toolbar, beside how the shown version is compared (PB27), which shows with
+         the photo. It spans the window, the operations panel's width included, so the edits
+         fit beside the comparison on a small screen, and it goes while About or a download
+         offer takes the stage's place (PB65). Its groups, in order: Open and Save as; Undo and Redo; rotate and flip
+         (PB65, PB66); Crop (PB67); Invert colours (PB68). Each button is a glyph with an
+         accessible name, a tooltip naming its shortcut and an AutomationId; what needs a
+         photo is off without one, and an edit waits for a running operation as Undo does,
+         each landing as a version in the history (PB28). A WPF ToolBar moves what does not
+         fit into its overflow menu rather than clipping it; no case narrows the window to
+         read that, since winwright has no resize (WW570). -->
+    <DockPanel DockPanel.Dock="Top" Margin="24,16,24,0"
+               Visibility="{Binding Visibility, ElementName=Stage}">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                  Visibility="{Binding Visibility, ElementName=Viewer}">
+        <RadioButton x:Name="ModeSingle" AutomationProperties.AutomationId="ModeSingle" Content="Result"
+                     GroupName="Compare" IsChecked="True" Margin="0,0,12,0" Checked="OnModeChanged" />
+        <RadioButton x:Name="ModeDivider" AutomationProperties.AutomationId="ModeDivider" Content="Compare"
+                     GroupName="Compare" Margin="0,0,12,0" Checked="OnModeChanged" />
+        <RadioButton x:Name="ModeSideBySide" AutomationProperties.AutomationId="ModeSideBySide" Content="Side by side"
+                     GroupName="Compare" Margin="0,0,12,0" Checked="OnModeChanged" />
+        <Button x:Name="FitButton" AutomationProperties.AutomationId="FitButton" Content="Fit" Padding="10,2"
+                Click="OnFitClick" ToolTip="Show the whole image" />
+      </StackPanel>
+      <ToolBarTray Background="Transparent" IsLocked="True" Margin="0,0,12,0">
+        <ToolBar x:Name="EditorToolbar" AutomationProperties.AutomationId="EditorToolbar" AutomationProperties.Name="Editor"
+                 Background="Transparent">
+          <Button x:Name="ToolbarOpen" AutomationProperties.AutomationId="ToolbarOpen" AutomationProperties.Name="Open"
+                  Command="Open" ToolTip="Open a photo (Ctrl+O)">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE8E5;" />
+          </Button>
+          <Button x:Name="ToolbarSaveAs" AutomationProperties.AutomationId="ToolbarSaveAs" AutomationProperties.Name="Save as"
+                  Command="SaveAs" ToolTip="Save as (Ctrl+S)">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE792;" />
+          </Button>
+          <Separator />
+          <Button x:Name="UndoButton" AutomationProperties.AutomationId="UndoButton" AutomationProperties.Name="Undo"
+                  Command="Undo" ToolTip="Undo (Ctrl+Z)">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7A7;" />
+          </Button>
+          <Button x:Name="RedoButton" AutomationProperties.AutomationId="RedoButton" AutomationProperties.Name="Redo"
+                  Command="Redo" ToolTip="Redo (Ctrl+Y)">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7A6;" />
+          </Button>
+          <Separator />
+          <!-- PB65: the font has one rotate glyph, clockwise; mirrored, it turns the other way. -->
+          <Button x:Name="RotateLeftButton" AutomationProperties.AutomationId="RotateLeftButton" AutomationProperties.Name="Rotate left"
+                  Command="{x:Static local:MainWindow.RotateLeftCommand}" ToolTip="Rotate left (Ctrl+Shift+R)">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7AD;" RenderTransformOrigin="0.5,0.5">
+              <TextBlock.RenderTransform>
+                <ScaleTransform ScaleX="-1" />
+              </TextBlock.RenderTransform>
+            </TextBlock>
+          </Button>
+          <Button x:Name="RotateRightButton" AutomationProperties.AutomationId="RotateRightButton" AutomationProperties.Name="Rotate right"
+                  Command="{x:Static local:MainWindow.RotateRightCommand}" ToolTip="Rotate right (Ctrl+R)">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7AD;" />
+          </Button>
+        </ToolBar>
+      </ToolBarTray>
+    </DockPanel>
+
     <!-- PB24: the operations panel: upscale, denoise (PB36), face restore (PB31) and background
          removal (PB32). Shown once an image is open. -->
-    <DockPanel x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,24,24,24" Visibility="Collapsed">
+    <DockPanel x:Name="Operations" DockPanel.Dock="Right" Width="300" Margin="0,8,24,24" Visibility="Collapsed">
       <TextBlock DockPanel.Dock="Top" Text="Operations" Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
       <!-- PB60: the run in progress, pinned above the cards rather than below them, so its
            progress and its end are seen without scrolling a panel taller than the window. -->
@@ -249,51 +314,8 @@
     <!-- PB23: the open screen. A drop zone and a button until an image is open, then the image.
          PB46: the About panel takes the stage's place while open, since nothing WPF draws can lie
          over the image surface's own window. -->
-    <Grid Margin="24">
+    <Grid Margin="24,8,24,24">
      <DockPanel x:Name="Stage">
-      <!-- PB63: the toolbar, beside how the shown version is compared (PB27), which shows with
-           the photo. Its groups, in order: Open and Save as; Undo and Redo; rotate and flip
-           (PB65, PB66); Crop (PB67); Invert colours (PB68). Each button is a glyph with an
-           accessible name, a tooltip naming its shortcut and an AutomationId; what needs a
-           photo is off without one, and an edit waits for a running operation as Undo does,
-           each landing as a version in the history (PB28). A WPF ToolBar moves what does not
-           fit into its overflow menu rather than clipping it; no case narrows the window to
-           read that, since winwright has no resize (WW570). -->
-      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
-                    Visibility="{Binding Visibility, ElementName=Viewer}">
-          <RadioButton x:Name="ModeSingle" AutomationProperties.AutomationId="ModeSingle" Content="Result"
-                       GroupName="Compare" IsChecked="True" Margin="0,0,12,0" Checked="OnModeChanged" />
-          <RadioButton x:Name="ModeDivider" AutomationProperties.AutomationId="ModeDivider" Content="Compare"
-                       GroupName="Compare" Margin="0,0,12,0" Checked="OnModeChanged" />
-          <RadioButton x:Name="ModeSideBySide" AutomationProperties.AutomationId="ModeSideBySide" Content="Side by side"
-                       GroupName="Compare" Margin="0,0,12,0" Checked="OnModeChanged" />
-          <Button x:Name="FitButton" AutomationProperties.AutomationId="FitButton" Content="Fit" Padding="10,2"
-                  Click="OnFitClick" ToolTip="Show the whole image" />
-        </StackPanel>
-        <ToolBarTray Background="Transparent" IsLocked="True" Margin="0,0,12,0">
-          <ToolBar x:Name="EditorToolbar" AutomationProperties.AutomationId="EditorToolbar" AutomationProperties.Name="Editor"
-                   Background="Transparent">
-            <Button x:Name="ToolbarOpen" AutomationProperties.AutomationId="ToolbarOpen" AutomationProperties.Name="Open"
-                    Command="Open" ToolTip="Open a photo (Ctrl+O)">
-              <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE8E5;" />
-            </Button>
-            <Button x:Name="ToolbarSaveAs" AutomationProperties.AutomationId="ToolbarSaveAs" AutomationProperties.Name="Save as"
-                    Command="SaveAs" ToolTip="Save as (Ctrl+S)">
-              <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE792;" />
-            </Button>
-            <Separator />
-            <Button x:Name="UndoButton" AutomationProperties.AutomationId="UndoButton" AutomationProperties.Name="Undo"
-                    Command="Undo" ToolTip="Undo (Ctrl+Z)">
-              <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7A7;" />
-            </Button>
-            <Button x:Name="RedoButton" AutomationProperties.AutomationId="RedoButton" AutomationProperties.Name="Redo"
-                    Command="Redo" ToolTip="Redo (Ctrl+Y)">
-              <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7A6;" />
-            </Button>
-          </ToolBar>
-        </ToolBarTray>
-      </DockPanel>
 
      <Grid>
       <Border x:Name="DropZone" AutomationProperties.AutomationId="DropZone" Style="{StaticResource GroupCard}"

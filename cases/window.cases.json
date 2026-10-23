@@ -82,6 +82,12 @@
       "shareable": false
     },
     {
+      // PB65: not lent, since its case edits the photo.
+      "name": "a window on the rotated JPEG fixture, to edit",
+      "arguments": ["--open", "tests/fixtures/images/rotated-exif6.jpg", "--provider", "cpu"],
+      "shareable": false
+    },
+    {
       // PB63: the same, for the toolbar's Save as.
       "name": "a window on a staged photo, to save from the toolbar",
       "files": ["tests/fixtures/images/rotated-exif6.jpg"],
@@ -326,6 +332,76 @@
           "act": "read",
           "absent": true,
           "named": "and the earlier refusal is gone"
+        }
+      ]
+    },
+
+    {
+      // PB65: the pixels themselves are ImageTransformsTests'; this is the toolbar, the keys
+      // and the history. The keys go to the Fit button, since the photo surface is a child
+      // window whose keys never reach WPF's bindings.
+      "name": "the photo is turned from the toolbar and the keyboard, each turn a version that undoes",
+      "catches": "a rotate button that does nothing, turns the wrong way, or turns without a history entry to undo",
+      "filed": "PB65",
+      "tags": ["toolbar", "edit", "history"],
+      "fixture": "a window on the rotated JPEG fixture, to edit",
+      "steps": [
+        {
+          "locator": "Button#RotateRightButton",
+          "act": "invoke",
+          "named": "Rotate right is pressed"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Rotate right — 16 × 8",
+          "named": "the 8 x 16 photo is now 16 x 8"
+        },
+        {
+          "locator": "List#History > ListItem[order=bottom]",
+          "act": "read",
+          "reads": "name",
+          "expect": "2. Rotate right",
+          "named": "and the turn is in the history"
+        },
+        {
+          "locator": "Button#FitButton",
+          "act": "press",
+          "with": "Ctrl+Shift+R",
+          "named": "Ctrl+Shift+R turns it back"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Rotate left — 8 × 16",
+          "named": "upright again, as a third version"
+        },
+        {
+          "locator": "Button#UndoButton",
+          "act": "invoke",
+          "named": "the left turn is undone"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Rotate right — 16 × 8",
+          "named": "back to the right turn"
+        },
+        {
+          "locator": "Button#FitButton",
+          "act": "press",
+          "with": "Ctrl+R",
+          "named": "Ctrl+R turns it right again"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Rotate right — 8 × 16",
+          "named": "a half turn from the opened photo"
         }
       ]
     },

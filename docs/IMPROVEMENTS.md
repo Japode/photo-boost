@@ -30,19 +30,6 @@ surface is PhotoBoost.Render's GPU surface, so the rectangle and dimming are dra
 and the handles are hit-tested in photo coordinates; the surface publishes the rectangle
 through its automation status, so a UI case can set it and read it back.
 
-### §PB65 Rotate 90°
-
-The owner asked for basic edits on 2026-10-23. Rotate left and Rotate right turn the
-photo a quarter turn, with Ctrl+Shift+R and Ctrl+R. A quarter turn is an exact move of
-every pixel, so it is done in PhotoBoost.Imaging on the 16-bit samples, alpha included,
-with no resampling: four turns give back the same bytes, which a unit test checks. Each
-turn is a version in the history (PB28), labelled "Rotate left" or "Rotate right", so it
-can be undone and compared with the opened photo. A comparison between versions of
-different shapes already works, since an upscale changes the size. Exported camera
-details keep their orientation tag at "normal", because the pixels are what was turned.
-It takes well under a second on an 8192 px photo, so it runs on the UI thread without a
-progress card.
-
 ### §PB66 Flip horizontal and vertical
 
 The owner asked for basic edits on 2026-10-23. Flip horizontal mirrors the photo left to
