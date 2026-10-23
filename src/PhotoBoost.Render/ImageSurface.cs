@@ -31,6 +31,10 @@ public sealed class ImageSurface : HwndHost
     private (int X, int Y) last;
     private RgbaImage? before;
     private RgbaImage? after;
+    private PixelRect? crop;
+    private CropHandle grabbed;
+    private PixelRect grabbedFrom;
+    private (double X, double Y) grabbedAt;
 
     private delegate nint SurfaceProc(nint hwnd, uint msg, nint wParam, nint lParam);
 
@@ -39,7 +43,35 @@ public sealed class ImageSurface : HwndHost
         None,
         Pan,
         Divider,
+        Crop,
     }
+
+    /// <summary>Raised when the crop rectangle changes, by a drag, an aspect or a case setting it.</summary>
+    public event EventHandler? CropChanged;
+
+    /// <summary>
+    /// PB67: the crop rectangle being edited, in the shown image's pixels, or null when not cropping.
+    /// Set, it is kept inside the image; the surface draws it, a press on a handle or inside it drags
+    /// it, and a press outside it still pans.
+    /// </summary>
+    public PixelRect? Crop
+    {
+        get => crop;
+        set
+        {
+            crop = value is { } rect && after is { } image ? CropMath.Clamp(rect, image.Width, image.Height) : null;
+            if (crop is null)
+            {
+                drag = drag == Drag.Crop ? Drag.None : drag;
+            }
+
+            Redraw();
+            CropChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>The width over height a crop drag keeps, or null for any.</summary>
+    public double? CropAspect { get; set; }
 
     /// <summary>The colours the surface paints itself, from the app's Brand.</summary>
     public SurfacePalette Palette { get; set; }
@@ -163,7 +195,22 @@ public sealed class ImageSurface : HwndHost
         return (Math.Max(1, (int)Math.Round(ActualWidth * scale)), Math.Max(1, (int)Math.Round(ActualHeight * scale)));
     }
 
-    private void Redraw() => renderer?.Render(view, mode, divider, Palette);
+    private void Redraw() => renderer?.Render(view, mode, divider, Palette, crop);
+
+    /// <summary>The photo point, in its own pixels, under a surface point.</summary>
+    private (double X, double Y) PhotoPoint(int x, int y)
+    {
+        (int iw, int ih) = renderer!.ImageSize;
+        (double u, double v) = ViewMath.ImagePoint(view, iw, ih, renderer.Width, renderer.Height, x, y);
+        return (u * iw, v * ih);
+    }
+
+    /// <summary>Photo pixels per surface pixel at this view, so a handle is grabbed at the same distance at any zoom.</summary>
+    private double PhotoPerSurfacePixel()
+    {
+        (int iw, int ih) = renderer!.ImageSize;
+        return ViewMath.Span(iw, ih, renderer.Width, renderer.Height, view.Zoom).X * iw / renderer.Width;
+    }
 
     private nint OnMessage(uint msg, nint wParam, nint lParam)
     {
@@ -179,8 +226,23 @@ public sealed class ImageSurface : HwndHost
             case WmLButtonDown:
                 SetFocus(child);
                 SetCapture(child);
-                drag = mode == CompareMode.Divider && ViewMath.OnDivider(divider, x, renderer.Width) ? Drag.Divider : Drag.Pan;
+                grabbedAt = PhotoPoint(x, y);
+                grabbedFrom = crop ?? default;
+                grabbed = crop is { } rect ? CropMath.HitTest(rect, grabbedAt.X, grabbedAt.Y, 8 * PhotoPerSurfacePixel()) : CropHandle.None;
+                if (grabbed != CropHandle.None)
+                {
+                    drag = Drag.Crop;
+                }
+                else
+                {
+                    drag = mode == CompareMode.Divider && ViewMath.OnDivider(divider, x, renderer.Width) ? Drag.Divider : Drag.Pan;
+                }
+
                 last = (x, y);
+                return 0;
+            case WmMouseMove when drag == Drag.Crop:
+                (double px, double py) = PhotoPoint(x, y);
+                Crop = CropMath.Drag(grabbedFrom, grabbed, px - grabbedAt.X, py - grabbedAt.Y, CropAspect, iw, ih);
                 return 0;
             case WmMouseMove when drag == Drag.Divider:
                 Divider = (double)x / renderer.Width;
@@ -289,13 +351,37 @@ public sealed class ImageSurface : HwndHost
     /// <summary>
     /// What the surface tells UI Automation: a slider named Comparison whose value is the divider in
     /// percent, settable, and whose item status says the zoom and mode, since a swapchain publishes
-    /// nothing a case could otherwise read (PB40, winwright WW552).
+    /// nothing a case could otherwise read (PB40, winwright WW552). PB67: its text value is the crop
+    /// rectangle as "x,y,width,height" in photo pixels while cropping, settable the same way, and
+    /// empty otherwise.
     /// </summary>
-    private sealed class SurfacePeer(ImageSurface owner) : FrameworkElementAutomationPeer(owner), IRangeValueProvider
+    private sealed class SurfacePeer(ImageSurface owner) : FrameworkElementAutomationPeer(owner), IRangeValueProvider, IValueProvider
     {
         public double Value => Math.Round(owner.Divider * 100, 1);
 
         public bool IsReadOnly => owner.Mode != CompareMode.Divider;
+
+        string IValueProvider.Value => owner.Crop is { } r
+            ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{r.X},{r.Y},{r.Width},{r.Height}")
+            : string.Empty;
+
+        bool IValueProvider.IsReadOnly => owner.Crop is null;
+
+        void IValueProvider.SetValue(string value)
+        {
+            if (owner.Crop is null)
+            {
+                throw new ElementNotEnabledException();
+            }
+
+            int[] parts = [.. value.Split(',').Select(one => int.TryParse(one.Trim(), System.Globalization.CultureInfo.InvariantCulture, out int n) ? n : -1)];
+            if (parts.Length != 4 || parts.Any(n => n < 0))
+            {
+                throw new ArgumentException("x,y,width,height in photo pixels", nameof(value));
+            }
+
+            owner.Crop = new PixelRect(parts[0], parts[1], parts[2], parts[3]);
+        }
 
         public double Maximum => 100;
 
@@ -316,7 +402,7 @@ public sealed class ImageSurface : HwndHost
         }
 
         public override object? GetPattern(PatternInterface patternInterface) =>
-            patternInterface == PatternInterface.RangeValue ? this : base.GetPattern(patternInterface);
+            patternInterface is PatternInterface.RangeValue or PatternInterface.Value ? this : base.GetPattern(patternInterface);
 
         protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Slider;
 

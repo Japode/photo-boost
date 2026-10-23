@@ -3,8 +3,8 @@ using System.Runtime.InteropServices;
 namespace PhotoBoost.Imaging;
 
 /// <summary>
-/// The edits that move pixels without changing any: a quarter turn either way (PB65) and a mirror
-/// either way (PB66). Each pixel's eight bytes are copied whole, alpha included, so nothing is
+/// The edits that move pixels without changing any: a quarter turn either way (PB65), a mirror
+/// either way (PB66) and a crop (PB67). Each pixel's eight bytes are copied whole, alpha included, so nothing is
 /// resampled, four turns give back the same bytes and so do two flips. Rows are walked in blocks so the column-wise writes of a turn stay in the cache,
 /// which keeps an 8192 px photo well under a second on the UI thread.
 /// </summary>
@@ -21,6 +21,27 @@ public static class ImageTransforms
     /// <param name="image">The source.</param>
     /// <returns>A new image, its width the source's height.</returns>
     public static RgbaImage RotateLeft(RgbaImage image) => Turn(image, clockwise: false);
+
+    /// <summary>The pixels inside a rectangle, copied row by row with no resampling (PB67).</summary>
+    /// <param name="image">The source.</param>
+    /// <param name="rect">What to keep; it must lie inside the image.</param>
+    /// <returns>A new image the rectangle's size.</returns>
+    public static RgbaImage Crop(RgbaImage image, PixelRect rect)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        if (rect.Width < 1 || rect.Height < 1 || rect.X < 0 || rect.Y < 0 || rect.X + rect.Width > image.Width || rect.Y + rect.Height > image.Height)
+        {
+            throw new ArgumentOutOfRangeException(nameof(rect), rect, $"Not inside the {image.Width} x {image.Height} image.");
+        }
+
+        RgbaImage result = new(rect.Width, rect.Height, image.SourceBitDepth);
+        for (int y = 0; y < rect.Height; y++)
+        {
+            image.Row(rect.Y + y).Slice(rect.X * 4, rect.Width * 4).CopyTo(result.Row(y));
+        }
+
+        return result;
+    }
 
     /// <summary>The photo mirrored left to right.</summary>
     /// <param name="image">The source.</param>

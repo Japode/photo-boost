@@ -28,6 +28,7 @@ public sealed class SurfaceRenderer : IDisposable
             float2 spanA; float2 originA; float2 spanB; float2 originB;
             float2 surface; float divider; float mode;
             float4 ground; float4 checkerLight; float4 checkerDark; float4 dividerColour;
+            float4 crop; float cropping; float3 unused;
         };
         Texture2D before : register(t0);
         Texture2D after : register(t1);
@@ -43,8 +44,28 @@ public sealed class SurfaceRenderer : IDisposable
             float4 square = ((uint(pixel.x) / 8 + uint(pixel.y) / 8) % 2 == 0) ? checkerLight : checkerDark;
             return float4(lerp(square.rgb, c.rgb, c.a), 1);
         }
+        // PB67: outside the crop rectangle (photo uv, left-top and right-bottom) is dimmed towards
+        // the ground; its border and eight handles are drawn in the divider's colour, measured in
+        // surface pixels so they stay the same size at any zoom.
+        float4 cropped(float2 uv, float2 pixel) {
+            float4 c = shade(after, uv, pixel);
+            float2 perPixel = spanA / surface;
+            float2 fromLow = (uv - crop.xy) / perPixel, fromHigh = (crop.zw - uv) / perPixel;
+            bool inside = all(fromLow >= 0) && all(fromHigh >= 0);
+            bool spanX = fromLow.x > -1.5 && fromHigh.x > -1.5, spanY = fromLow.y > -1.5 && fromHigh.y > -1.5;
+            if (((abs(fromLow.x) < 1 || abs(fromHigh.x) < 1) && spanY) || ((abs(fromLow.y) < 1 || abs(fromHigh.y) < 1) && spanX)) return dividerColour;
+            float2 middle = (crop.xy + crop.zw) / 2;
+            for (int hx = 0; hx < 3; hx++) {
+                for (int hy = 0; hy < 3; hy++) {
+                    float2 handle = float2(hx == 0 ? crop.x : hx == 1 ? middle.x : crop.z, hy == 0 ? crop.y : hy == 1 ? middle.y : crop.w);
+                    if ((hx != 1 || hy != 1) && all(abs(uv - handle) / perPixel < 5)) return dividerColour;
+                }
+            }
+            return inside ? c : float4(lerp(c.rgb, ground.rgb, 0.6), 1);
+        }
         float4 ps(V i) : SV_Target {
             float2 pixel = i.pos.xy;
+            if (cropping > 0.5) return cropped(i.uv * spanA + originA, pixel);
             if (mode > 1.5) {
                 bool left = i.uv.x < 0.5;
                 float2 half = float2(left ? i.uv.x * 2 : i.uv.x * 2 - 1, i.uv.y);
@@ -83,7 +104,7 @@ public sealed class SurfaceRenderer : IDisposable
         vertex = device.CreateVertexShader(Compiler.Compile(Shader, "vs", "surface", "vs_5_0").Span);
         pixel = device.CreatePixelShader(Compiler.Compile(Shader, "ps", "surface", "ps_5_0").Span);
         sampler = device.CreateSamplerState(new SamplerDescription(Filter.MinMagMipLinear, TextureAddressMode.Clamp));
-        constants = device.CreateBuffer(new BufferDescription(128, BindFlags.ConstantBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
+        constants = device.CreateBuffer(new BufferDescription(160, BindFlags.ConstantBuffer, ResourceUsage.Dynamic, CpuAccessFlags.Write));
     }
 
     /// <summary>Whether this is the software rasteriser.</summary>
@@ -168,7 +189,8 @@ public sealed class SurfaceRenderer : IDisposable
     /// <param name="mode">Single, divider or side by side.</param>
     /// <param name="divider">The divider, 0 to 1 across.</param>
     /// <param name="palette">The surface's own colours.</param>
-    public void Render(View view, CompareMode mode, double divider, SurfacePalette palette)
+    /// <param name="crop">The crop rectangle being edited, in the after image's pixels (PB67), or null.</param>
+    public void Render(View view, CompareMode mode, double divider, SurfacePalette palette, PixelRect? crop = null)
     {
         if (target is null)
         {
@@ -180,12 +202,15 @@ public sealed class SurfaceRenderer : IDisposable
         {
             (double sx, double sy) = ViewMath.Span(a.Width, a.Height, Width, Height, view.Zoom);
             (double hx, double hy) = ViewMath.Span(a.Width, a.Height, Width / 2.0, Height, 1);
+            PixelRect c = crop ?? new PixelRect(0, 0, a.Width, a.Height);
             float[] frame =
             [
                 (float)sx, (float)sy, (float)(view.CenterX - (sx / 2)), (float)(view.CenterY - (sy / 2)),
                 (float)hx, (float)hy, (float)(0.5 - (hx / 2)), (float)(0.5 - (hy / 2)),
                 Width, Height, (float)divider, (float)mode,
                 .. Floats(palette.Ground), .. Floats(palette.CheckerLight), .. Floats(palette.CheckerDark), .. Floats(palette.Divider),
+                (float)c.X / a.Width, (float)c.Y / a.Height, (float)(c.X + c.Width) / a.Width, (float)(c.Y + c.Height) / a.Height,
+                crop is null ? 0 : 1, 0, 0, 0,
             ];
             MappedSubresource mapped = context.Map(constants, MapMode.WriteDiscard);
             Marshal.Copy(frame, 0, mapped.DataPointer, frame.Length);

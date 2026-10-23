@@ -117,6 +117,22 @@ public sealed class SurfaceTests
         Assert.Equal((128, 128, 128), Rgb(pixels, 200, 10, 50));  // ground beside the square image
     }
 
+    [Fact]
+    public void CroppingDimsOutsideTheRectangleAndDrawsItsBorder()
+    {
+        // PB67: a 20 x 10 blue photo fills the 200 x 100 surface at 10 px a photo pixel; the crop
+        // keeps photo columns 5 to 15, i.e. surface x 50 to 150.
+        using SurfaceRenderer renderer = Offscreen(200, 100);
+        renderer.SetImages(null, Flat(20, 10, 0, 0, 255));
+
+        renderer.Render(View.Fit, CompareMode.Single, 0.5, Palette, new PixelRect(5, 0, 10, 10));
+        byte[] pixels = renderer.ReadPixels();
+
+        Assert.Equal((0, 0, 255), Rgb(pixels, 200, 100, 30));    // inside: the photo as it is
+        Assert.Equal((76, 76, 178), Rgb(pixels, 200, 20, 30));   // outside: 60% towards the ground, a hair under .5
+        Assert.Equal((255, 89, 13), Rgb(pixels, 200, 50, 30));   // the left border
+    }
+
     private static SurfaceRenderer Offscreen(int width, int height)
     {
         SurfaceRenderer renderer = new(warp: true);

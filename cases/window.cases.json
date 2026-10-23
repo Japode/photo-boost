@@ -454,6 +454,92 @@
     },
 
     {
+      // PB67: the rectangle is set through the surface's text value, since winwright cannot drag
+      // a handle from one point of the surface to another (WW572); CropMathTests holds the drag.
+      "name": "the photo is cropped to a rectangle and an aspect, as a version that undoes",
+      "catches": "a crop editor that does not open, an aspect or size the bar does not report, or an Apply that cuts the wrong pixels or nothing",
+      "filed": "PB67",
+      "tags": ["toolbar", "edit", "crop", "history"],
+      "fixture": "a window on the rotated JPEG fixture, to edit",
+      "steps": [
+        {
+          "locator": "Button#CropButton",
+          "act": "invoke",
+          "named": "Crop is pressed"
+        },
+        {
+          "locator": "Text#CropSize",
+          "act": "read",
+          "reads": "name",
+          "expect": "8 × 16 px",
+          "named": "the editor starts on the whole 8 x 16 photo"
+        },
+        {
+          "locator": "ComboBox#CropAspect",
+          "act": "expand",
+          "named": "the aspects are opened"
+        },
+        {
+          "locator": "ComboBox#CropAspect > ListItem[name=\"1:1\"]",
+          "act": "select",
+          "reads": "selected",
+          "expect": "selected",
+          "named": "1:1 is chosen"
+        },
+        {
+          "locator": "Text#CropSize",
+          "act": "read",
+          "reads": "name",
+          "expect": "8 × 8 px",
+          "named": "the largest square fits the photo's width"
+        },
+        {
+          "locator": "Slider#Surface",
+          "act": "set value",
+          "with": "2,4,4,8",
+          "named": "the rectangle is set to 4 x 8 from (2, 4)"
+        },
+        {
+          "locator": "Text#CropSize",
+          "act": "read",
+          "reads": "name",
+          "expect": "4 × 8 px",
+          "named": "the bar follows the rectangle"
+        },
+        {
+          "locator": "Button#CropApply",
+          "act": "invoke",
+          "named": "Apply is pressed"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — Crop 4 × 8 — 4 × 8",
+          "named": "the photo is now the 4 x 8 rectangle, as a new version"
+        },
+        {
+          "locator": "Button#CropApply",
+          "act": "read",
+          "absent": true,
+          "named": "and the editor has closed"
+        },
+        {
+          "locator": "Button#UndoButton",
+          "act": "invoke",
+          "named": "the crop is undone"
+        },
+        {
+          "locator": "Text#ImageInfo",
+          "act": "read",
+          "reads": "name",
+          "expect": "rotated-exif6.jpg — 8 × 16",
+          "named": "the whole photo is back"
+        }
+      ]
+    },
+
+    {
       // PB13, PB58: only the offer is read; the download itself needs the network, which a case
       // does not reach, and ModelDownloadsTests drives it against a stand-in server.
       "name": "with no models About offers to download everything",

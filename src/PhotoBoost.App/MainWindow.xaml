@@ -11,6 +11,7 @@
         AllowDrop="True"
         DragOver="OnDragOver"
         Drop="OnDrop"
+        PreviewKeyDown="OnWindowKeyDown"
         WindowStartupLocation="CenterScreen">
   <!-- PB28: undo and redo through the application commands, which bring Ctrl+Z and Ctrl+Y;
        Ctrl+Shift+Z is the other redo people reach for. -->
@@ -25,6 +26,7 @@
     <!-- PB65: the quarter turns, whose commands carry Ctrl+R and Ctrl+Shift+R. -->
     <CommandBinding Command="{x:Static local:MainWindow.RotateLeftCommand}" Executed="OnRotateLeft" CanExecute="CanEdit" />
     <CommandBinding Command="{x:Static local:MainWindow.RotateRightCommand}" Executed="OnRotateRight" CanExecute="CanEdit" />
+    <CommandBinding Command="{x:Static local:MainWindow.CropCommand}" Executed="OnCrop" CanExecute="CanCrop" />
     <!-- PB66: the flips. -->
     <CommandBinding Command="{x:Static local:MainWindow.FlipHorizontalCommand}" Executed="OnFlipHorizontal" CanExecute="CanEdit" />
     <CommandBinding Command="{x:Static local:MainWindow.FlipVerticalCommand}" Executed="OnFlipVertical" CanExecute="CanEdit" />
@@ -142,6 +144,12 @@
                 <RotateTransform Angle="90" />
               </TextBlock.RenderTransform>
             </TextBlock>
+          </Button>
+          <Separator />
+          <!-- PB67: a toggle, so pressing it again while cropping is the same as Cancel. -->
+          <Button x:Name="CropButton" AutomationProperties.AutomationId="CropButton" AutomationProperties.Name="Crop"
+                  Command="{x:Static local:MainWindow.CropCommand}" ToolTip="Crop (C)">
+            <TextBlock Style="{StaticResource ToolbarIcon}" Text="&#xE7A8;" />
           </Button>
         </ToolBar>
       </ToolBarTray>
@@ -352,6 +360,32 @@
         <!-- PB27: the caption; how it is compared sits beside the toolbar above (PB63). -->
         <TextBlock x:Name="ImageInfo" DockPanel.Dock="Top" AutomationProperties.AutomationId="ImageInfo"
                    Style="{StaticResource SectionHeader}" Margin="2,0,0,8" />
+        <!-- PB67: the crop editor's bar, above the photo since nothing WPF draws can lie over the
+             surface: the aspect, the rectangle's size in the photo's own pixels, Apply (Enter)
+             and Cancel (Esc). -->
+        <Border x:Name="CropBar" DockPanel.Dock="Top" Style="{StaticResource GroupCard}" Padding="12,8" Margin="0,0,0,8"
+                Visibility="Collapsed">
+          <DockPanel>
+            <Button x:Name="CropCancel" AutomationProperties.AutomationId="CropCancel" DockPanel.Dock="Right" Content="Cancel"
+                    Padding="12,2" Margin="8,0,0,0" IsCancel="True" Click="OnCropCancel" />
+            <Button x:Name="CropApply" AutomationProperties.AutomationId="CropApply" DockPanel.Dock="Right" Content="Apply"
+                    Padding="12,2" IsDefault="True" Click="OnCropApply" />
+            <TextBlock Text="Aspect" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox x:Name="CropAspect" AutomationProperties.AutomationId="CropAspect" AutomationProperties.Name="Aspect"
+                      Width="110" SelectedIndex="0" SelectionChanged="OnCropAspectChanged">
+              <ComboBoxItem Content="Free" />
+              <ComboBoxItem Content="Original" />
+              <ComboBoxItem Content="1:1" />
+              <ComboBoxItem Content="4:3" />
+              <ComboBoxItem Content="3:4" />
+              <ComboBoxItem Content="3:2" />
+              <ComboBoxItem Content="2:3" />
+              <ComboBoxItem Content="16:9" />
+              <ComboBoxItem Content="9:16" />
+            </ComboBox>
+            <TextBlock x:Name="CropSize" AutomationProperties.AutomationId="CropSize" VerticalAlignment="Center" Margin="12,0,0,0" />
+          </DockPanel>
+        </Border>
         <!-- PB64: a later file that could not be opened, said over the photo, which stays. -->
         <TextBlock x:Name="ViewerOpenError" DockPanel.Dock="Top" AutomationProperties.AutomationId="ViewerOpenError"
                    Visibility="Collapsed" TextWrapping="Wrap" Margin="2,0,0,8"

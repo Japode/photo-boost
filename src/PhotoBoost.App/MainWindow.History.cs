@@ -29,6 +29,7 @@ public partial class MainWindow
     {
         Image = image;
         ViewerOpenError.Visibility = Visibility.Collapsed;
+        EndCrop(); // PB67: a rectangle drawn on the last version means nothing on this one.
         // PB27: the surface compares the version shown against the opened file.
         Surface.Palette = Brand.Surface;
         Surface.Show(history.Position > 0 ? history.Original : null, image);

@@ -1,6 +1,6 @@
 namespace PhotoBoost.Imaging.Tests;
 
-/// <summary>PB65, PB66: quarter turns and flips are exact moves of every pixel, alpha included.</summary>
+/// <summary>PB65, PB66, PB67: quarter turns, flips and crops are exact moves of every pixel, alpha included.</summary>
 public sealed class ImageTransformsTests
 {
     // A 3 x 2 image whose every sample is distinct, so any misplaced pixel or channel shows.
@@ -114,6 +114,23 @@ public sealed class ImageTransformsTests
 
         Assert.True(turned.Samples.SequenceEqual(flipped.Samples));
     }
+
+    [Fact]
+    public void CroppingCopiesThePixelsInsideTheRectangleUnchanged()
+    {
+        // PB67.
+        RgbaImage image = Numbered(130, 67, depth: 8);
+
+        RgbaImage cropped = ImageTransforms.Crop(image, new PixelRect(7, 3, 64, 20));
+
+        Assert.Equal((64, 20, 8), (cropped.Width, cropped.Height, cropped.SourceBitDepth));
+        Assert.Equal(Pixel(image, 7, 3), Pixel(cropped, 0, 0));
+        Assert.Equal(Pixel(image, 70, 22), Pixel(cropped, 63, 19));
+    }
+
+    [Fact]
+    public void ACropOutsideTheImageIsRefused() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => ImageTransforms.Crop(Numbered(), new PixelRect(1, 0, 3, 2)));
 
     [Fact]
     public void ATurnRightIsUndoneByATurnLeftAndKeepsTheSourceDepth()
