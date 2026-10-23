@@ -16,8 +16,6 @@
 
 ## Block H — Editor: basic edits and toolbar
 
-- 💭 **PB68** (deps: PB63 ✅) **A photo's colours cannot be inverted, so a scanned negative stays a negative** — Asked for as "invert" and read as inverting the colours, since mirroring is PB66; an idea until the owner confirms which was meant. → §PB68
-
 ## Non-goals
 
 - **Cloud inference or external APIs** Every model runs locally; the network is used
